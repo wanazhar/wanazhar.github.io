@@ -1,0 +1,61 @@
+/* Retro Japanese Web スタイル */
+body.crt {
+  background: #000 url('images/bg_tile.gif');
+  color: #0f0;
+  font-family: 'MS PGothic', 'MS Gothic', monospace;
+  line-height: 1.2;
+  animation: scanline 1s linear infinite, crtFlicker 0.15s infinite;
+}
+
+@keyframes scanline {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 4px; }
+}
+
+@keyframes crtFlicker {
+  0% { opacity: 0.9; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+
+.hit-counter {
+  background: #000;
+  border: 3px solid #f0f;
+  padding: 5px;
+  display: inline-block;
+}
+
+.news-ticker {
+  background: #00f;
+  color: #ff0;
+  padding: 3px;
+  border: 2px dashed #0ff;
+}
+
+.repo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 15px;
+  background: url('images/pixel_border.gif');
+}
+
+.repo-card {
+  border: 3px solid #ff00ff !important;
+  background: #000 !important;
+  padding: 15px;
+  position: relative;
+}
+
+.repo-card::before {
+  content: '★ New Update ★';
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #f00;
+  color: #ff0;
+  padding: 2px 5px;
+  transform: rotate(15deg);
+}
+
+/* その他のレトロスタイル... */
