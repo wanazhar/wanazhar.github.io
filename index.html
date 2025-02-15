@@ -5,36 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>wanazhar's</title>
     <link rel="stylesheet" href="assets/style.css">
+    <link rel="icon" type="image/x-icon" href="images/retro.ico">
 </head>
-<body>
+<body class="crt">
     <div class="container">
+        <div class="hit-counter">
+            <img src="images/hitcounter.gif" alt="visitors">
+            <span class="counter">00001</span>
+        </div>
         <header>
             <h1>💾 wanazhar's 🚀</h1>
-            <marquee>this is a vibe coding zone ✨</marquee>
+            <marquee behavior="scroll" direction="left" class="news-ticker">
+                ようこそ! Welcome to my cyber shrine! 最新更新: Added PDF Toolkit • 訪問者数: 1 • メール: wanazhar@hotmail.com
+            </marquee>
         </header>
 
         <section id="projects">
-            <table border="1" cellspacing="5" cellpadding="10">
-                <tr>
-                    <td>
-                        <img src="images/bulkpdf.png" alt="bulk pdf encryptor">
-                        <h2>bulk pdf encryptor</h2>
-                        <p>encrypt multiple pdfs easily with a gui</p>
-                        <a href="https://github.com/wanazhar/bulkpdfencryptor" target="_blank">🔗 view on github</a>
-                    </td>
-                    <td>
-                        <img src="images/pdftoolkit.png" alt="PDF Toolkit">
-                        <h2>pdf toolkit</h2>
-                        <p>merge, split, compress, and encrypt pdfs.</p>
-                        <a href="https://github.com/wanazhar/pdftoolkit" target="_blank">🔗 view on github</a>
-                    </td>
-                </tr>
-            </table>
+            <img src="images/under_construction.gif" class="construction-banner blink">
+            <div class="loading">🔃 Loading GitHub Repositories...</div>
+        </section>
+
+        <div class="webring">
+            <img src="images/webring_prev.gif">
+            <a href="#">🏮 Join Our Webring 🏮</a>
+            <img src="images/webring_next.gif">
+        </div>
+
+        <section class="guestbook">
+            <h2>🗒️ ゲストブック Guestbook</h2>
+            <form>
+                <input type="text" name="name" placeholder="名前 Name" style="font-family: 'MS PGothic'">
+                <textarea placeholder="メッセージ Message..." style="font-family: 'MS PGothic'"></textarea>
+                <input type="submit" value="送信 Submit">
+            </form>
         </section>
 
         <footer>
-            <p>© 2025 wanazhar | best viewed in netscape navigator 🤓</p>
+            <p> 2025 wanazhar | best viewed in netscape navigator </p>
         </footer>
     </div>
+    <script src="assets/script.js"></script>
 </body>
 </html>
