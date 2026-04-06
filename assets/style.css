@@ -81,31 +81,53 @@ body::after {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 2;
+  z-index: 6;
 }
 
 .petal {
   position: absolute;
-  top: -10%;
-  width: 14px;
-  height: 10px;
-  background: linear-gradient(135deg, #ffd6ef, #ff9dd5);
-  border-radius: 12px 12px 12px 2px;
-  opacity: 0.72;
-  box-shadow: 0 0 10px rgba(255, 173, 218, 0.2);
-  animation-name: petal-fall;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
+  top: -12vh;
+  width: 16px;
+  height: 11px;
+  background: linear-gradient(135deg, #ffdff2, #ff9fd4);
+  border-radius: 14px 14px 14px 3px;
+  opacity: 0.85;
+  box-shadow: 0 0 12px rgba(255, 173, 218, 0.28);
+  animation: petal-fall 14s linear infinite;
+  will-change: transform;
+}
+
+.petal::after {
+  content: '';
+  position: absolute;
+  inset: 2px 3px auto auto;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.45);
 }
 
 @keyframes petal-fall {
   0% {
-    transform: translate3d(0, -10vh, 0) rotate(0deg);
+    transform: translate3d(0, -12vh, 0) rotate(0deg);
   }
   100% {
-    transform: translate3d(var(--drift, 40px), 110vh, 0) rotate(360deg);
+    transform: translate3d(var(--drift, 48px), 115vh, 0) rotate(360deg);
   }
 }
+
+.p1 { left: 4%;  animation-duration: 13s; animation-delay: -2s;  --drift: 36px; }
+.p2 { left: 12%; animation-duration: 17s; animation-delay: -8s;  --drift: -42px; }
+.p3 { left: 21%; animation-duration: 15s; animation-delay: -5s;  --drift: 58px; }
+.p4 { left: 32%; animation-duration: 19s; animation-delay: -11s; --drift: -34px; }
+.p5 { left: 43%; animation-duration: 14s; animation-delay: -4s;  --drift: 41px; }
+.p6 { left: 51%; animation-duration: 18s; animation-delay: -9s;  --drift: -56px; }
+.p7 { left: 61%; animation-duration: 16s; animation-delay: -6s;  --drift: 33px; }
+.p8 { left: 70%; animation-duration: 20s; animation-delay: -12s; --drift: -47px; }
+.p9 { left: 78%; animation-duration: 15s; animation-delay: -3s;  --drift: 54px; }
+.p10 { left: 85%; animation-duration: 17s; animation-delay: -10s; --drift: -31px; }
+.p11 { left: 91%; animation-duration: 14s; animation-delay: -7s;  --drift: 38px; }
+.p12 { left: 96%; animation-duration: 18s; animation-delay: -13s; --drift: -28px; }
 
 img {
   max-width: 100%;
@@ -580,9 +602,9 @@ main {
   }
 
   .petal {
-    width: 12px;
+    width: 13px;
     height: 9px;
-    opacity: 0.5;
+    opacity: 0.7;
   }
 
   .repo-grid,
