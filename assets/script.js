@@ -43,7 +43,7 @@ function formatDate(value) {
 }
 
 function repoCard(repo, compact = false) {
-  const description = repo.description || 'No description uploaded. Mysterious.';
+  const description = repo.description || 'No description available.';
   const homepageLink = repo.homepage
     ? `<a class="repo-link secondary" href="${escapeHtml(repo.homepage)}" target="_blank" rel="noreferrer">LIVE</a>`
     : '';
@@ -69,7 +69,7 @@ function renderRepoList(container, repos, compact = false) {
   if (!container) return;
 
   if (!repos.length) {
-    container.innerHTML = '<div class="empty-card">No repos matched. Either the archive is empty or your search was too damn specific.</div>';
+    container.innerHTML = '<div class="empty-card">No repositories matched your search.</div>';
     return;
   }
 
@@ -134,7 +134,7 @@ fetch('https://api.github.com/users/wanazhar/repos?per_page=100&sort=updated')
     }
   })
   .catch((error) => {
-    const message = `<div class="error-card">⚠️ Repo uplink failed: ${escapeHtml(error.message)}. GitHub probably sneezed. Try again later.</div>`;
+    const message = `<div class="error-card">Unable to load repositories right now: ${escapeHtml(error.message)}.</div>`;
     if (featuredContainer) featuredContainer.innerHTML = message;
     if (archiveContainer) archiveContainer.innerHTML = message;
   });
