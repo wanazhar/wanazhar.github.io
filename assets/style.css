@@ -556,7 +556,6 @@ main {
 }
 
 @media (max-width: 760px) {
-  .petals-layer,
   .cursor-kitty,
   .cursor-trail {
     display: none !important;
@@ -578,6 +577,12 @@ main {
   .webring-panel,
   .footer-panel {
     padding: 14px;
+  }
+
+  .petal {
+    width: 12px;
+    height: 9px;
+    opacity: 0.5;
   }
 
   .repo-grid,
