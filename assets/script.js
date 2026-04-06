@@ -5,24 +5,6 @@ const toggleArchiveButton = document.querySelector('#toggle-archive');
 
 const isDesktop = window.matchMedia('(min-width: 761px)').matches;
 
-const petalsLayer = document.createElement('div');
-petalsLayer.className = 'petals-layer';
-document.body.appendChild(petalsLayer);
-
-const petalCount = isDesktop ? 18 : 10;
-Array.from({ length: petalCount }, () => {
-  const petal = document.createElement('div');
-  petal.className = 'petal';
-  petal.style.left = `${Math.random() * 100}%`;
-  petal.style.animationDuration = `${12 + Math.random() * 10}s`;
-  petal.style.animationDelay = `${Math.random() * -20}s`;
-  petal.style.setProperty('--drift', `${-80 + Math.random() * 160}px`);
-  petal.style.opacity = `${0.35 + Math.random() * 0.45}`;
-  petal.style.transform = `scale(${0.7 + Math.random() * 0.8})`;
-  petalsLayer.appendChild(petal);
-  return petal;
-});
-
 if (isDesktop) {
   const cursorTrail = Array.from({ length: 8 }, () => {
     const dot = document.createElement('div');
