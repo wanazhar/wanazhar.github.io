@@ -1,30 +1,50 @@
-const counterEl = document.querySelector('.counter');
 const featuredContainer = document.querySelector('#featured-projects');
 const archiveContainer = document.querySelector('#archive-projects');
 const searchInput = document.querySelector('#repo-search');
 const toggleArchiveButton = document.querySelector('#toggle-archive');
 
-let visitCount = Number(localStorage.getItem('visitCount') || 0);
-visitCount += 1;
-localStorage.setItem('visitCount', String(visitCount));
-if (counterEl) {
-  counterEl.textContent = String(visitCount).padStart(5, '0');
+const isDesktop = window.matchMedia('(min-width: 761px)').matches;
+
+if (isDesktop) {
+  const petalsLayer = document.createElement('div');
+  petalsLayer.className = 'petals-layer';
+  document.body.appendChild(petalsLayer);
+
+  Array.from({ length: 18 }, (_, index) => {
+    const petal = document.createElement('div');
+    petal.className = 'petal';
+    petal.style.left = `${Math.random() * 100}%`;
+    petal.style.animationDuration = `${12 + Math.random() * 10}s`;
+    petal.style.animationDelay = `${Math.random() * -20}s`;
+    petal.style.setProperty('--drift', `${-80 + Math.random() * 160}px`);
+    petal.style.opacity = `${0.35 + Math.random() * 0.45}`;
+    petal.style.transform = `scale(${0.7 + Math.random() * 0.8})`;
+    petalsLayer.appendChild(petal);
+    return index;
+  });
+
+  const cursorTrail = Array.from({ length: 8 }, () => {
+    const dot = document.createElement('div');
+    dot.className = 'cursor-trail';
+    document.body.appendChild(dot);
+    return dot;
+  });
+
+  const kitty = document.createElement('div');
+  kitty.className = 'cursor-kitty';
+  kitty.innerHTML = '<span class="ear-left"></span><span class="ear-right"></span><i class="eye-left"></i><i class="eye-right"></i>';
+  document.body.appendChild(kitty);
+
+  let trailIndex = 0;
+  document.addEventListener('mousemove', (event) => {
+    const dot = cursorTrail[trailIndex % cursorTrail.length];
+    dot.style.left = `${event.clientX}px`;
+    dot.style.top = `${event.clientY}px`;
+    kitty.style.left = `${event.clientX}px`;
+    kitty.style.top = `${event.clientY}px`;
+    trailIndex += 1;
+  });
 }
-
-const cursorTrail = Array.from({ length: 8 }, () => {
-  const dot = document.createElement('div');
-  dot.className = 'cursor-trail';
-  document.body.appendChild(dot);
-  return dot;
-});
-
-let trailIndex = 0;
-document.addEventListener('mousemove', (event) => {
-  const dot = cursorTrail[trailIndex % cursorTrail.length];
-  dot.style.left = `${event.pageX}px`;
-  dot.style.top = `${event.pageY}px`;
-  trailIndex += 1;
-});
 
 function escapeHtml(value = '') {
   return value
