@@ -3,47 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wanazhar's</title>
+    <title>wanazhar's cyber shrine</title>
+    <meta name="description" content="Retro cyber shrine / personal GitHub Pages site for wanazhar.">
     <link rel="stylesheet" href="assets/style.css">
     <link rel="icon" type="image/x-icon" href="images/retro.ico">
 </head>
 <body class="crt">
+    <div class="scanlines" aria-hidden="true"></div>
+
     <div class="container">
-        <div class="hit-counter">
-            <img src="images/hitcounter.gif" alt="visitors">
-            <span class="counter">00001</span>
+        <div class="top-bar panel">
+            <div class="hit-counter" aria-label="visitor counter">
+                <img src="images/hitcounter.gif" alt="visitors">
+                <span class="counter">00001</span>
+            </div>
+            <div class="status-lights" aria-label="site status">
+                <span class="status-pill online">ONLINE</span>
+                <span class="status-pill sync">UPLINK OK</span>
+                <span class="status-pill build">STATIC HTML</span>
+            </div>
         </div>
-        <header>
-            <h1>💾 wanazhar's 🚀</h1>
+
+        <header class="hero panel">
+            <p class="eyebrow">ようこそ // WELCOME TO THE SHRINE</p>
+            <h1>💾 wanazhar's cyber shrine 🚀</h1>
+            <p class="hero-copy">
+                A small chaotic corner of the internet for tools, experiments, random builds, and ideas worth keeping alive a little longer.
+            </p>
             <marquee behavior="scroll" direction="left" class="news-ticker">
-                ようこそ! Welcome to my cyber shrine! 最新更新: Added PDF Toolkit • 訪問者数: 1 • Github: github.com/wanazhar
+                最新更新: shrine redesign online • shipping weird useful stuff • repo uplink stable • github.com/wanazhar • old web still has more soul than most modern sites
             </marquee>
+            <div class="hero-actions">
+                <a href="#featured" class="pixel-button">ENTER ARCHIVE</a>
+                <a href="https://github.com/wanazhar" class="pixel-button alt" target="_blank" rel="noreferrer">VISIT GITHUB</a>
+            </div>
         </header>
 
-        <section id="projects">
-            <img src="images/under_construction.gif" class="construction-banner blink">
-            <div class="loading">🔃 Loading GitHub Repositories...</div>
-        </section>
+        <main>
+            <section class="panel intro-grid">
+                <div class="terminal-box">
+                    <div class="window-title">/about_me.exe</div>
+                    <p><span class="prompt">&gt;</span> handle: <strong>wanazhar</strong></p>
+                    <p><span class="prompt">&gt;</span> status: building useful internet stuff with a slight taste for chaos</p>
+                    <p><span class="prompt">&gt;</span> aesthetic: retro japanese web / cyber nostalgia / old-school internet energy</p>
+                    <p><span class="prompt">&gt;</span> mission: make things that are practical, strange, or ideally both</p>
+                </div>
 
-        <div class="webring">
-            <img src="images/webring_prev.gif">
-            <a href="#">🏮 Join Our Webring 🏮</a>
-            <img src="images/webring_next.gif">
-        </div>
+                <div class="terminal-box">
+                    <div class="window-title">/status.log</div>
+                    <ul class="status-list">
+                        <li>📡 currently broadcasting from GitHub Pages</li>
+                        <li>🛠️ featured projects pulled live from GitHub</li>
+                        <li>🧪 archive contains tools, experiments, and side quests</li>
+                        <li>💿 fake guestbook has been respectfully put down</li>
+                    </ul>
+                </div>
+            </section>
 
-        <section class="guestbook">
-            <h2>🗒️ ゲストブック Guestbook</h2>
-            <form>
-                <input type="text" name="name" placeholder="名前 Name" style="font-family: 'MS PGothic'">
-                <textarea placeholder="メッセージ Message..." style="font-family: 'MS PGothic'"></textarea>
-                <input type="submit" value="送信 Submit">
-            </form>
-        </section>
+            <section id="featured" class="panel section-block">
+                <div class="section-heading">
+                    <h2>★ Featured Transmissions</h2>
+                    <p>The good stuff first. No one needs to scroll through repo soup immediately.</p>
+                </div>
+                <div id="featured-projects" class="repo-grid" aria-live="polite">
+                    <div class="loading-card">🔃 Pulling featured repos from orbit...</div>
+                </div>
+            </section>
 
-        <footer>
-            <p> 2025 wanazhar | best viewed in netscape navigator </p>
+            <section class="panel section-block">
+                <div class="section-heading">
+                    <h2>▣ Outposts</h2>
+                    <p>Links, source, and escape routes.</p>
+                </div>
+                <div class="link-grid">
+                    <a class="link-card" href="https://github.com/wanazhar" target="_blank" rel="noreferrer">
+                        <span class="link-label">GitHub</span>
+                        <span class="link-meta">source code / repos / experiments</span>
+                    </a>
+                    <a class="link-card" href="#archive">
+                        <span class="link-label">Repo Archive</span>
+                        <span class="link-meta">browse the full transmission log</span>
+                    </a>
+                </div>
+            </section>
+
+            <section id="archive" class="panel section-block">
+                <div class="section-heading">
+                    <h2>⌘ Repository Archive</h2>
+                    <p>Everything else, sorted so the archive feels intentional instead of looking like a garage floor.</p>
+                </div>
+                <div class="archive-toolbar">
+                    <label for="repo-search" class="sr-only">Search repositories</label>
+                    <input id="repo-search" type="search" placeholder="search archive...">
+                    <button id="toggle-archive" class="pixel-button small" type="button">HIDE ARCHIVE</button>
+                </div>
+                <div id="archive-projects" class="repo-grid compact" aria-live="polite">
+                    <div class="loading-card">Loading archive...</div>
+                </div>
+            </section>
+
+            <section class="panel webring-panel">
+                <div class="webring">
+                    <img src="images/webring_prev.gif" alt="previous webring site">
+                    <a href="https://github.com/wanazhar" target="_blank" rel="noreferrer">🏮 traverse the webring of chaos 🏮</a>
+                    <img src="images/webring_next.gif" alt="next webring site">
+                </div>
+            </section>
+        </main>
+
+        <footer class="panel footer-panel">
+            <p>2026 wanazhar // best viewed with caffeine, curiosity, and a healthy disrespect for boring websites</p>
         </footer>
     </div>
+
     <script src="assets/script.js"></script>
 </body>
 </html>
