@@ -42,9 +42,9 @@ body::after {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(0,0,0,0.18));
+  background: linear-gradient(to bottom, rgba(255,255,255,0.02), rgba(0,0,0,0.14));
   mix-blend-mode: screen;
-  opacity: 0.35;
+  opacity: 0.22;
 }
 
 .scanlines {
@@ -93,12 +93,17 @@ img {
 .hit-counter {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   background: #000;
   border: 2px solid var(--pink);
-  padding: 6px 10px;
+  padding: 10px 12px;
   color: var(--yellow);
   font-weight: bold;
+}
+
+.counter-label {
+  color: var(--yellow);
+  text-transform: lowercase;
 }
 
 .counter {
@@ -140,9 +145,9 @@ h1, h2, h3 {
 }
 
 .hero h1 {
-  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-size: clamp(2rem, 5vw, 3.2rem);
   color: var(--yellow);
-  text-shadow: 2px 2px 0 #000, 0 0 12px rgba(255, 228, 92, 0.35);
+  text-shadow: 2px 2px 0 #000, 0 0 8px rgba(255, 228, 92, 0.22);
 }
 
 .hero-copy {
@@ -269,7 +274,7 @@ main {
 }
 
 .repo-card::before {
-  content: '★ SHRINE FILE ★';
+  content: 'PROJECT';
   position: absolute;
   top: -10px;
   right: 10px;
@@ -277,7 +282,7 @@ main {
   color: #fff9b0;
   padding: 2px 8px;
   font-size: 0.7rem;
-  transform: rotate(3deg);
+  transform: rotate(2deg);
 }
 
 .repo-card h3 {
