@@ -133,8 +133,8 @@ export class PlayerController {
     move.addScaledVector(cameraRight, strafeInput);
     if (move.lengthSq() > 0) move.normalize();
 
-    const sprint = this.hasInput('sprint') ? 1.55 : 1;
-    const speed = 12 * sprint * (wantsMove ? inputStrength : 0);
+    const sprint = this.hasInput('sprint') ? 2.05 : 1;
+    const speed = 16 * sprint * (wantsMove ? inputStrength : 0);
     const previous = this.group.position.clone();
     this.group.position.addScaledVector(move, speed * deltaSeconds);
     this.terrain.clampXZ(this.group.position);

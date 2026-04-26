@@ -3,8 +3,8 @@ import { VoxelInstancer, VOXEL_PALETTE } from './VoxelInstancer.js';
 import { fbm, hash2, mulberry32, clamp } from '../utils/noise.js';
 import { tourismLandmarks } from '../data/tourismContent.js';
 
-const MAP_MIN = -96;
-const MAP_MAX = 96;
+const MAP_MIN = -220;
+const MAP_MAX = 220;
 const MAP_SIZE = MAP_MAX - MAP_MIN + 1;
 
 function mapKey(x, z) {
@@ -553,6 +553,136 @@ function addTourismExpansion(inst, terrain) {
   });
 }
 
+
+function addDistrictLabel(inst, terrain, cx, cz, width, key = 'gatewayPurple') {
+  const ground = terrain.surfaceYAt(cx, cz);
+  inst.addBox(cx, ground + 0.7, cz, width, 0.8, 2.2, key);
+  inst.addBox(cx - width / 2 + 0.5, ground + 2.1, cz, 0.6, 2.8, 0.6, 'concreteDark');
+  inst.addBox(cx + width / 2 - 0.5, ground + 2.1, cz, 0.6, 2.8, 0.6, 'concreteDark');
+}
+
+function addMosqueMarker(inst, terrain, cx, cz, scale = 1) {
+  const ground = terrain.surfaceYAt(cx, cz);
+  inst.addBox(cx, ground + 2.4 * scale, cz, 9 * scale, 4.8 * scale, 6 * scale, 'mosqueWhite');
+  inst.addBox(cx, ground + 5.4 * scale, cz, 7 * scale, 1.8 * scale, 7 * scale, 'mosqueBlue');
+  inst.addBox(cx - 6 * scale, ground + 6 * scale, cz + 2 * scale, 1.1 * scale, 10 * scale, 1.1 * scale, 'mosqueWhite');
+}
+
+function addMallMarker(inst, terrain, cx, cz, key = 'mallGold') {
+  const ground = terrain.surfaceYAt(cx, cz);
+  inst.addBox(cx, ground + 4, cz, 18, 8, 12, key);
+  inst.addBox(cx, ground + 8.8, cz, 20, 1.2, 14, 'concreteDark');
+  inst.addBox(cx - 6, ground + 4.2, cz - 6.1, 4, 2.4, 0.4, 'glassDark');
+  inst.addBox(cx + 5, ground + 4.2, cz - 6.1, 4, 2.4, 0.4, 'glassDark');
+}
+
+function addHillMarker(inst, terrain, cx, cz, key = 'treeLeaf') {
+  const ground = terrain.surfaceYAt(cx, cz);
+  for (let i = 0; i < 5; i += 1) {
+    inst.addBox(cx + (i - 2) * 4, ground + 1 + i * 0.8, cz + i * 2, 14 - i * 1.6, 2 + i * 0.8, 10 - i, i % 2 ? key : 'grassDark');
+  }
+  addPalmTree(inst, terrain, cx - 7, cz - 4, 5);
+  addPalmTree(inst, terrain, cx + 8, cz + 6, 4.5);
+}
+
+function addFoodMarker(inst, terrain, cx, cz) {
+  addMarketStalls(inst, terrain, cx, cz, 12, 'marketRed');
+  const ground = terrain.surfaceYAt(cx, cz);
+  for (let i = -8; i <= 8; i += 4) {
+    inst.addBox(cx + i, ground + 4, cz - 8, 0.45, 5.2, 0.45, 'concreteDark');
+    inst.addBox(cx + i, ground + 6.8, cz - 8, 1.4, 0.7, 1.4, 'lampGlow');
+  }
+}
+
+function addGatewayMarker(inst, terrain, cx, cz, index) {
+  const ground = terrain.surfaceYAt(cx, cz);
+  addPlaza(inst, terrain, cx, cz, 18, 14, index % 2 ? 'plaza' : 'concrete');
+  inst.addBox(cx, ground + 1.4, cz, 14, 2.2, 9, 'gatewayPurple');
+  inst.addBox(cx, ground + 5, cz, 7, 7, 1.4, 'lampGlow');
+  inst.addBox(cx, ground + 8.8, cz, 4, 2, 4, index % 2 ? 'templeGold' : 'glassGreen');
+  addDistrictLabel(inst, terrain, cx, cz + 9, 12, 'gatewayPurple');
+}
+
+function addSatelliteLandmark(inst, terrain, item, index) {
+  addPlaza(inst, terrain, item.x, item.z, item.category === 'gateway' ? 18 : 22, item.category === 'gateway' ? 14 : 18, index % 2 ? 'plaza' : 'parkPath');
+  if (item.category === 'gateway') {
+    addGatewayMarker(inst, terrain, item.x, item.z, index);
+  } else if (['nature', 'excursion', 'viewpoint'].includes(item.category)) {
+    addHillMarker(inst, terrain, item.x, item.z, item.category === 'excursion' ? 'caveLimestone' : 'treeLeaf');
+    if (item.name.includes('Putrajaya')) {
+      for (let x = item.x - 12; x <= item.x + 12; x += 1) {
+        for (let z = item.z + 10; z <= item.z + 18; z += 1) addRoadTile(inst, terrain, x, z, 1, 1, 'water');
+      }
+      addMosqueMarker(inst, terrain, item.x - 8, item.z - 4, 1.15);
+    }
+  } else if (['food', 'market'].includes(item.category)) {
+    addFoodMarker(inst, terrain, item.x, item.z);
+  } else if (['shopping', 'family', 'modern'].includes(item.category)) {
+    addMallMarker(inst, terrain, item.x, item.z, item.category === 'family' ? 'pavilionRed' : 'mallGold');
+  } else if (['culture', 'heritage'].includes(item.category)) {
+    addMosqueMarker(inst, terrain, item.x, item.z, item.name.includes('Blue Mosque') ? 1.3 : 1);
+  } else {
+    addGenericBuilding(inst, terrain, item.x - 6, item.z - 5, 12, 10, 22, 'glassGreen', 'glassDark');
+  }
+  addDistrictLabel(inst, terrain, item.x, item.z - 12, Math.min(18, Math.max(8, item.name.length * 0.36)), item.category === 'gateway' ? 'gatewayPurple' : 'warning');
+}
+
+function addOuterRoads(inst, terrain) {
+  const horizontals = [-170, -128, -88, -38, 12, 52, 92, 138, 178];
+  const verticals = [-188, -148, -108, -62, -18, 38, 88, 132, 176];
+  horizontals.forEach((z, index) => addRoadLine(inst, terrain, { x: -208, z }, { x: 208, z }, index % 3 === 0 ? 5 : 3));
+  verticals.forEach((x, index) => addRoadLine(inst, terrain, { x, z: -208 }, { x, z: 208 }, index % 3 === 0 ? 5 : 3));
+  addRoadLine(inst, terrain, { x: -204, z: 152 }, { x: -148, z: 42 }, 5);
+  addRoadLine(inst, terrain, { x: -148, z: 42 }, { x: -82, z: -88 }, 5);
+  addRoadLine(inst, terrain, { x: -82, z: -88 }, { x: 68, z: -184 }, 5);
+  addRoadLine(inst, terrain, { x: 68, z: -184 }, { x: 188, z: -82 }, 5);
+  addRoadLine(inst, terrain, { x: 126, z: 18 }, { x: 148, z: 162 }, 5);
+}
+
+function addOuterDistrictExpansion(inst, terrain) {
+  addOuterRoads(inst, terrain);
+
+  tourismLandmarks
+    .filter((item) => Math.abs(item.x) > 96 || Math.abs(item.z) > 96 || item.category === 'gateway')
+    .forEach((item, index) => addSatelliteLandmark(inst, terrain, item, index));
+
+  const random = mulberry32(20260426);
+  const clusters = [
+    { cx: -156, cz: -126, radius: 34, count: 34, key: 'glassGreen' },
+    { cx: -184, cz: -38, radius: 30, count: 24, key: 'concreteDark' },
+    { cx: -92, cz: 92, radius: 32, count: 28, key: 'blackGlass' },
+    { cx: 132, cz: -136, radius: 42, count: 34, key: 'mosqueWhite' },
+    { cx: 114, cz: -168, radius: 34, count: 26, key: 'glass' },
+    { cx: 142, cz: 68, radius: 30, count: 20, key: 'parkPath' },
+    { cx: 188, cz: 12, radius: 55, count: 42, key: 'gatewayPurple' },
+    { cx: -204, cz: -88, radius: 26, count: 18, key: 'redBrick' }
+  ];
+
+  clusters.forEach((cluster) => {
+    for (let i = 0; i < cluster.count; i += 1) {
+      const angle = random() * Math.PI * 2;
+      const r = Math.sqrt(random()) * cluster.radius;
+      const x = Math.round(cluster.cx + Math.cos(angle) * r);
+      const z = Math.round(cluster.cz + Math.sin(angle) * r);
+      if (Math.abs(x) > 214 || Math.abs(z) > 214) continue;
+      if (isNearAny(x, z, tourismLandmarks, 10)) continue;
+      const w = rangeInt(random, 4, 9);
+      const d = rangeInt(random, 4, 9);
+      const h = rangeInt(random, 7, cluster.key === 'blackGlass' || cluster.key === 'glass' ? 34 : 20);
+      addGenericBuilding(inst, terrain, x, z, w, d, h, cluster.key, cluster.key === 'blackGlass' ? 'glass' : 'glassDark');
+    }
+  });
+
+  for (let x = -208; x <= 208; x += 24) {
+    addPalmTree(inst, terrain, x, 204, 4.5);
+    addPalmTree(inst, terrain, x, -204, 4.2);
+  }
+  for (let z = -180; z <= 180; z += 28) {
+    addPalmTree(inst, terrain, -210, z, 4);
+    addPalmTree(inst, terrain, 210, z, 4);
+  }
+}
+
 function addRoads(inst, terrain) {
   addRoadLine(inst, terrain, { x: -88, z: -8 }, { x: 88, z: -8 }, 7);
   addRoadLine(inst, terrain, { x: -86, z: 42 }, { x: 86, z: 42 }, 5);
@@ -565,20 +695,25 @@ function addRoads(inst, terrain) {
 function addTransit(inst, terrain) {
   addTransitLine(inst, terrain, 'x', -8, -84, 86, 13.2);
   addTransitLine(inst, terrain, 'z', 18, -75, 74, 15.8);
+  addTransitLine(inst, terrain, 'x', -128, -198, 178, 14.8);
+  addTransitLine(inst, terrain, 'z', 132, -188, 172, 15.5);
+  addTransitLine(inst, terrain, 'x', 92, -204, 188, 15.0);
   addStation(inst, terrain, -12, -8);
   addStation(inst, terrain, 18, 22);
   addStation(inst, terrain, 58, -8);
   addStation(inst, terrain, -62, -55);
+  [[-156, -128], [-184, -38], [-92, 92], [132, -136], [114, -168], [142, 68], [188, 92], [188, -82]].forEach(([x, z]) => addStation(inst, terrain, x, z, 'gatewayPurple'));
 }
 
 export function createKualaLumpurWorld(scene) {
   scene.background = new THREE.Color(0x07101f);
-  scene.fog = new THREE.Fog(0x07101f, 90, 235);
+  scene.fog = new THREE.Fog(0x07101f, 170, 620);
 
   const inst = new VoxelInstancer(scene, { castShadow: false, receiveShadow: true });
   const terrain = createTerrain(inst);
 
   addParksAndWater(inst, terrain);
+  addOuterDistrictExpansion(inst, terrain);
   addRoads(inst, terrain);
   addTransit(inst, terrain);
   addStreetDetails(inst, terrain);
@@ -660,9 +795,45 @@ export function createKualaLumpurWorld(scene) {
         new THREE.Vector3(-36, 14.4, -58),
         new THREE.Vector3(18, 16, 22),
         new THREE.Vector3(82, 14.4, 68),
-        new THREE.Vector3(92, 14.4, 6)
+        new THREE.Vector3(132, 15.5, -136),
+        new THREE.Vector3(188, 15.5, -82)
       ],
       color: 'purple'
+    },
+    {
+      name: 'Greater KL outer ring',
+      label: 'BRT',
+      stations: ['Mont Kiara', 'FRIM', 'Kuala Selangor', 'Shah Alam', 'Sunway', 'Bangsar', 'Kajang', 'Putrajaya', 'Zoo Negara', 'Genting Base'],
+      points: [
+        new THREE.Vector3(-92, 15.2, 92),
+        new THREE.Vector3(-138, 15.2, 128),
+        new THREE.Vector3(-204, 15.2, 152),
+        new THREE.Vector3(-184, 15.2, -38),
+        new THREE.Vector3(-156, 15.2, -126),
+        new THREE.Vector3(-94, 15.2, -108),
+        new THREE.Vector3(68, 15.2, -184),
+        new THREE.Vector3(132, 15.2, -136),
+        new THREE.Vector3(142, 15.2, 68),
+        new THREE.Vector3(148, 15.2, 162)
+      ],
+      color: 'green'
+    },
+    {
+      name: 'Malaysia gateway spine',
+      label: 'Tour',
+      stations: ['Penang Gate', 'Langkawi Gate', 'Malacca Gate', 'Cameron Gate', 'Taman Negara Gate', 'Kinabalu Gate', 'Perhentian Gate', 'Putrajaya Gate', 'KLIA Gate'],
+      points: [
+        new THREE.Vector3(188, 15.0, 92),
+        new THREE.Vector3(188, 15.0, 72),
+        new THREE.Vector3(188, 15.0, 52),
+        new THREE.Vector3(188, 15.0, 32),
+        new THREE.Vector3(188, 15.0, 12),
+        new THREE.Vector3(188, 15.0, -8),
+        new THREE.Vector3(188, 15.0, -28),
+        new THREE.Vector3(188, 15.0, -58),
+        new THREE.Vector3(188, 15.0, -82)
+      ],
+      color: 'yellow'
     }
   ];
 

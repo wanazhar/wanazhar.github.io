@@ -164,8 +164,31 @@ export function setupHud({
 
   function togglePanel(panel) {
     if (!panel) return;
-    panel.hidden = !panel.hidden;
+    const nextHidden = !panel.hidden;
+    [guidebookPanel, questPanel, tipsPanel].forEach((item) => {
+      if (item && item !== panel && window.matchMedia('(max-width: 860px)').matches) item.hidden = true;
+    });
+    panel.hidden = nextHidden;
+    requestRender();
   }
+
+  function closePanel(panel) {
+    if (!panel) return;
+    panel.hidden = true;
+    requestRender();
+  }
+
+  [guidebookPanel, questPanel, tipsPanel].forEach((panel) => {
+    panel?.addEventListener('pointerdown', (event) => event.stopPropagation());
+  });
+
+  document.querySelectorAll('[data-close-panel]').forEach((button) => {
+    button.addEventListener('click', () => closePanel(document.getElementById(button.dataset.closePanel)));
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') [guidebookPanel, questPanel, tipsPanel].forEach(closePanel);
+  });
 
   function setGuidebook(landmark) {
     if (!landmark) return;
