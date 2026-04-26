@@ -1,0 +1,8 @@
+export const tourismRoutes = [
+  { id: 'first-timer-kl', name: 'First Timer KL', stops: ['Petronas Twin Towers', 'KLCC Park', 'KL Tower', 'Merdeka Square', 'Petaling Street / Chinatown', 'Jalan Alor'], summary: 'A compact introduction to skyline, heritage, and food.' },
+  { id: 'heritage-trail', name: 'Heritage Trail', stops: ['Merdeka Square', 'Sultan Abdul Samad Building', 'Royal Selangor Club', 'Masjid Jamek / River of Life', 'Central Market', 'Petaling Street / Chinatown', 'Old Railway Station'], summary: 'Colonial core, river history, markets, and old rail architecture.' },
+  { id: 'food-night-market', name: 'Food & Night Market', stops: ['Kampung Baru', 'Chow Kit Market', 'Petaling Street / Chinatown', 'Jalan Alor', 'Bukit Bintang'], summary: 'Markets, street food, and evening city energy.' },
+  { id: 'garden-museum', name: 'Garden & Museum', stops: ['Masjid Negara', 'Islamic Arts Museum', 'National Planetarium', 'Lake Gardens', 'Tugu Negara', 'National Museum'], summary: 'Indoor culture stops and green paths for a slower day.' },
+  { id: 'skyline-modern-kl', name: 'Skyline Modern KL', stops: ['Petronas Twin Towers', 'KLCC Park', 'Pavilion KL', 'TRX Exchange 106', 'Merdeka 118', 'KL Tower'], summary: 'Towers, malls, and modern city viewpoints.' },
+  { id: 'malaysia-highlights', name: 'Malaysia Highlights', stops: ['Penang George Town Gateway', 'Langkawi Gateway', 'Malacca Gateway', 'Cameron Highlands Gateway', 'Taman Negara Gateway', 'Kinabalu Gateway', 'Perhentian Islands Gateway', 'Putrajaya Gateway', 'Sepang / KLIA Gateway'], summary: 'Gateway pads for planning beyond Kuala Lumpur.' }
+];

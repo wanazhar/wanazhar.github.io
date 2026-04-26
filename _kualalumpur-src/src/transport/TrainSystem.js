@@ -38,6 +38,8 @@ function createTrainCars(colorKey) {
   const materials = {
     trainBlue: new THREE.MeshLambertMaterial({ color: 0x1f8eed }),
     trainYellow: new THREE.MeshLambertMaterial({ color: 0xf7c948 }),
+    trainGreen: new THREE.MeshLambertMaterial({ color: 0x32c48d }),
+    trainPurple: new THREE.MeshLambertMaterial({ color: 0x8b5cf6 }),
     trainWhite: new THREE.MeshLambertMaterial({ color: 0xf5f7fa }),
     trainWindow: new THREE.MeshLambertMaterial({ color: 0x132638 })
   };
@@ -55,7 +57,8 @@ export class TrainSystem {
 
     transportPaths.forEach((path, index) => {
       const curve = new THREE.CatmullRomCurve3(path.points, false, 'catmullrom', 0.1);
-      const cars = createTrainCars(path.color === 'yellow' ? 'trainYellow' : 'trainBlue');
+      const colorKey = path.color === 'yellow' ? 'trainYellow' : path.color === 'green' ? 'trainGreen' : path.color === 'purple' ? 'trainPurple' : 'trainBlue';
+      const cars = createTrainCars(colorKey);
       cars.forEach((car) => scene.add(car));
       this.trains.push({
         cars,
@@ -63,9 +66,15 @@ export class TrainSystem {
         progress: index * 0.42,
         speed: index === 0 ? 0.035 : 0.027,
         lengthOffset: 0.024,
-        name: path.name
+        name: path.name,
+        label: path.label ?? path.name
       });
-      path.points.forEach((point) => this.stations.push({ point, name: path.name }));
+      path.points.forEach((point, stationIndex) => this.stations.push({
+        point,
+        name: path.stations?.[stationIndex] ?? `${path.label ?? 'Rail'} Station ${stationIndex + 1}`,
+        routeName: path.name,
+        label: path.label ?? path.name
+      }));
     });
   }
 
@@ -95,10 +104,21 @@ export class TrainSystem {
   startRide(playerPosition) {
     const station = this.findBoardingStation(playerPosition, 14);
     if (!station || this.trains.length === 0) return null;
-    const train = this.trains.find((item) => item.name === station.name) ?? this.trains[0];
+    const train = this.trains.find((item) => item.name === station.routeName) ?? this.trains[0];
     this.ride = { train, elapsed: 0, duration: 9, exitPoint: station.point.clone() };
     this.wake(12000);
     return this.ride;
+  }
+
+  fastTravelTo(stationName, terrain) {
+    const station = this.stations.find((item) => item.name === stationName);
+    if (!station) return null;
+    const target = station.point.clone();
+    target.x += 4;
+    target.z += 4;
+    target.y = terrain.surfaceYAt(target.x, target.z) + 0.1;
+    this.wake(5000);
+    return target;
   }
 
   exitRide(terrain) {

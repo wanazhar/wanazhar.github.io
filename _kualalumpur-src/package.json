@@ -8,10 +8,10 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "lint:syntax": "node --check src/main.js && node --check src/world/VoxelInstancer.js && node --check src/world/createKualaLumpurWorld.js && node --check src/world/CityActors.js && node --check src/characters/PlayerController.js && node --check src/transport/TrainSystem.js && node --check src/render/AdaptiveRenderer.js && node --check src/utils/noise.js && node --check src/game/LandmarkProgress.js && node --check src/game/TourRoute.js && node --check src/ui/hud.js && node --check src/ui/miniMap.js && node --check src/ui/photoMode.js"
+    "lint:syntax": "node --check src/main.js && node --check src/world/VoxelInstancer.js && node --check src/world/createKualaLumpurWorld.js && node --check src/world/CityActors.js && node --check src/characters/PlayerController.js && node --check src/transport/TrainSystem.js && node --check src/render/AdaptiveRenderer.js && node --check src/utils/noise.js && node --check src/game/LandmarkProgress.js && node --check src/game/TourRoute.js && node --check src/game/SaveSystem.js && node --check src/game/QuestSystem.js && node --check src/data/tourismContent.js && node --check src/data/quests.js && node --check src/data/routes.js && node --check src/data/postcards.js && node --check src/ui/hud.js && node --check src/ui/miniMap.js && node --check src/ui/photoMode.js"
   },
   "dependencies": {
-    "three": "file:../../../../../tmp/npm-tarballs/three.tgz",
-    "vite": "file:../../../../../tmp/npm-tarballs/vite.tgz"
+    "three": "^0.181.2",
+    "vite": "^7.2.0"
   }
 }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { VoxelInstancer, VOXEL_PALETTE } from './VoxelInstancer.js';
 import { fbm, hash2, mulberry32, clamp } from '../utils/noise.js';
+import { tourismLandmarks } from '../data/tourismContent.js';
 
 const MAP_MIN = -96;
 const MAP_MAX = 96;
@@ -466,6 +467,92 @@ function addParksAndWater(inst, terrain) {
   }
 }
 
+function addRiverOfLife(inst, terrain) {
+  for (let z = -62; z <= -28; z += 1) {
+    const x = Math.round(-8 + Math.sin(z * 0.18) * 3);
+    for (let ox = -2; ox <= 2; ox += 1) addRoadTile(inst, terrain, x + ox, z, 1, 1, 'riverBlue');
+  }
+  for (let x = -24; x <= 6; x += 1) {
+    const z = Math.round(-39 + Math.sin(x * 0.22) * 2);
+    for (let oz = -1; oz <= 1; oz += 1) addRoadTile(inst, terrain, x, z + oz, 1, 1, 'riverBlue');
+  }
+}
+
+function addSmallSign(inst, terrain, cx, cz, key = 'warning') {
+  const ground = terrain.surfaceYAt(cx, cz);
+  inst.addBox(cx, ground + 1.8, cz, 0.45, 3.2, 0.45, 'concreteDark');
+  inst.addBox(cx, ground + 3.6, cz, 4.2, 1.5, 0.55, key);
+}
+
+function addMarketStalls(inst, terrain, cx, cz, count, key = 'marketRed') {
+  for (let i = 0; i < count; i += 1) {
+    const x = cx + (i % 5) * 4 - 8;
+    const z = cz + Math.floor(i / 5) * 4 - 4;
+    const ground = terrain.surfaceYAt(x, z);
+    inst.addBox(x, ground + 1.1, z, 2.6, 2.2, 2.2, 'concreteDark');
+    inst.addBox(x, ground + 2.5, z, 3.2, 0.55, 2.8, i % 2 ? key : 'awningStripe');
+    inst.addBox(x, ground + 0.65, z + 2, 1.1, 1.3, 1.1, 'lampGlow');
+  }
+}
+
+function addTourismExpansion(inst, terrain) {
+  addRiverOfLife(inst, terrain);
+
+  addPlaza(inst, terrain, -25, 43, 24, 18, 'parkPath');
+  [[-31, 39], [-22, 38], [-18, 48], [-32, 50], [-24, 44]].forEach(([x, z]) => addPalmTree(inst, terrain, x, z, 4));
+
+  addMarketStalls(inst, terrain, -18, -42, 9, 'marketRed');
+  addSmallSign(inst, terrain, -15, -36, 'templeRed');
+  addMarketStalls(inst, terrain, 23, -32, 10, 'lampGlow');
+  for (let i = -8; i <= 8; i += 4) {
+    const y = terrain.surfaceYAt(23 + i, -27);
+    inst.addBox(23 + i, y + 1, -27, 1.4, 0.7, 1.4, 'mallGold');
+  }
+
+  const mosqueGround = terrain.surfaceYAt(-9, -38);
+  inst.addBox(-9, mosqueGround + 3, -38, 12, 6, 8, 'mosqueWhite');
+  inst.addBox(-9, mosqueGround + 7, -38, 8, 2, 8, 'roofCopper');
+  inst.addBox(-14, mosqueGround + 9, -34, 1.4, 12, 1.4, 'mosqueWhite');
+
+  const clubGround = terrain.surfaceYAt(-12, -55);
+  inst.addBox(-12, clubGround + 3, -55, 16, 6, 7, 'stationRoof');
+  inst.addBox(-12, clubGround + 6.8, -55, 18, 1, 8, 'mosqueWhite');
+
+  const iamGround = terrain.surfaceYAt(-58, -40);
+  inst.addBox(-58, iamGround + 3.6, -40, 18, 7.2, 12, 'mosqueWhite');
+  inst.addBox(-58, iamGround + 8.1, -40, 9, 2.5, 9, 'mosqueBlue');
+  const planetGround = terrain.surfaceYAt(-64, -34);
+  inst.addBox(-64, planetGround + 3, -34, 12, 6, 10, 'museumBrown');
+  inst.addBox(-64, planetGround + 7.2, -34, 8, 3, 8, 'glassGreen');
+
+  const palaceGround = terrain.surfaceYAt(-86, 10);
+  addPlaza(inst, terrain, -86, 10, 18, 16, 'plaza');
+  inst.addBox(-86, palaceGround + 4, 10, 16, 8, 9, 'palaceWall');
+  inst.addBox(-86, palaceGround + 9, 10, 12, 2.2, 6, 'palaceGold');
+  inst.addBox(-94, palaceGround + 5, 6, 2, 10, 2, 'palaceGold');
+
+  const caveGround = terrain.surfaceYAt(82, 68);
+  inst.addBox(82, caveGround + 8, 68, 18, 16, 8, 'caveLimestone');
+  inst.addBox(82, caveGround + 3, 63, 5, 6, 3, 'templeGold');
+  for (let step = 0; step < 8; step += 1) inst.addBox(82, caveGround + 0.2 + step * 0.25, 58 + step, 9 - step * 0.5, 0.3, 1, 'concrete');
+
+  addMarketStalls(inst, terrain, -35, 8, 8, 'templeGold');
+  addMarketStalls(inst, terrain, -44, -12, 8, 'marketBlue');
+  addMarketStalls(inst, terrain, -55, -74, 7, 'littleIndiaPink');
+
+  const pavilionGround = terrain.surfaceYAt(39, -18);
+  inst.addBox(39, pavilionGround + 4.5, -18, 18, 9, 12, 'pavilionRed');
+  inst.addBox(39, pavilionGround + 9.5, -18, 20, 1, 13, 'mallGold');
+
+  tourismLandmarks.filter((item) => item.category === 'gateway').forEach((item, index) => {
+    const ground = terrain.surfaceYAt(item.x, item.z);
+    addPlaza(inst, terrain, item.x, item.z, 8, 7, index % 2 ? 'plaza' : 'concrete');
+    inst.addBox(item.x, ground + 0.8, item.z, 7, 1.2, 5.5, 'gatewayPurple');
+    inst.addBox(item.x, ground + 3.2, item.z, 4.5, 3.6, 0.8, 'lampGlow');
+    addSmallSign(inst, terrain, item.x - 3, item.z + 3, 'gatewayPurple');
+  });
+}
+
 function addRoads(inst, terrain) {
   addRoadLine(inst, terrain, { x: -88, z: -8 }, { x: 88, z: -8 }, 7);
   addRoadLine(inst, terrain, { x: -86, z: 42 }, { x: 86, z: 42 }, 5);
@@ -495,6 +582,7 @@ export function createKualaLumpurWorld(scene) {
   addRoads(inst, terrain);
   addTransit(inst, terrain);
   addStreetDetails(inst, terrain);
+  addTourismExpansion(inst, terrain);
   addCityBuildings(inst, terrain);
   addPetronas(inst, terrain);
   addMerdeka118(inst, terrain);
@@ -518,26 +606,17 @@ export function createKualaLumpurWorld(scene) {
 
   const stats = inst.finalize();
 
-  const landmarks = [
-    { name: 'Petronas Twin Towers', position: new THREE.Vector3(-12, terrain.surfaceYAt(-12, 22) + 5, 22) },
-    { name: 'Merdeka 118', position: new THREE.Vector3(35, terrain.surfaceYAt(35, 18) + 8, 18) },
-    { name: 'KL Tower', position: new THREE.Vector3(58, terrain.surfaceYAt(58, -25) + 8, -25) },
-    { name: 'Merdeka Square', position: new THREE.Vector3(0, terrain.surfaceYAt(0, -55) + 4, -55) },
-    { name: 'Masjid Negara', position: new THREE.Vector3(-48, terrain.surfaceYAt(-48, -32) + 4, -32) },
-    { name: 'Tugu Negara', position: new THREE.Vector3(-70, terrain.surfaceYAt(-70, 43) + 4, 43) },
-    { name: 'LRT / MRT Hub', position: new THREE.Vector3(18, 16, 22) },
-    { name: 'Lake Gardens', position: new THREE.Vector3(-70, terrain.surfaceYAt(-70, 65) + 3, 65) },
-    { name: 'TRX Exchange 106', position: new THREE.Vector3(66, terrain.surfaceYAt(66, 32) + 8, 32) },
-    { name: 'Bukit Bintang', position: new THREE.Vector3(30, terrain.surfaceYAt(30, -22) + 4, -22) },
-    { name: 'Central Market', position: new THREE.Vector3(-20, terrain.surfaceYAt(-20, -60) + 4, -60) },
-    { name: 'Old Railway Station', position: new THREE.Vector3(-36, terrain.surfaceYAt(-36, -58) + 4, -58) },
-    { name: 'Thean Hou Temple', position: new THREE.Vector3(-75, terrain.surfaceYAt(-75, -20) + 5, -20) },
-    { name: 'National Museum', position: new THREE.Vector3(-58, terrain.surfaceYAt(-58, -66) + 4, -66) }
-  ];
+  const landmarks = tourismLandmarks.map((item) => ({
+    ...item,
+    position: new THREE.Vector3(item.x, terrain.surfaceYAt(item.x, item.z) + (item.category === 'gateway' ? 2 : 4), item.z),
+    visitRadius: item.category === 'gateway' ? 9 : 10
+  }));
 
   const transportPaths = [
     {
       name: 'Kelana Jaya inspired elevated line',
+      label: 'LRT',
+      stations: ['Subang Gateway', 'Pasar Seni', 'KLCC', 'Bukit Bintang Link', 'KL Tower', 'Ampang Park'],
       points: [
         new THREE.Vector3(-82, 14.4, -8),
         new THREE.Vector3(-48, 14.4, -8),
@@ -550,6 +629,8 @@ export function createKualaLumpurWorld(scene) {
     },
     {
       name: 'Monorail inspired north-south line',
+      label: 'Monorail',
+      stations: ['KL Sentral', 'Imbi', 'Bukit Bintang', 'Titiwangsa'],
       points: [
         new THREE.Vector3(18, 17.0, -72),
         new THREE.Vector3(18, 17.0, -28),
@@ -557,6 +638,31 @@ export function createKualaLumpurWorld(scene) {
         new THREE.Vector3(18, 17.0, 72)
       ],
       color: 'yellow'
+    },
+    {
+      name: 'MRT heritage loop',
+      label: 'MRT',
+      stations: ['National Museum', 'Merdeka', 'TRX', 'KLCC Park'],
+      points: [
+        new THREE.Vector3(-58, 14.4, -66),
+        new THREE.Vector3(-18, 14.4, -42),
+        new THREE.Vector3(35, 14.4, 18),
+        new THREE.Vector3(66, 14.4, 32),
+        new THREE.Vector3(-25, 14.4, 43)
+      ],
+      color: 'green'
+    },
+    {
+      name: 'KTM tourism gateway',
+      label: 'KTM',
+      stations: ['Old Railway Station', 'Batu Caves Gateway', 'Malaysia Highlights'],
+      points: [
+        new THREE.Vector3(-36, 14.4, -58),
+        new THREE.Vector3(18, 16, 22),
+        new THREE.Vector3(82, 14.4, 68),
+        new THREE.Vector3(92, 14.4, 6)
+      ],
+      color: 'purple'
     }
   ];
 

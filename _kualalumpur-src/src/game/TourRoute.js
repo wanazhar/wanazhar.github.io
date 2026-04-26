@@ -1,8 +1,16 @@
 export class TourRoute {
   constructor(landmarks, routeNames) {
     this.landmarks = landmarks;
-    this.route = routeNames.map((name) => landmarks.find((landmark) => landmark.name === name)).filter(Boolean);
+    this.routeId = 'custom';
+    this.route = [];
+    this.setStops(routeNames);
     this.active = false;
+    this.index = 0;
+  }
+
+  setStops(routeNames, routeId = this.routeId) {
+    this.routeId = routeId;
+    this.route = routeNames.map((name) => this.landmarks.find((landmark) => landmark.name === name)).filter(Boolean);
     this.index = 0;
   }
 

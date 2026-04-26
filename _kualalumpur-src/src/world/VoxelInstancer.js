@@ -51,6 +51,17 @@ export const VOXEL_PALETTE = {
   museumBrown: 0x8a5a35,
   lampGlow: 0xfff0a8,
   busGreen: 0x2aa876
+  ,
+  parkPath: 0xc8b98c,
+  riverBlue: 0x0f8fb5,
+  marketRed: 0xd64545,
+  awningStripe: 0xf8f2d8,
+  palaceGold: 0xe1b85d,
+  palaceWall: 0xf1ead2,
+  caveLimestone: 0xb6afa0,
+  littleIndiaPink: 0xd85c9f,
+  pavilionRed: 0xb31f35,
+  gatewayPurple: 0x7f5af0
 };
 
 export class VoxelInstancer {
