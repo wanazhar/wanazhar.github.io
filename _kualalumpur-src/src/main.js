@@ -21,7 +21,7 @@ import { QuestSystem } from './game/QuestSystem.js';
 const canvas = document.getElementById('game-canvas');
 const adaptive = new AdaptiveRenderer(canvas);
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.1, 900);
+const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.1, 1800);
 
 const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x25321f, 1.7);
 scene.add(hemiLight);
@@ -52,7 +52,7 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.enablePan = false;
 controls.minDistance = 7;
-controls.maxDistance = 180;
+controls.maxDistance = 520;
 controls.maxPolarAngle = Math.PI * 0.495;
 controls.target.copy(player.group.position).add(new THREE.Vector3(0, 2, 0));
 controls.update();
@@ -80,9 +80,9 @@ const rainGeometry = new THREE.BufferGeometry();
 const rainCount = 360;
 const rainPositions = new Float32Array(rainCount * 3);
 for (let i = 0; i < rainCount; i += 1) {
-  rainPositions[i * 3] = (Math.random() - 0.5) * 180;
-  rainPositions[i * 3 + 1] = 18 + Math.random() * 65;
-  rainPositions[i * 3 + 2] = (Math.random() - 0.5) * 180;
+  rainPositions[i * 3] = world.terrain.min + Math.random() * world.terrain.size;
+  rainPositions[i * 3 + 1] = 18 + Math.random() * 95;
+  rainPositions[i * 3 + 2] = world.terrain.min + Math.random() * world.terrain.size;
 }
 rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
 const rain = new THREE.Points(rainGeometry, new THREE.PointsMaterial({ color: 0xa9d7ff, size: 0.24, transparent: true, opacity: 0.62 }));
@@ -118,10 +118,10 @@ function setCameraMode(mode, landmark = currentLandmark) {
     placeCameraNear(target, 58);
     hud?.showToast('Landmark camera.');
   } else {
-    const target = new THREE.Vector3(0, 18, 4);
+    const target = new THREE.Vector3(0, 30, 0);
     controls.target.copy(target);
     recentCameraTarget.copy(target);
-    camera.position.set(125, 112, 132);
+    camera.position.set(310, 260, 325);
     camera.lookAt(target);
     controls.update();
     hud?.showToast('Skyline overview.');
@@ -328,7 +328,11 @@ function loop(now) {
     const positions = rain.geometry.attributes.position.array;
     for (let i = 0; i < rainCount; i += 1) {
       positions[i * 3 + 1] -= deltaSeconds * (timeModes[timeModeIndex] === 'Thunderstorm' ? 46 : 30);
-      if (positions[i * 3 + 1] < 4) positions[i * 3 + 1] = 78;
+      if (positions[i * 3 + 1] < 4) {
+        positions[i * 3] = world.terrain.min + Math.random() * world.terrain.size;
+        positions[i * 3 + 1] = 108;
+        positions[i * 3 + 2] = world.terrain.min + Math.random() * world.terrain.size;
+      }
     }
     rain.geometry.attributes.position.needsUpdate = true;
   }
