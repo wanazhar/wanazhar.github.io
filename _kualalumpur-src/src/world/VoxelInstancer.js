@@ -1,0 +1,148 @@
+import * as THREE from 'three';
+
+export const VOXEL_PALETTE = {
+  grass: 0x3f9b4f,
+  grass2: 0x58b65f,
+  grassDark: 0x2f7440,
+  dirt: 0x7a5638,
+  clay: 0x9b7352,
+  stone: 0x777c83,
+  stoneDark: 0x4f5964,
+  road: 0x222733,
+  roadLight: 0x3a4250,
+  lineWhite: 0xf1f6ff,
+  lineYellow: 0xffd166,
+  rail: 0x8e98a7,
+  concrete: 0xaeb6bd,
+  concreteDark: 0x707984,
+  glass: 0x6bb8d6,
+  glassDark: 0x23485d,
+  glassGreen: 0x43a79b,
+  silver: 0xcfd7df,
+  steel: 0x96a0aa,
+  blackGlass: 0x111927,
+  petronasTrim: 0xe9f2f8,
+  merdekaGlass: 0x385c83,
+  merdekaTrim: 0xffe29d,
+  klTowerWhite: 0xe8e1cf,
+  klTowerRed: 0xd83d3d,
+  roofCopper: 0xb46a3c,
+  mosqueBlue: 0x2667d8,
+  mosqueWhite: 0xf4f7f5,
+  monumentBronze: 0x8b5f32,
+  treeTrunk: 0x7a4e2d,
+  treeLeaf: 0x2b8f4a,
+  treeLeaf2: 0x1f6d3f,
+  water: 0x1976a3,
+  trainBlue: 0x1f8eed,
+  trainYellow: 0xf7c948,
+  trainWhite: 0xf5f7fa,
+  trainWindow: 0x132638,
+  station: 0xd8d2c4,
+  stationRoof: 0x5b6573,
+  plaza: 0xbcaa87,
+  redBrick: 0x9f4d38,
+  lantern: 0xff7b54,
+  warning: 0xffa630,
+  mallGold: 0xd7a94d,
+  templeRed: 0xc83f35,
+  templeGold: 0xffcf66,
+  marketBlue: 0x2f6f9f,
+  museumBrown: 0x8a5a35,
+  lampGlow: 0xfff0a8,
+  busGreen: 0x2aa876
+};
+
+export class VoxelInstancer {
+  constructor(scene, options = {}) {
+    this.scene = scene;
+    this.palette = options.palette ?? VOXEL_PALETTE;
+    this.castShadow = options.castShadow ?? false;
+    this.receiveShadow = options.receiveShadow ?? true;
+    this.instances = new Map();
+    this.meshes = [];
+    this.total = 0;
+  }
+
+  addVoxel(x, y, z, materialKey) {
+    this.addBox(x + 0.5, y + 0.5, z + 0.5, 1, 1, 1, materialKey);
+  }
+
+  addBox(x, y, z, sx, sy, sz, materialKey) {
+    if (sx <= 0 || sy <= 0 || sz <= 0) return;
+    if (!this.instances.has(materialKey)) this.instances.set(materialKey, []);
+    this.instances.get(materialKey).push({ x, y, z, sx, sy, sz });
+    this.total += 1;
+  }
+
+  addColumn(x, z, y0, y1, materialKey) {
+    for (let y = y0; y <= y1; y += 1) this.addVoxel(x, y, z, materialKey);
+  }
+
+  addVoxelBox(x0, y0, z0, width, height, depth, materialKey) {
+    for (let x = x0; x < x0 + width; x += 1) {
+      for (let y = y0; y < y0 + height; y += 1) {
+        for (let z = z0; z < z0 + depth; z += 1) {
+          this.addVoxel(x, y, z, materialKey);
+        }
+      }
+    }
+  }
+
+  addWireVoxelBox(x0, y0, z0, width, height, depth, materialKey) {
+    for (let x = x0; x < x0 + width; x += 1) {
+      for (let y = y0; y < y0 + height; y += 1) {
+        for (let z = z0; z < z0 + depth; z += 1) {
+          const edgeCount =
+            Number(x === x0 || x === x0 + width - 1) +
+            Number(y === y0 || y === y0 + height - 1) +
+            Number(z === z0 || z === z0 + depth - 1);
+          if (edgeCount >= 2) this.addVoxel(x, y, z, materialKey);
+        }
+      }
+    }
+  }
+
+  finalize() {
+    const box = new THREE.BoxGeometry(1, 1, 1);
+    box.computeBoundingBox();
+    const matrix = new THREE.Matrix4();
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+
+    for (const [key, data] of this.instances.entries()) {
+      const color = this.palette[key];
+      if (color === undefined) {
+        console.warn(`Missing voxel palette color: ${key}`);
+        continue;
+      }
+      const material = new THREE.MeshLambertMaterial({
+        color,
+        flatShading: true,
+        fog: true
+      });
+      const mesh = new THREE.InstancedMesh(box, material, data.length);
+      mesh.name = `voxels_${key}`;
+      mesh.castShadow = this.castShadow;
+      mesh.receiveShadow = this.receiveShadow;
+      mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+
+      data.forEach((item, index) => {
+        position.set(item.x, item.y, item.z);
+        scale.set(item.sx, item.sy, item.sz);
+        matrix.compose(position, quaternion, scale);
+        mesh.setMatrixAt(index, matrix);
+      });
+
+      mesh.computeBoundingSphere();
+      this.scene.add(mesh);
+      this.meshes.push(mesh);
+    }
+
+    return {
+      total: this.total,
+      meshes: this.meshes.length
+    };
+  }
+}

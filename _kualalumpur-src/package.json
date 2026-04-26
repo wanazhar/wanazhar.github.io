@@ -1,0 +1,17 @@
+{
+  "name": "voxel-kuala-lumpur",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A code-generated Vite + Three.js voxel Kuala Lumpur browser game prototype.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "lint:syntax": "node --check src/main.js && node --check src/world/VoxelInstancer.js && node --check src/world/createKualaLumpurWorld.js && node --check src/world/CityActors.js && node --check src/characters/PlayerController.js && node --check src/transport/TrainSystem.js && node --check src/render/AdaptiveRenderer.js && node --check src/utils/noise.js && node --check src/game/LandmarkProgress.js && node --check src/game/TourRoute.js && node --check src/ui/hud.js && node --check src/ui/miniMap.js && node --check src/ui/photoMode.js"
+  },
+  "dependencies": {
+    "three": "file:../../../../../tmp/npm-tarballs/three.tgz",
+    "vite": "file:../../../../../tmp/npm-tarballs/vite.tgz"
+  }
+}
