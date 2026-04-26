@@ -1,0 +1,214 @@
+export function setupHud({
+  landmarks,
+  player,
+  trainSystem,
+  requestRender,
+  focusLandmark,
+  refocusPlayer,
+  setCameraMode,
+  toggleTour,
+  cycleTimeMode,
+  boardTrain
+}) {
+  const fpsEl = document.getElementById('fps');
+  const pixelRatioEl = document.getElementById('pixel-ratio');
+  const voxelCountEl = document.getElementById('voxel-count');
+  const stampCountEl = document.getElementById('stamp-count');
+  const tourStateEl = document.getElementById('tour-state');
+  const tourNextEl = document.getElementById('tour-next');
+  const renderStateEl = document.getElementById('render-state');
+  const buttons = document.getElementById('landmark-buttons');
+  const toast = document.getElementById('toast');
+  const joystick = document.getElementById('touch-joystick');
+  const stick = document.getElementById('touch-stick');
+  const landmarkButtons = new Map();
+  const boardTrainButton = document.getElementById('btn-board-train');
+
+  landmarks.forEach((landmark) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = landmark.name.replace('Petronas Twin Towers', 'Petronas').replace('National ', '');
+    button.title = landmark.name;
+    button.addEventListener('click', () => {
+      focusLandmark(landmark);
+      showToast(`Focused: ${landmark.name}`);
+    });
+    landmarkButtons.set(landmark.name, button);
+    buttons.appendChild(button);
+  });
+
+  const keepTouchOnOverlay = (element) => {
+    if (!element) return;
+    element.addEventListener('touchstart', (event) => event.preventDefault(), { passive: false });
+    element.addEventListener('touchmove', (event) => event.preventDefault(), { passive: false });
+  };
+
+  const bindHoldButton = (id, key, { toastOnDown } = {}) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+
+    const down = (event) => {
+      event.preventDefault();
+      element.setPointerCapture?.(event.pointerId);
+      element.classList.add('is-active');
+      player.setVirtualKey(key, true);
+      trainSystem.wake();
+      if (toastOnDown) showToast(toastOnDown);
+      requestRender();
+    };
+
+    const up = (event) => {
+      event.preventDefault();
+      element.releasePointerCapture?.(event.pointerId);
+      element.classList.remove('is-active');
+      player.setVirtualKey(key, false);
+      requestRender();
+    };
+
+    element.addEventListener('pointerdown', down);
+    element.addEventListener('pointerup', up);
+    element.addEventListener('pointercancel', up);
+    element.addEventListener('lostpointercapture', up);
+    keepTouchOnOverlay(element);
+  };
+
+  const bindTapButton = (id, onTap) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      element.classList.add('is-active');
+      onTap();
+      requestRender();
+    });
+    element.addEventListener('pointerup', () => element.classList.remove('is-active'));
+    element.addEventListener('pointercancel', () => element.classList.remove('is-active'));
+    keepTouchOnOverlay(element);
+  };
+
+  bindHoldButton('btn-touch-jump', 'jump');
+  bindHoldButton('btn-touch-sprint', 'sprint', { toastOnDown: 'Sprint held. Push the left thumb-stick to run.' });
+
+  bindTapButton('btn-touch-focus', () => {
+    refocusPlayer?.();
+    showToast('Camera refocused on the explorer.');
+  });
+
+  bindTapButton('btn-touch-trains', () => {
+    const permanent = trainSystem.togglePermanentMotion();
+    showToast(permanent ? 'Continuous train motion enabled.' : 'Train motion now auto-pauses when idle.');
+  });
+
+  bindTapButton('btn-camera-walk', () => setCameraMode?.('walk'));
+  bindTapButton('btn-camera-landmark', () => setCameraMode?.('landmark'));
+  bindTapButton('btn-camera-skyline', () => setCameraMode?.('skyline'));
+  bindTapButton('btn-tour', () => toggleTour?.());
+  bindTapButton('btn-time', () => cycleTimeMode?.());
+  bindTapButton('btn-board-train', () => boardTrain?.());
+
+  if (joystick && stick) {
+    const radius = 46;
+    let activePointerId = null;
+    let origin = { x: 0, y: 0 };
+
+    const setStick = (x, y) => {
+      const distance = Math.hypot(x, y);
+      const limited = distance > radius ? radius / distance : 1;
+      const dx = x * limited;
+      const dy = y * limited;
+      const axisX = dx / radius;
+      const axisY = -dy / radius;
+      stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+      player.setVirtualAxis(axisX, axisY);
+      trainSystem.wake();
+      requestRender();
+    };
+
+    const resetStick = () => {
+      activePointerId = null;
+      stick.style.transform = 'translate(-50%, -50%)';
+      player.setVirtualAxis(0, 0);
+      joystick.classList.remove('is-active');
+      requestRender();
+    };
+
+    joystick.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      activePointerId = event.pointerId;
+      joystick.setPointerCapture?.(event.pointerId);
+      const rect = joystick.getBoundingClientRect();
+      origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      joystick.classList.add('is-active');
+      setStick(event.clientX - origin.x, event.clientY - origin.y);
+    });
+
+    joystick.addEventListener('pointermove', (event) => {
+      if (event.pointerId !== activePointerId) return;
+      event.preventDefault();
+      setStick(event.clientX - origin.x, event.clientY - origin.y);
+    });
+
+    joystick.addEventListener('pointerup', (event) => {
+      if (event.pointerId !== activePointerId) return;
+      event.preventDefault();
+      joystick.releasePointerCapture?.(event.pointerId);
+      resetStick();
+    });
+
+    joystick.addEventListener('pointercancel', resetStick);
+    joystick.addEventListener('lostpointercapture', resetStick);
+    keepTouchOnOverlay(joystick);
+  }
+
+  let toastTimer = 0;
+  function showToast(message) {
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.style.opacity = '0.75';
+    }, 2200);
+  }
+
+  function setVoxelStats(stats) {
+    voxelCountEl.textContent = stats.total.toLocaleString();
+  }
+
+  function setProgress(progress) {
+    stampCountEl.textContent = `${progress.count}/${progress.total}`;
+    landmarks.forEach((landmark) => {
+      landmarkButtons.get(landmark.name)?.classList.toggle('is-visited', progress.isVisited(landmark));
+    });
+  }
+
+  function setTour({ active, nextName, distance, progressText }) {
+    const tourButton = document.getElementById('btn-tour');
+    tourButton.textContent = active ? 'Cancel Tour' : 'Start KL Tour';
+    tourStateEl.textContent = progressText ?? 'Off';
+    tourNextEl.textContent = active && nextName ? `Next destination: ${nextName} · ${Math.round(distance)}m` : 'Next destination: none';
+  }
+
+  function setTimeMode(mode) {
+    document.getElementById('btn-time').textContent = mode;
+  }
+
+  function setBoardTrainAvailable(available) {
+    boardTrainButton.hidden = !available;
+  }
+
+  function update({ fps, pixelRatio, running, trainsActive }) {
+    fpsEl.textContent = fps > 0 ? String(Math.round(fps)) : '--';
+    pixelRatioEl.textContent = `${pixelRatio.toFixed(2)}x`;
+    renderStateEl.textContent = running ? (trainsActive ? 'Active + transit' : 'Active') : 'Paused';
+  }
+
+  return {
+    setVoxelStats,
+    setProgress,
+    setTour,
+    setTimeMode,
+    setBoardTrainAvailable,
+    update,
+    showToast
+  };
+}
