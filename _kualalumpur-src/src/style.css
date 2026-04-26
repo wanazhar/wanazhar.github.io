@@ -3,8 +3,8 @@
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #050816;
   color: #eff7ff;
-  --panel: rgba(8, 16, 35, 0.68);
-  --panel-strong: rgba(8, 16, 35, 0.86);
+  --panel: rgba(8, 16, 35, 0.72);
+  --panel-strong: rgba(8, 16, 35, 0.88);
   --line: rgba(255, 255, 255, 0.14);
   --accent: #68e1fd;
   --accent-2: #ffd166;
@@ -44,7 +44,7 @@ body {
   z-index: 5;
   width: min(360px, calc(100vw - 24px));
   border: 1px solid var(--line);
-  border-radius: 22px;
+  border-radius: 8px;
   padding: 16px;
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
 }
@@ -72,7 +72,7 @@ body {
   place-items: center;
   width: 48px;
   height: 48px;
-  border-radius: 15px;
+  border-radius: 8px;
   color: #081023;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   font-weight: 900;
@@ -110,7 +110,7 @@ h2 {
   grid-template-columns: 1fr auto;
   gap: 8px 14px;
   padding: 12px;
-  border-radius: 16px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -125,7 +125,9 @@ h2 {
 .button-row button,
 .board-train,
 .photo-mode button,
-.photo-presets button {
+.photo-presets button,
+.save-row button,
+select {
   border: 1px solid rgba(255, 255, 255, 0.16);
   color: #ffffff;
   background: rgba(255, 255, 255, 0.1);
@@ -210,6 +212,8 @@ kbd {
 }
 
 .landmark-buttons {
+  max-height: min(58vh, 620px);
+  overflow: auto;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
@@ -220,11 +224,88 @@ kbd {
   border: 1px solid rgba(255, 255, 255, 0.16);
   color: #ffffff;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 13px;
+  border-radius: 8px;
   padding: 10px 12px;
   font: inherit;
+  font-size: 0.74rem;
   cursor: pointer;
   transition: transform 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+#route-selector,
+#station-selector {
+  width: 100%;
+  margin-bottom: 8px;
+  background: rgba(5, 12, 24, 0.82);
+}
+
+.tourism-panel {
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  max-height: min(70vh, 620px);
+  overflow: auto;
+}
+
+#quest-panel {
+  right: 388px;
+}
+
+#tips-panel {
+  left: 14px;
+  top: 390px;
+  bottom: auto;
+  max-height: calc(100vh - 410px);
+  transform: none;
+}
+
+#guidebook-note {
+  color: rgba(239, 247, 255, 0.86);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+#guidebook-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin: 12px 0;
+  font-size: 0.78rem;
+}
+
+#guidebook-details dt {
+  color: rgba(239, 247, 255, 0.64);
+}
+
+#guidebook-details dd {
+  margin: 0;
+}
+
+.compact-list {
+  display: grid;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: rgba(239, 247, 255, 0.82);
+}
+
+.compact-list p {
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.compact-list .is-complete {
+  border-color: rgba(255, 209, 102, 0.42);
+  color: #fff6d6;
+}
+
+.save-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .landmark-buttons button:hover,
@@ -272,6 +353,13 @@ kbd {
   gap: 6px;
   font-size: 0.76rem;
   color: rgba(239, 247, 255, 0.86);
+}
+
+.postcard-caption {
+  max-width: 260px;
+  color: rgba(239, 247, 255, 0.82);
+  font-size: 0.74rem;
+  line-height: 1.25;
 }
 
 #app.is-photo-clean #hud,
@@ -426,6 +514,24 @@ kbd {
 @media (pointer: coarse), (max-width: 860px) {
   #landmarks {
     display: none;
+  }
+
+  .tourism-panel {
+    left: 10px;
+    right: 10px;
+    top: 132px;
+    width: auto;
+    transform: none;
+    max-height: 38vh;
+  }
+
+  #quest-panel,
+  #tips-panel {
+    left: 10px;
+    right: 10px;
+    top: 132px;
+    bottom: auto;
+    width: auto;
   }
 
   .controls-list {

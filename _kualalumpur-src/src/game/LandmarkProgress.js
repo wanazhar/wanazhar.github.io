@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
 export class LandmarkProgress {
-  constructor(landmarks, radius = 10) {
+  constructor(landmarks, radius = 10, initialVisited = []) {
     this.landmarks = landmarks;
     this.radius = radius;
-    this.visited = new Set();
+    this.visited = new Set(initialVisited);
     this.temp = new THREE.Vector3();
   }
 

@@ -8,7 +8,14 @@ export function setupHud({
   setCameraMode,
   toggleTour,
   cycleTimeMode,
-  boardTrain
+  boardTrain,
+  tourismContent,
+  routes,
+  questSystem,
+  saveSystem,
+  setRoute,
+  fastTravel,
+  resetProgress
 }) {
   const fpsEl = document.getElementById('fps');
   const pixelRatioEl = document.getElementById('pixel-ratio');
@@ -23,6 +30,17 @@ export function setupHud({
   const stick = document.getElementById('touch-stick');
   const landmarkButtons = new Map();
   const boardTrainButton = document.getElementById('btn-board-train');
+  const routeSelector = document.getElementById('route-selector');
+  const stationSelector = document.getElementById('station-selector');
+  const guidebookPanel = document.getElementById('guidebook-panel');
+  const questPanel = document.getElementById('quest-panel');
+  const tipsPanel = document.getElementById('tips-panel');
+  const guidebookTitle = document.getElementById('guidebook-title');
+  const guidebookNote = document.getElementById('guidebook-note');
+  const guidebookDetails = document.getElementById('guidebook-details');
+  const highlightList = document.getElementById('highlight-list');
+  const questList = document.getElementById('quest-list');
+  const tipsList = document.getElementById('tips-list');
 
   landmarks.forEach((landmark) => {
     const button = document.createElement('button');
@@ -31,6 +49,7 @@ export function setupHud({
     button.title = landmark.name;
     button.addEventListener('click', () => {
       focusLandmark(landmark);
+      setGuidebook(landmark);
       showToast(`Focused: ${landmark.name}`);
     });
     landmarkButtons.set(landmark.name, button);
@@ -105,6 +124,94 @@ export function setupHud({
   bindTapButton('btn-tour', () => toggleTour?.());
   bindTapButton('btn-time', () => cycleTimeMode?.());
   bindTapButton('btn-board-train', () => boardTrain?.());
+  bindTapButton('btn-guidebook', () => togglePanel(guidebookPanel));
+  bindTapButton('btn-quests', () => {
+    renderQuests();
+    togglePanel(questPanel);
+  });
+  bindTapButton('btn-tips', () => togglePanel(tipsPanel));
+  bindTapButton('btn-save-now', () => {
+    saveSystem?.persist();
+    showToast('Progress saved on this device.');
+  });
+  bindTapButton('btn-reset-progress', () => {
+    resetProgress?.();
+    showToast('Progress reset.');
+  });
+
+  routes?.forEach((route) => {
+    const option = document.createElement('option');
+    option.value = route.id;
+    option.textContent = route.name;
+    routeSelector.appendChild(option);
+  });
+  if (saveSystem?.data.activeRoute) routeSelector.value = saveSystem.data.activeRoute;
+  routeSelector.addEventListener('change', () => {
+    setRoute?.(routeSelector.value);
+    requestRender();
+  });
+
+  trainSystem.stations.forEach((station) => {
+    const option = document.createElement('option');
+    option.value = station.name;
+    option.textContent = `${station.label}: ${station.name}`;
+    stationSelector.appendChild(option);
+  });
+  stationSelector.addEventListener('change', () => {
+    fastTravel?.(stationSelector.value);
+    requestRender();
+  });
+
+  function togglePanel(panel) {
+    if (!panel) return;
+    panel.hidden = !panel.hidden;
+  }
+
+  function setGuidebook(landmark) {
+    if (!landmark) return;
+    guidebookTitle.textContent = landmark.name;
+    guidebookNote.textContent = landmark.note ?? 'Tourism stop in the stylized KL guide.';
+    guidebookDetails.innerHTML = '';
+    [
+      ['District', landmark.district],
+      ['Best time', landmark.bestTime],
+      ['Category', landmark.category],
+      ['Tip', landmark.tip]
+    ].forEach(([label, value]) => {
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.textContent = value ?? '-';
+      guidebookDetails.append(dt, dd);
+    });
+    highlightList.innerHTML = '';
+    tourismContent?.zones?.forEach((zone) => {
+      const item = document.createElement('p');
+      item.textContent = `${zone.name}: ${zone.summary}`;
+      highlightList.appendChild(item);
+    });
+  }
+
+  function renderQuests() {
+    questList.innerHTML = '';
+    questSystem?.summaries().forEach((quest) => {
+      const item = document.createElement('p');
+      item.className = quest.complete ? 'is-complete' : '';
+      item.textContent = `${quest.complete ? 'Done' : `${quest.progress}/${quest.target}`} · ${quest.name}: ${quest.description}`;
+      questList.appendChild(item);
+    });
+  }
+
+  function renderTips() {
+    tipsList.innerHTML = '';
+    [...(tourismContent?.tips ?? []), ...(tourismContent?.facts ?? []), ...(tourismContent?.glossary ?? []).map((item) => `${item.term}: ${item.meaning}`)].forEach((text) => {
+      const item = document.createElement('p');
+      item.textContent = text;
+      tipsList.appendChild(item);
+    });
+  }
+  setGuidebook(landmarks[0]);
+  renderTips();
 
   if (joystick && stick) {
     const radius = 46;
@@ -179,6 +286,7 @@ export function setupHud({
     landmarks.forEach((landmark) => {
       landmarkButtons.get(landmark.name)?.classList.toggle('is-visited', progress.isVisited(landmark));
     });
+    renderQuests();
   }
 
   function setTour({ active, nextName, distance, progressText }) {
@@ -209,6 +317,8 @@ export function setupHud({
     setTimeMode,
     setBoardTrainAvailable,
     update,
-    showToast
+    showToast,
+    setGuidebook,
+    renderQuests
   };
 }

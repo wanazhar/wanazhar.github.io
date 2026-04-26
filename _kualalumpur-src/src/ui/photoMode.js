@@ -1,10 +1,14 @@
-export function setupPhotoMode({ renderer, scene, camera, controls, hudRoot, landmarks, applyPreset, requestRender, showToast }) {
+import { captionForLandmark } from '../data/postcards.js';
+
+export function setupPhotoMode({ renderer, scene, camera, controls, hudRoot, landmarks, postcards, getCurrentLandmark, getTimeMode, applyPreset, requestRender, showToast, onCapture }) {
   const root = document.getElementById('photo-mode');
   const toggle = document.getElementById('btn-photo-mode');
   const exit = document.getElementById('btn-photo-exit');
   const shot = document.getElementById('btn-photo-shot');
   const fov = document.getElementById('photo-fov');
   const presets = document.getElementById('photo-presets');
+  const template = document.getElementById('postcard-template');
+  const caption = document.getElementById('postcard-caption');
   let active = false;
 
   const presetNames = ['Skyline', 'Petronas', 'Merdeka', 'KL Tower', 'Tour Poster'];
@@ -20,6 +24,20 @@ export function setupPhotoMode({ renderer, scene, camera, controls, hudRoot, lan
     });
     presets.appendChild(button);
   });
+
+  postcards?.forEach((item) => {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = item.name;
+    template.appendChild(option);
+  });
+
+  function updateCaption() {
+    const selected = postcards?.find((item) => item.id === template.value);
+    caption.textContent = selected?.caption ?? captionForLandmark(getCurrentLandmark?.(), getTimeMode?.());
+  }
+  template.addEventListener('change', updateCaption);
+  updateCaption();
 
   function setActive(value) {
     active = value;
@@ -45,6 +63,8 @@ export function setupPhotoMode({ renderer, scene, camera, controls, hudRoot, lan
     link.download = `voxel-kl-${Date.now()}.png`;
     if ('download' in link) link.click();
     else window.open(data, '_blank', 'noopener');
+    onCapture?.({ postcardId: template.value, caption: caption.textContent });
+    showToast(`Postcard captured: ${caption.textContent}`);
   });
 
   return { setActive, get active() { return active; } };

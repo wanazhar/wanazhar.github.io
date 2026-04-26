@@ -9,8 +9,8 @@
       content="A code-generated voxel Kuala Lumpur browser game prototype built with Vite and Three.js."
     />
     <title>Voxel Kuala Lumpur</title>
-    <script type="module" crossorigin src="./assets/index-urA3UT3U.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BsuiwX_6.css">
+    <script type="module" crossorigin src="./assets/index-CpYFze3w.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-C3SqckNf.css">
   </head>
   <body>
     <div id="app">
@@ -21,7 +21,7 @@
           <span class="brand__mark">KL</span>
           <div>
             <h1>Voxel Kuala Lumpur</h1>
-            <p>Third-person code-generated city prototype</p>
+            <p>Interactive Malaysia tourism guide</p>
           </div>
         </div>
         <div class="stats-grid">
@@ -42,12 +42,17 @@
           <button id="btn-time" type="button">Day</button>
           <button id="btn-photo-mode" type="button">Photo</button>
         </div>
+        <div class="button-row" aria-label="Tourism panels">
+          <button id="btn-guidebook" type="button">Guidebook</button>
+          <button id="btn-quests" type="button">Quests</button>
+          <button id="btn-tips" type="button">Tips</button>
+        </div>
         <div id="tour-next" class="status-line">Next destination: none</div>
         <button id="btn-board-train" class="board-train" type="button" hidden>Board Train</button>
         <div class="controls-list">
           <p><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> move</p>
           <p><kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump</p>
-          <p>Drag / pinch to orbit camera · scroll to zoom</p>
+          <p>Drag / pinch to orbit camera · tap panels for routes</p>
           <p><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> camera · <kbd>E</kbd> board train</p>
           <p><kbd>F</kbd> focus player · <kbd>P</kbd> toggle trains</p>
         </div>
@@ -59,7 +64,30 @@
 
       <section id="landmarks" class="panel glass">
         <h2>Jump to landmark</h2>
+        <select id="route-selector" aria-label="Select guided route"></select>
+        <select id="station-selector" aria-label="Fast travel station"></select>
         <div id="landmark-buttons" class="landmark-buttons"></div>
+      </section>
+
+      <section id="guidebook-panel" class="panel glass tourism-panel" hidden>
+        <h2 id="guidebook-title">Guidebook</h2>
+        <p id="guidebook-note"></p>
+        <dl id="guidebook-details"></dl>
+        <div id="highlight-list" class="compact-list"></div>
+      </section>
+
+      <section id="quest-panel" class="panel glass tourism-panel" hidden>
+        <h2>Quests & Achievements</h2>
+        <div id="quest-list" class="compact-list"></div>
+        <div class="save-row">
+          <button id="btn-save-now" type="button">Save</button>
+          <button id="btn-reset-progress" type="button">Reset</button>
+        </div>
+      </section>
+
+      <section id="tips-panel" class="panel glass tourism-panel" hidden>
+        <h2>Travel Tips & Facts</h2>
+        <div id="tips-list" class="compact-list"></div>
       </section>
 
       <section id="touch-overlay" class="touch-overlay" aria-label="Touch navigation overlay">
@@ -91,6 +119,8 @@
 
       <section id="photo-mode" class="photo-mode glass" hidden>
         <div id="photo-presets" class="photo-presets"></div>
+        <select id="postcard-template" aria-label="Postcard template"></select>
+        <span id="postcard-caption" class="postcard-caption"></span>
         <label>FOV <input id="photo-fov" type="range" min="42" max="78" value="64" /></label>
         <button id="btn-photo-shot" type="button">Download PNG</button>
         <button id="btn-photo-exit" type="button">Exit</button>
