@@ -14,7 +14,7 @@ cp -R dist/* "$TARGET_DIR"/
 
 cd "$PAGES_REPO"
 git add kualalumpur
-git commit -m "Add voxel Kuala Lumpur prototype" || true
+git commit -m "Update Kuala Lumpur page" || true
 git push
 
 echo "Done. Open: https://wanazhar.github.io/kualalumpur/"

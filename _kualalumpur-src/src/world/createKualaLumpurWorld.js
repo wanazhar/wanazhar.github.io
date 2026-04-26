@@ -627,6 +627,76 @@ function addSatelliteLandmark(inst, terrain, item, index) {
   addDistrictLabel(inst, terrain, item.x, item.z - 12, Math.min(18, Math.max(8, item.name.length * 0.36)), item.category === 'gateway' ? 'gatewayPurple' : 'warning');
 }
 
+
+function addTourismPin(inst, terrain, item, index) {
+  const ground = terrain.surfaceYAt(item.x, item.z);
+  const colorByCategory = {
+    skyline: 'merdekaTrim',
+    viewpoint: 'lampGlow',
+    heritage: 'redBrick',
+    culture: 'templeGold',
+    museum: 'museumBrown',
+    market: 'marketRed',
+    food: 'warning',
+    shopping: 'mallGold',
+    family: 'pavilionRed',
+    park: 'treeLeaf2',
+    nature: 'treeLeaf',
+    excursion: 'caveLimestone',
+    transit: 'station',
+    modern: 'glassGreen',
+    sports: 'stationRoof',
+    gateway: 'gatewayPurple'
+  };
+  const key = colorByCategory[item.category] ?? 'warning';
+  const size = item.category === 'gateway' ? 3.2 : item.category === 'skyline' ? 2.8 : 2.4;
+  inst.addBox(item.x, ground + 0.16, item.z, 7.4, 0.24, 7.4, index % 2 ? 'plaza' : 'concrete');
+  inst.addBox(item.x, ground + 2.1, item.z, 0.5, 4.1, 0.5, 'concreteDark');
+  inst.addBox(item.x, ground + 4.5, item.z, size, size, size, key);
+  inst.addBox(item.x, ground + 6.2, item.z, Math.max(2.1, size * 0.7), 0.45, Math.max(2.1, size * 0.7), 'lampGlow');
+  if (index % 3 === 0) {
+    inst.addBox(item.x - 3.2, ground + 1.2, item.z + 3.1, 1.2, 2.4, 1.2, key);
+    inst.addBox(item.x + 3.1, ground + 1.2, item.z - 3.2, 1.2, 2.4, 1.2, key);
+  }
+}
+
+function addAllLandmarkPins(inst, terrain) {
+  tourismLandmarks.forEach((item, index) => {
+    const isMajorIcon = [
+      'Petronas Twin Towers',
+      'Merdeka 118',
+      'KL Tower',
+      'Sultan Abdul Samad Building',
+      'Masjid Negara',
+      'Tugu Negara',
+      'TRX Exchange 106',
+      'Bukit Bintang',
+      'Central Market',
+      'Old Railway Station',
+      'Thean Hou Temple',
+      'National Museum'
+    ].includes(item.name);
+    if (isMajorIcon) return;
+    addTourismPin(inst, terrain, item, index);
+  });
+}
+
+function addRegionSpines(inst, terrain) {
+  const spines = [
+    [[-156, -126], [-136, -92], [-122, -62], [-114, -34], [-126, 22], [-168, 42]],
+    [[-184, -38], [-176, -8], [-196, 18], [-198, -72], [-210, -126], [-186, -198]],
+    [[24, -150], [88, -144], [124, -126], [144, -126], [142, -172], [198, -106]],
+    [[8, 82], [52, 62], [76, 78], [88, 92], [104, 112], [18, 176], [-28, 206]],
+    [[-92, 92], [-88, 126], [-104, 150], [-176, 84], [-204, 152], [-214, 186]],
+    [[112, -8], [156, 26], [158, 88], [178, 190], [204, 166]]
+  ];
+  spines.forEach((points, spineIndex) => {
+    for (let i = 0; i < points.length - 1; i += 1) {
+      addRoadLine(inst, terrain, { x: points[i][0], z: points[i][1] }, { x: points[i + 1][0], z: points[i + 1][1] }, spineIndex % 2 ? 3 : 5);
+    }
+  });
+}
+
 function addOuterRoads(inst, terrain) {
   const horizontals = [-170, -128, -88, -38, 12, 52, 92, 138, 178];
   const verticals = [-188, -148, -108, -62, -18, 38, 88, 132, 176];
@@ -641,6 +711,7 @@ function addOuterRoads(inst, terrain) {
 
 function addOuterDistrictExpansion(inst, terrain) {
   addOuterRoads(inst, terrain);
+  addRegionSpines(inst, terrain);
 
   tourismLandmarks
     .filter((item) => Math.abs(item.x) > 96 || Math.abs(item.z) > 96 || item.category === 'gateway')
@@ -719,6 +790,7 @@ export function createKualaLumpurWorld(scene) {
   addStreetDetails(inst, terrain);
   addTourismExpansion(inst, terrain);
   addCityBuildings(inst, terrain);
+  addAllLandmarkPins(inst, terrain);
   addPetronas(inst, terrain);
   addMerdeka118(inst, terrain);
   addKLTower(inst, terrain);
@@ -815,6 +887,67 @@ export function createKualaLumpurWorld(scene) {
         new THREE.Vector3(132, 15.2, -136),
         new THREE.Vector3(142, 15.2, 68),
         new THREE.Vector3(148, 15.2, 162)
+      ],
+      color: 'green'
+    },
+
+    ,
+    {
+      name: 'PJ Subang Sunway connector',
+      label: 'Rapid',
+      stations: ['TTDI', 'Bandar Utama', 'PJ Old Town', 'SS15', 'Sunway', 'USJ', 'Puchong'],
+      points: [
+        new THREE.Vector3(-126, 15.2, 22),
+        new THREE.Vector3(-156, 15.2, 12),
+        new THREE.Vector3(-122, 15.2, -62),
+        new THREE.Vector3(-136, 15.2, -92),
+        new THREE.Vector3(-156, 15.2, -126),
+        new THREE.Vector3(-126, 15.2, -116),
+        new THREE.Vector3(-78, 15.2, -150)
+      ],
+      color: 'blue'
+    },
+    {
+      name: 'Shah Alam Klang coast connector',
+      label: 'Coast',
+      stations: ['Shah Alam', 'i-City', 'Klang Little India', 'Port Klang', 'Pulau Ketam Ferry', 'Morib Gate'],
+      points: [
+        new THREE.Vector3(-184, 15.2, -38),
+        new THREE.Vector3(-176, 15.2, -8),
+        new THREE.Vector3(-198, 15.2, -72),
+        new THREE.Vector3(-210, 15.2, -150),
+        new THREE.Vector3(-210, 15.2, -126),
+        new THREE.Vector3(-186, 15.2, -198)
+      ],
+      color: 'purple'
+    },
+    {
+      name: 'Putrajaya KLIA south connector',
+      label: 'ERL',
+      stations: ['Mines Lake', 'IOI City', 'Putrajaya Mosque', 'Cyberjaya', 'Sepang Circuit', 'KLIA', 'Nilai'],
+      points: [
+        new THREE.Vector3(24, 15.2, -150),
+        new THREE.Vector3(88, 15.2, -144),
+        new THREE.Vector3(124, 15.2, -126),
+        new THREE.Vector3(114, 15.2, -168),
+        new THREE.Vector3(176, 15.2, -116),
+        new THREE.Vector3(198, 15.2, -106),
+        new THREE.Vector3(134, 15.2, -206)
+      ],
+      color: 'yellow'
+    },
+    {
+      name: 'North east nature connector',
+      label: 'Green',
+      stations: ['Titiwangsa', 'Setapak', 'Wangsa Maju', 'Batu Caves', 'Gombak', 'Kanching', 'Rawang Falls'],
+      points: [
+        new THREE.Vector3(8, 15.2, 82),
+        new THREE.Vector3(52, 15.2, 62),
+        new THREE.Vector3(76, 15.2, 78),
+        new THREE.Vector3(88, 15.2, 92),
+        new THREE.Vector3(104, 15.2, 112),
+        new THREE.Vector3(18, 15.2, 176),
+        new THREE.Vector3(-28, 15.2, 206)
       ],
       color: 'green'
     },
