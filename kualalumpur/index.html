@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1020" />
+    <meta
+      name="description"
+      content="A code-generated voxel Kuala Lumpur browser game prototype built with Vite and Three.js."
+    />
+    <title>Voxel Kuala Lumpur</title>
+    <script type="module" crossorigin src="./assets/index-DCjL1J-l.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-D0EhqXXi.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas" aria-label="Voxel Kuala Lumpur game canvas"></canvas>
+
+      <section id="hud" class="panel glass">
+        <div class="brand">
+          <span class="brand__mark">KL</span>
+          <div>
+            <h1>Voxel Kuala Lumpur</h1>
+            <p>Third-person code-generated city prototype</p>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <span>FPS</span><strong id="fps">--</strong>
+          <span>Pixel ratio</span><strong id="pixel-ratio">--</strong>
+          <span>Voxels</span><strong id="voxel-count">--</strong>
+          <span>Render loop</span><strong id="render-state">Idle</strong>
+        </div>
+        <div class="controls-list">
+          <p><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> move</p>
+          <p><kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump</p>
+          <p>Drag / pinch to orbit camera · scroll to zoom</p>
+          <p><kbd>F</kbd> focus player · <kbd>P</kbd> toggle trains</p>
+        </div>
+      </section>
+
+      <section id="landmarks" class="panel glass">
+        <h2>Jump to landmark</h2>
+        <div id="landmark-buttons" class="landmark-buttons"></div>
+      </section>
+
+      <section id="touch-overlay" class="touch-overlay" aria-label="Touch navigation overlay">
+        <div class="touch-hint glass">Touch mode · left thumb to move · drag the city to orbit</div>
+
+        <div id="touch-joystick" class="touch-joystick glass" role="application" aria-label="Virtual movement joystick">
+          <div class="touch-joystick__ring"></div>
+          <div id="touch-stick" class="touch-joystick__stick">
+            <span></span>
+          </div>
+          <small>Move</small>
+        </div>
+
+        <div class="touch-actions">
+          <button id="btn-touch-sprint" class="touch-button touch-button--wide glass" type="button" aria-label="Hold to sprint">
+            Sprint
+          </button>
+          <button id="btn-touch-jump" class="touch-button touch-button--primary glass" type="button" aria-label="Jump">
+            Jump
+          </button>
+          <button id="btn-touch-focus" class="touch-button glass" type="button" aria-label="Refocus camera on player">
+            Focus
+          </button>
+          <button id="btn-touch-trains" class="touch-button glass" type="button" aria-label="Toggle continuous trains">
+            Trains
+          </button>
+        </div>
+      </section>
+
+      <div id="toast" class="toast glass" role="status" aria-live="polite">
+        Generated entirely from code. No textures. No external assets.
+      </div>
+    </div>
+  </body>
+</html>
