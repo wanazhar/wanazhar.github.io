@@ -111,6 +111,7 @@ h2 {
   margin-bottom: 0;
 }
 
+.panel-toggle,
 .panel-close {
   display: inline-grid;
   place-items: center;
@@ -127,9 +128,51 @@ h2 {
   cursor: pointer;
 }
 
+.panel-toggle:hover,
 .panel-close:hover {
   background: rgba(255, 107, 107, 0.22);
   border-color: rgba(255, 107, 107, 0.52);
+}
+
+.brand {
+  position: relative;
+}
+
+.brand .panel-toggle {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.panel.is-collapsed {
+  width: auto !important;
+  max-width: calc(100vw - 24px);
+  padding: 10px 12px;
+}
+
+.panel.is-collapsed > :not(.brand):not(.panel-heading) {
+  display: none !important;
+}
+
+.panel.is-collapsed .brand {
+  margin-bottom: 0;
+}
+
+.panel.is-collapsed .brand p {
+  display: none;
+}
+
+.panel.is-collapsed .brand__mark {
+  width: 36px;
+  height: 36px;
+}
+
+.panel.is-collapsed .panel-heading {
+  margin-bottom: 0;
+}
+
+.panel.is-collapsed .panel-toggle {
+  background: rgba(104, 225, 253, 0.16);
+  border-color: rgba(104, 225, 253, 0.44);
 }
 
 .brand p,
@@ -161,6 +204,7 @@ h2 {
 
 .button-row button,
 .board-train,
+.panel-toggle,
 .panel-close,
 .photo-mode button,
 .photo-presets button,

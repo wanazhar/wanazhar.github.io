@@ -1,5 +1,5 @@
 export const postcardTemplates = [
-  { id: 'classic', name: 'Classic KL', caption: 'Greetings from voxel Kuala Lumpur.' },
+  { id: 'classic', name: 'Classic KL', caption: 'Greetings from Kuala Lumpur.' },
   { id: 'heritage', name: 'Heritage Walk', caption: 'Layers of rivers, markets, mosques, and old civic streets.' },
   { id: 'food', name: 'Food Trail', caption: 'Street grills, market colors, and late-night Jalan Alor energy.' },
   { id: 'rainy', name: 'Monsoon Mood', caption: 'Wet roads and tower lights after tropical rain.' },

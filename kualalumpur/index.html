@@ -6,22 +6,23 @@
     <meta name="theme-color" content="#0b1020" />
     <meta
       name="description"
-      content="A code-generated voxel Kuala Lumpur browser game prototype built with Vite and Three.js."
+      content="An interactive Kuala Lumpur and Greater Klang Valley tourism map built with Vite and Three.js."
     />
-    <title>Voxel Kuala Lumpur</title>
-    <script type="module" crossorigin src="./assets/index-wlfShOeR.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DTpb-81A.css">
+    <title>Kuala Lumpur</title>
+    <script type="module" crossorigin src="./assets/index-BDmcrUjt.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DuJivjyw.css">
   </head>
   <body>
     <div id="app">
-      <canvas id="game-canvas" aria-label="Voxel Kuala Lumpur game canvas"></canvas>
+      <canvas id="game-canvas" aria-label="Kuala Lumpur interactive map canvas"></canvas>
 
       <section id="hud" class="panel glass">
         <div class="brand">
           <span class="brand__mark">KL</span>
           <div>
-            <h1>Voxel Kuala Lumpur</h1>
+            <h1>Kuala Lumpur</h1>
             <p>Interactive Malaysia tourism guide</p>
+            <button id="btn-collapse-hud" class="panel-toggle" type="button" data-collapse-panel="hud" aria-label="Minimize main menu">−</button>
           </div>
         </div>
         <div class="stats-grid">
@@ -59,11 +60,12 @@
       </section>
 
       <section id="minimap-panel" class="panel glass" aria-label="Mini-map">
+        <div class="panel-heading"><h2>Map</h2><button class="panel-toggle" type="button" data-collapse-panel="minimap-panel" aria-label="Minimize mini-map">−</button></div>
         <canvas id="mini-map" width="180" height="180"></canvas>
       </section>
 
       <section id="landmarks" class="panel glass">
-        <h2>Jump to landmark</h2>
+        <div class="panel-heading"><h2>Jump to landmark</h2><button class="panel-toggle" type="button" data-collapse-panel="landmarks" aria-label="Minimize landmarks">−</button></div>
         <select id="route-selector" aria-label="Select guided route"></select>
         <select id="station-selector" aria-label="Fast travel station"></select>
         <div id="landmark-buttons" class="landmark-buttons"></div>

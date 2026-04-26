@@ -1,4 +1,4 @@
-# Voxel Kuala Lumpur
+# Kuala Lumpur
 
 A browser game prototype built with **Vite + Three.js**. The scene is a Minecraft-style voxel version of Kuala Lumpur generated entirely from code. No textures, no image assets, no models.
 
@@ -101,7 +101,7 @@ cp -R dist/* ~/projects/wanazhar.github.io/kualalumpur/
 
 cd ~/projects/wanazhar.github.io
 git add kualalumpur
-git commit -m "Add voxel Kuala Lumpur prototype"
+git commit -m "Add Kuala Lumpur prototype"
 git push
 ```
 

@@ -265,7 +265,7 @@ hud.setProgress(landmarkProgress);
 updateTourHud();
 hud.setTimeMode(timeModes[timeModeIndex]);
 applyTimeMode(timeModes[timeModeIndex]);
-hud.showToast('Explore KL: WASD to move, touch joystick on mobile, routes and guidebook in panels.');
+hud.showToast('Explore Kuala Lumpur: WASD to move, touch joystick on mobile, routes and guidebook in panels.');
 
 const miniMap = setupMiniMap({
   canvas: document.getElementById('mini-map'),

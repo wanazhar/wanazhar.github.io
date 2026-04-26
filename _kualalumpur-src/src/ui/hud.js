@@ -186,6 +186,18 @@ export function setupHud({
     button.addEventListener('click', () => closePanel(document.getElementById(button.dataset.closePanel)));
   });
 
+  document.querySelectorAll('[data-collapse-panel]').forEach((button) => {
+    const panel = document.getElementById(button.dataset.collapsePanel);
+    if (!panel) return;
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const collapsed = panel.classList.toggle('is-collapsed');
+      button.textContent = collapsed ? '+' : '−';
+      button.setAttribute('aria-label', collapsed ? `Restore ${panel.id}` : `Minimize ${panel.id}`);
+      requestRender();
+    });
+  });
+
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') [guidebookPanel, questPanel, tipsPanel].forEach(closePanel);
   });
