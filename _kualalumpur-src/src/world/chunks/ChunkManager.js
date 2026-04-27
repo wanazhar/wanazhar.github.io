@@ -5,7 +5,7 @@ export class ChunkManager {
     this.chunkSize = options.chunkSize ?? DEFAULT_CHUNK_SIZE;
     this.tier = options.tier ?? getDetailTier();
     this.budget = options.budget ?? DETAIL_BUDGETS[this.tier];
-    this.visibleRadius = options.visibleRadius ?? 8;
+    this.visibleRadius = options.visibleRadius ?? this.budget.baseVisibleRadius ?? 8;
     this.chunks = [];
     this.lastOrigin = null;
     this.visibleInstances = 0;

@@ -6,7 +6,7 @@ const BUDGETS = {
   maxAuthoredInstances: 10_400_000,
   maxInstancedMeshes: 1200,
   maxChunks: 100,
-  maxVisibleInstances: 1100000
+  maxVisibleInstances: 350000
 };
 
 const scene = new THREE.Scene();

@@ -14,19 +14,22 @@ export function getDetailTier(environment = globalThis) {
 
 export const DETAIL_BUDGETS = {
   mobile: {
+    baseVisibleRadius: 3,
     highRadius: 1,
     mediumRadius: 2,
-    visibleInstanceCap: 1100000
+    visibleInstanceCap: 350000
   },
   balanced: {
+    baseVisibleRadius: 5,
     highRadius: 2,
     mediumRadius: 3,
-    visibleInstanceCap: 1100000
+    visibleInstanceCap: 350000
   },
   desktop: {
+    baseVisibleRadius: 8,
     highRadius: 2,
     mediumRadius: 4,
-    visibleInstanceCap: 1100000
+    visibleInstanceCap: 350000
   }
 };
 

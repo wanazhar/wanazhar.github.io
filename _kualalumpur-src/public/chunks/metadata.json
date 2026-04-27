@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
-  "generatedAt": "2026-04-27T07:28:15.114Z",
+  "generatedAt": "2026-04-27T14:04:45.157Z",
   "mode": "phase4-10m-generated-detail",
-  "note": "10M authored deterministic KL/Klang Valley detail layer. Base world remains bundled; generated detail chunks are streamed/rendered up to the shared 1.1M desktop/mobile visibility budget.",
+  "note": "10M authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.",
   "totalInstances": 306103,
   "generatedDetailInstances": 10000000,
   "totalAuthoredWithGeneratedDetail": 10306103,
@@ -3514,9 +3514,9 @@
   ],
   "runtimeBudget": {
     "tier": "mobile",
-    "visibleInstanceCap": 1100000,
-    "generatedDetailVisibleBudget": 1100000,
-    "visibleRadius": 8
+    "visibleInstanceCap": 350000,
+    "generatedDetailVisibleBudget": 350000,
+    "visibleRadius": 3
   },
   "sectionCounts": {
     "terrain": 233438,
