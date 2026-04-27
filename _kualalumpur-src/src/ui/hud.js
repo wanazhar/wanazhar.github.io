@@ -318,10 +318,13 @@ export function setupHud({
   }
 
   const formatCompact = (value) => (Number.isFinite(value) ? Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value) : '--');
+  let baseVisibleVoxelCount = 0;
 
   function setVoxelStats(stats) {
-    voxelCountEl.textContent = stats.total.toLocaleString();
+    baseVisibleVoxelCount = stats.total;
     const generated = stats.generatedDetail;
+    const generatedVisible = generated?.visibleRendered ?? 0;
+    voxelCountEl.textContent = formatCompact(baseVisibleVoxelCount + generatedVisible);
     if (!generated) return;
     generatedAuthoredEl.textContent = formatCompact(generated.authoredTotal);
     totalAuthoredEl.textContent = formatCompact(stats.total + generated.authoredTotal);
@@ -356,6 +359,8 @@ export function setupHud({
     pixelRatioEl.textContent = `${pixelRatio.toFixed(2)}x`;
     renderStateEl.textContent = running ? (trainsActive ? 'Active + transit' : 'Active') : 'Paused';
     if (generatedDetail) {
+      const visibleTotal = baseVisibleVoxelCount + generatedDetail.visibleRendered;
+      voxelCountEl.textContent = formatCompact(visibleTotal);
       generatedChunksEl.textContent = `${generatedDetail.activeChunks}/${generatedDetail.loadedChunks}`;
       generatedVisibleEl.textContent = `${formatCompact(generatedDetail.visibleRendered)}/${formatCompact(generatedDetail.visibleAuthored)}`;
       generatedAuthoredEl.textContent = formatCompact(generatedDetail.authoredTotal);
