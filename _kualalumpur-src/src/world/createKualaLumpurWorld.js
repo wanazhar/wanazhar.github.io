@@ -6,6 +6,17 @@ import { tourismLandmarks } from '../data/tourismContent.js';
 const MAP_MIN = -220;
 const MAP_MAX = 220;
 const MAP_SIZE = MAP_MAX - MAP_MIN + 1;
+const landmarkByName = new Map(tourismLandmarks.map((item) => [item.name, item]));
+
+function landmarkPoint(name, fallback) {
+  const item = landmarkByName.get(name);
+  return item ? { x: item.x, z: item.z } : fallback;
+}
+
+function landmarkVector(name, y, fallback) {
+  const point = landmarkPoint(name, fallback);
+  return new THREE.Vector3(point.x, y, point.z);
+}
 
 function mapKey(x, z) {
   return `${x},${z}`;
@@ -115,22 +126,21 @@ function addPetronasTower(inst, ground, cx, cz) {
 }
 
 function addPetronas(inst, terrain) {
-  const cz = 22;
-  const left = -18;
-  const right = -5;
-  const ground = terrain.surfaceYAt(-12, cz);
-  addPlaza(inst, terrain, -12, cz, 38, 28, 'concrete');
+  const { x: cx, z: cz } = landmarkPoint('Petronas Twin Towers', { x: -12, z: 22 });
+  const left = cx - 6.5;
+  const right = cx + 6.5;
+  const ground = terrain.surfaceYAt(cx, cz);
+  addPlaza(inst, terrain, cx, cz, 38, 28, 'concrete');
   addPetronasTower(inst, ground, left, cz);
   addPetronasTower(inst, ground, right, cz);
   inst.addBox((left + right) / 2, ground + 35, cz, Math.abs(right - left) + 4, 3, 3.2, 'petronasTrim');
   inst.addBox((left + right) / 2, ground + 35, cz, Math.abs(right - left) + 2, 1.5, 4.6, 'glass');
-  inst.addBox(-12, ground + 2.4, cz + 16, 20, 4.8, 8, 'concreteDark');
-  inst.addBox(-12, ground + 5.2, cz + 16, 22, 1.2, 9.5, 'petronasTrim');
+  inst.addBox(cx, ground + 2.4, cz + 16, 20, 4.8, 8, 'concreteDark');
+  inst.addBox(cx, ground + 5.2, cz + 16, 22, 1.2, 9.5, 'petronasTrim');
 }
 
 function addMerdeka118(inst, terrain) {
-  const cx = 35;
-  const cz = 18;
+  const { x: cx, z: cz } = landmarkPoint('Merdeka 118', { x: 35, z: 18 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 30, 26, 'plaza');
   for (let y = 0; y < 86; y += 3) {
@@ -148,8 +158,7 @@ function addMerdeka118(inst, terrain) {
 }
 
 function addKLTower(inst, terrain) {
-  const cx = 58;
-  const cz = -25;
+  const { x: cx, z: cz } = landmarkPoint('KL Tower', { x: 58, z: -25 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 22, 20, 'concrete');
   inst.addBox(cx, ground + 27, cz, 3, 54, 3, 'klTowerWhite');
@@ -163,8 +172,7 @@ function addKLTower(inst, terrain) {
 }
 
 function addSultanAbdulSamad(inst, terrain) {
-  const cx = 0;
-  const cz = -55;
+  const { x: cx, z: cz } = landmarkPoint('Sultan Abdul Samad Building', { x: 0, z: -55 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 62, 22, 'plaza');
   inst.addBox(cx, ground + 4, cz, 54, 8, 8, 'redBrick');
@@ -190,8 +198,7 @@ function addSultanAbdulSamad(inst, terrain) {
 }
 
 function addNationalMosque(inst, terrain) {
-  const cx = -48;
-  const cz = -32;
+  const { x: cx, z: cz } = landmarkPoint('Masjid Negara', { x: -48, z: -32 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 34, 26, 'concrete');
   inst.addBox(cx, ground + 3, cz, 22, 6, 14, 'mosqueWhite');
@@ -204,8 +211,7 @@ function addNationalMosque(inst, terrain) {
 }
 
 function addNationalMonument(inst, terrain) {
-  const cx = -70;
-  const cz = 43;
+  const { x: cx, z: cz } = landmarkPoint('Tugu Negara', { x: -70, z: 43 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 26, 20, 'plaza');
   inst.addBox(cx, ground + 1.3, cz, 16, 2.6, 10, 'stone');
@@ -224,8 +230,7 @@ function addNationalMonument(inst, terrain) {
 }
 
 function addExchange106(inst, terrain) {
-  const cx = 66;
-  const cz = 32;
+  const { x: cx, z: cz } = landmarkPoint('TRX Exchange 106', { x: 66, z: 32 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 28, 22, 'concrete');
   for (let y = 0; y < 74; y += 3) {
@@ -240,8 +245,7 @@ function addExchange106(inst, terrain) {
 }
 
 function addBukitBintang(inst, terrain) {
-  const cx = 30;
-  const cz = -22;
+  const { x: cx, z: cz } = landmarkPoint('Bukit Bintang', { x: 30, z: -22 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 30, 24, 'plaza');
   inst.addBox(cx - 8, ground + 5, cz, 18, 10, 10, 'mallGold');
@@ -251,8 +255,7 @@ function addBukitBintang(inst, terrain) {
 }
 
 function addCentralMarket(inst, terrain) {
-  const cx = -20;
-  const cz = -60;
+  const { x: cx, z: cz } = landmarkPoint('Central Market', { x: -20, z: -60 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 24, 16, 'concrete');
   inst.addBox(cx, ground + 3.8, cz, 20, 7.6, 9, 'marketBlue');
@@ -261,8 +264,7 @@ function addCentralMarket(inst, terrain) {
 }
 
 function addRailwayStation(inst, terrain) {
-  const cx = -36;
-  const cz = -58;
+  const { x: cx, z: cz } = landmarkPoint('Old Railway Station', { x: -36, z: -58 });
   const ground = terrain.surfaceYAt(cx, cz);
   inst.addBox(cx, ground + 4, cz, 24, 8, 7, 'mosqueWhite');
   for (let x = -10; x <= 10; x += 5) inst.addBox(cx + x, ground + 9, cz, 3, 4, 3, 'mosqueWhite');
@@ -272,8 +274,7 @@ function addRailwayStation(inst, terrain) {
 }
 
 function addTheanHouTemple(inst, terrain) {
-  const cx = -75;
-  const cz = -20;
+  const { x: cx, z: cz } = landmarkPoint('Thean Hou Temple', { x: -75, z: -20 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 22, 18, 'plaza');
   inst.addBox(cx, ground + 3, cz, 16, 6, 10, 'templeRed');
@@ -285,8 +286,7 @@ function addTheanHouTemple(inst, terrain) {
 }
 
 function addNationalMuseum(inst, terrain) {
-  const cx = -58;
-  const cz = -66;
+  const { x: cx, z: cz } = landmarkPoint('National Museum', { x: -58, z: -66 });
   const ground = terrain.surfaceYAt(cx, cz);
   addPlaza(inst, terrain, cx, cz, 24, 18, 'concrete');
   inst.addBox(cx, ground + 3.5, cz, 18, 7, 10, 'museumBrown');
@@ -356,14 +356,8 @@ function addStation(inst, terrain, cx, cz, labelKey = 'station') {
 
 function addCityBuildings(inst, terrain) {
   const random = mulberry32(20260604);
-  const landmarkPoints = [
-    { x: -12, z: 22 },
-    { x: 35, z: 18 },
-    { x: 58, z: -25 },
-    { x: 0, z: -55 },
-    { x: -48, z: -32 },
-    { x: -70, z: 43 }
-  ];
+  const landmarkPoints = ['Petronas Twin Towers', 'Merdeka 118', 'KL Tower', 'Sultan Abdul Samad Building', 'Masjid Negara', 'Tugu Negara']
+    .map((name) => landmarkPoint(name, { x: 0, z: 0 }));
   const colors = ['glass', 'glassGreen', 'merdekaGlass', 'silver', 'concreteDark', 'blackGlass'];
 
   for (let i = 0; i < 88; i += 1) {
@@ -497,54 +491,67 @@ function addMarketStalls(inst, terrain, cx, cz, count, key = 'marketRed') {
 
 function addTourismExpansion(inst, terrain) {
   addRiverOfLife(inst, terrain);
+  const klccPark = landmarkPoint('KLCC Park', { x: -25, z: 43 });
+  const chinatown = landmarkPoint('Petaling Street / Chinatown', { x: -18, z: -42 });
+  const jalanAlor = landmarkPoint('Jalan Alor', { x: 23, z: -32 });
+  const riverOfLife = landmarkPoint('Masjid Jamek / River of Life', { x: -9, z: -38 });
+  const club = landmarkPoint('Royal Selangor Club', { x: -12, z: -55 });
+  const islamicArts = landmarkPoint('Islamic Arts Museum', { x: -58, z: -40 });
+  const planetarium = landmarkPoint('National Planetarium', { x: -64, z: -34 });
+  const palace = landmarkPoint('Istana Negara', { x: -86, z: 10 });
+  const batuCaves = landmarkPoint('Batu Caves Gateway', { x: 82, z: 68 });
+  const kampungBaru = landmarkPoint('Kampung Baru', { x: -35, z: 8 });
+  const chowKit = landmarkPoint('Chow Kit Market', { x: -44, z: -12 });
+  const littleIndia = landmarkPoint('Little India Brickfields', { x: -55, z: -74 });
+  const pavilion = landmarkPoint('Pavilion KL', { x: 39, z: -18 });
 
-  addPlaza(inst, terrain, -25, 43, 24, 18, 'parkPath');
-  [[-31, 39], [-22, 38], [-18, 48], [-32, 50], [-24, 44]].forEach(([x, z]) => addPalmTree(inst, terrain, x, z, 4));
+  addPlaza(inst, terrain, klccPark.x, klccPark.z, 24, 18, 'parkPath');
+  [[-6, -4], [3, -5], [7, 5], [-7, 7], [1, 1]].forEach(([dx, dz]) => addPalmTree(inst, terrain, klccPark.x + dx, klccPark.z + dz, 4));
 
-  addMarketStalls(inst, terrain, -18, -42, 9, 'marketRed');
-  addSmallSign(inst, terrain, -15, -36, 'templeRed');
-  addMarketStalls(inst, terrain, 23, -32, 10, 'lampGlow');
+  addMarketStalls(inst, terrain, chinatown.x, chinatown.z, 9, 'marketRed');
+  addSmallSign(inst, terrain, chinatown.x + 3, chinatown.z + 6, 'templeRed');
+  addMarketStalls(inst, terrain, jalanAlor.x, jalanAlor.z, 10, 'lampGlow');
   for (let i = -8; i <= 8; i += 4) {
-    const y = terrain.surfaceYAt(23 + i, -27);
-    inst.addBox(23 + i, y + 1, -27, 1.4, 0.7, 1.4, 'mallGold');
+    const y = terrain.surfaceYAt(jalanAlor.x + i, jalanAlor.z + 5);
+    inst.addBox(jalanAlor.x + i, y + 1, jalanAlor.z + 5, 1.4, 0.7, 1.4, 'mallGold');
   }
 
-  const mosqueGround = terrain.surfaceYAt(-9, -38);
-  inst.addBox(-9, mosqueGround + 3, -38, 12, 6, 8, 'mosqueWhite');
-  inst.addBox(-9, mosqueGround + 7, -38, 8, 2, 8, 'roofCopper');
-  inst.addBox(-14, mosqueGround + 9, -34, 1.4, 12, 1.4, 'mosqueWhite');
+  const mosqueGround = terrain.surfaceYAt(riverOfLife.x, riverOfLife.z);
+  inst.addBox(riverOfLife.x, mosqueGround + 3, riverOfLife.z, 12, 6, 8, 'mosqueWhite');
+  inst.addBox(riverOfLife.x, mosqueGround + 7, riverOfLife.z, 8, 2, 8, 'roofCopper');
+  inst.addBox(riverOfLife.x - 5, mosqueGround + 9, riverOfLife.z + 4, 1.4, 12, 1.4, 'mosqueWhite');
 
-  const clubGround = terrain.surfaceYAt(-12, -55);
-  inst.addBox(-12, clubGround + 3, -55, 16, 6, 7, 'stationRoof');
-  inst.addBox(-12, clubGround + 6.8, -55, 18, 1, 8, 'mosqueWhite');
+  const clubGround = terrain.surfaceYAt(club.x, club.z);
+  inst.addBox(club.x, clubGround + 3, club.z, 16, 6, 7, 'stationRoof');
+  inst.addBox(club.x, clubGround + 6.8, club.z, 18, 1, 8, 'mosqueWhite');
 
-  const iamGround = terrain.surfaceYAt(-58, -40);
-  inst.addBox(-58, iamGround + 3.6, -40, 18, 7.2, 12, 'mosqueWhite');
-  inst.addBox(-58, iamGround + 8.1, -40, 9, 2.5, 9, 'mosqueBlue');
-  const planetGround = terrain.surfaceYAt(-64, -34);
-  inst.addBox(-64, planetGround + 3, -34, 12, 6, 10, 'museumBrown');
-  inst.addBox(-64, planetGround + 7.2, -34, 8, 3, 8, 'glassGreen');
+  const iamGround = terrain.surfaceYAt(islamicArts.x, islamicArts.z);
+  inst.addBox(islamicArts.x, iamGround + 3.6, islamicArts.z, 18, 7.2, 12, 'mosqueWhite');
+  inst.addBox(islamicArts.x, iamGround + 8.1, islamicArts.z, 9, 2.5, 9, 'mosqueBlue');
+  const planetGround = terrain.surfaceYAt(planetarium.x, planetarium.z);
+  inst.addBox(planetarium.x, planetGround + 3, planetarium.z, 12, 6, 10, 'museumBrown');
+  inst.addBox(planetarium.x, planetGround + 7.2, planetarium.z, 8, 3, 8, 'glassGreen');
 
-  const palaceGround = terrain.surfaceYAt(-86, 10);
-  addPlaza(inst, terrain, -86, 10, 18, 16, 'plaza');
-  inst.addBox(-86, palaceGround + 4, 10, 16, 8, 9, 'palaceWall');
-  inst.addBox(-86, palaceGround + 9, 10, 12, 2.2, 6, 'palaceGold');
-  inst.addBox(-94, palaceGround + 5, 6, 2, 10, 2, 'palaceGold');
+  const palaceGround = terrain.surfaceYAt(palace.x, palace.z);
+  addPlaza(inst, terrain, palace.x, palace.z, 18, 16, 'plaza');
+  inst.addBox(palace.x, palaceGround + 4, palace.z, 16, 8, 9, 'palaceWall');
+  inst.addBox(palace.x, palaceGround + 9, palace.z, 12, 2.2, 6, 'palaceGold');
+  inst.addBox(palace.x - 8, palaceGround + 5, palace.z - 4, 2, 10, 2, 'palaceGold');
 
-  const caveGround = terrain.surfaceYAt(82, 68);
-  inst.addBox(82, caveGround + 8, 68, 18, 16, 8, 'caveLimestone');
-  inst.addBox(82, caveGround + 3, 63, 5, 6, 3, 'templeGold');
-  for (let step = 0; step < 8; step += 1) inst.addBox(82, caveGround + 0.2 + step * 0.25, 58 + step, 9 - step * 0.5, 0.3, 1, 'concrete');
+  const caveGround = terrain.surfaceYAt(batuCaves.x, batuCaves.z);
+  inst.addBox(batuCaves.x, caveGround + 8, batuCaves.z, 18, 16, 8, 'caveLimestone');
+  inst.addBox(batuCaves.x, caveGround + 3, batuCaves.z - 5, 5, 6, 3, 'templeGold');
+  for (let step = 0; step < 8; step += 1) inst.addBox(batuCaves.x, caveGround + 0.2 + step * 0.25, batuCaves.z - 10 + step, 9 - step * 0.5, 0.3, 1, 'concrete');
 
-  addMarketStalls(inst, terrain, -35, 8, 8, 'templeGold');
-  addMarketStalls(inst, terrain, -44, -12, 8, 'marketBlue');
-  addMarketStalls(inst, terrain, -55, -74, 7, 'littleIndiaPink');
+  addMarketStalls(inst, terrain, kampungBaru.x, kampungBaru.z, 8, 'templeGold');
+  addMarketStalls(inst, terrain, chowKit.x, chowKit.z, 8, 'marketBlue');
+  addMarketStalls(inst, terrain, littleIndia.x, littleIndia.z, 7, 'littleIndiaPink');
 
-  const pavilionGround = terrain.surfaceYAt(39, -18);
-  inst.addBox(39, pavilionGround + 4.5, -18, 18, 9, 12, 'pavilionRed');
-  inst.addBox(39, pavilionGround + 9.5, -18, 20, 1, 13, 'mallGold');
+  const pavilionGround = terrain.surfaceYAt(pavilion.x, pavilion.z);
+  inst.addBox(pavilion.x, pavilionGround + 4.5, pavilion.z, 18, 9, 12, 'pavilionRed');
+  inst.addBox(pavilion.x, pavilionGround + 9.5, pavilion.z, 20, 1, 13, 'mallGold');
 
-  tourismLandmarks.filter((item) => item.category === 'gateway').forEach((item, index) => {
+  tourismLandmarks.filter((item) => item.isSchematicGateway).forEach((item, index) => {
     const ground = terrain.surfaceYAt(item.x, item.z);
     addPlaza(inst, terrain, item.x, item.z, 8, 7, index % 2 ? 'plaza' : 'concrete');
     inst.addBox(item.x, ground + 0.8, item.z, 7, 1.2, 5.5, 'gatewayPurple');
@@ -683,16 +690,16 @@ function addAllLandmarkPins(inst, terrain) {
 
 function addRegionSpines(inst, terrain) {
   const spines = [
-    [[-156, -126], [-136, -92], [-122, -62], [-114, -34], [-126, 22], [-168, 42]],
-    [[-184, -38], [-176, -8], [-196, 18], [-198, -72], [-210, -126], [-186, -198]],
-    [[24, -150], [88, -144], [124, -126], [144, -126], [142, -172], [198, -106]],
-    [[8, 82], [52, 62], [76, 78], [88, 92], [104, 112], [18, 176], [-28, 206]],
-    [[-92, 92], [-88, 126], [-104, 150], [-176, 84], [-204, 152], [-214, 186]],
-    [[112, -8], [156, 26], [158, 88], [178, 190], [204, 166]]
+    ['Sunway Lagoon & Pyramid', 'SS15 Food Street', 'PJ Old Town', 'Section 17 Market', 'TTDI Market', 'Mutiara Damansara Curve'],
+    ['Shah Alam Blue Mosque', 'i-City Shah Alam', 'Setia City Park', 'Klang Little India', 'Pulau Ketam Ferry Gate', 'Morib Beach Gateway'],
+    ['Mines Lake', 'IOI City Mall', 'Putrajaya Pink Mosque', 'Putrajaya Bridge Promenade', 'Dengkil Kampung Food', 'KLIA Terminal Gateway'],
+    ['Titiwangsa Lake Gardens', 'Setapak Food Quarter', 'Wangsa Maju Town Centre', 'Batu Caves Temple Steps', 'Gombak Transit Gate', 'Kanching Falls', 'Rawang Waterfall Gate'],
+    ['Mont Kiara Dining Cluster', 'Kepong Food Row', 'Sungai Buloh Nursery Belt', 'Elmina Rainbow Bridge', 'Kuala Selangor Fireflies', 'Sasaran Sky Mirror Gate'],
+    ['Ampang Korean Village', 'Ulu Klang Ridge Trail', 'Melawati Food & Hills', 'Janda Baik Gateway', 'Bukit Tinggi Village Gate']
   ];
-  spines.forEach((points, spineIndex) => {
+  spines.map((names) => names.map((name) => landmarkPoint(name, { x: 0, z: 0 }))).forEach((points, spineIndex) => {
     for (let i = 0; i < points.length - 1; i += 1) {
-      addRoadLine(inst, terrain, { x: points[i][0], z: points[i][1] }, { x: points[i + 1][0], z: points[i + 1][1] }, spineIndex % 2 ? 3 : 5);
+      addRoadLine(inst, terrain, points[i], points[i + 1], spineIndex % 2 ? 3 : 5);
     }
   });
 }
@@ -702,11 +709,11 @@ function addOuterRoads(inst, terrain) {
   const verticals = [-188, -148, -108, -62, -18, 38, 88, 132, 176];
   horizontals.forEach((z, index) => addRoadLine(inst, terrain, { x: -208, z }, { x: 208, z }, index % 3 === 0 ? 5 : 3));
   verticals.forEach((x, index) => addRoadLine(inst, terrain, { x, z: -208 }, { x, z: 208 }, index % 3 === 0 ? 5 : 3));
-  addRoadLine(inst, terrain, { x: -204, z: 152 }, { x: -148, z: 42 }, 5);
-  addRoadLine(inst, terrain, { x: -148, z: 42 }, { x: -82, z: -88 }, 5);
-  addRoadLine(inst, terrain, { x: -82, z: -88 }, { x: 68, z: -184 }, 5);
-  addRoadLine(inst, terrain, { x: 68, z: -184 }, { x: 188, z: -82 }, 5);
-  addRoadLine(inst, terrain, { x: 126, z: 18 }, { x: 148, z: 162 }, 5);
+  addRoadLine(inst, terrain, landmarkPoint('Kuala Selangor Fireflies', { x: -204, z: 152 }), landmarkPoint('Damansara Arts & Cafes', { x: -148, z: 42 }), 5);
+  addRoadLine(inst, terrain, landmarkPoint('Damansara Arts & Cafes', { x: -148, z: 42 }), landmarkPoint('Mid Valley Megamall', { x: -82, z: -88 }), 5);
+  addRoadLine(inst, terrain, landmarkPoint('Mid Valley Megamall', { x: -82, z: -88 }), landmarkPoint('Kajang Satay Town', { x: 68, z: -184 }), 5);
+  addRoadLine(inst, terrain, landmarkPoint('Kajang Satay Town', { x: 68, z: -184 }), landmarkPoint('KLIA Terminal Gateway', { x: 198, z: -106 }), 5);
+  addRoadLine(inst, terrain, landmarkPoint('Ampang Lookout Ridge', { x: 126, z: 18 }), landmarkPoint('Genting Highlands Gateway', { x: 148, z: 162 }), 5);
 }
 
 function addOuterDistrictExpansion(inst, terrain) {
@@ -719,15 +726,15 @@ function addOuterDistrictExpansion(inst, terrain) {
 
   const random = mulberry32(20260426);
   const clusters = [
-    { cx: -156, cz: -126, radius: 34, count: 34, key: 'glassGreen' },
-    { cx: -184, cz: -38, radius: 30, count: 24, key: 'concreteDark' },
-    { cx: -92, cz: 92, radius: 32, count: 28, key: 'blackGlass' },
-    { cx: 132, cz: -136, radius: 42, count: 34, key: 'mosqueWhite' },
-    { cx: 114, cz: -168, radius: 34, count: 26, key: 'glass' },
-    { cx: 142, cz: 68, radius: 30, count: 20, key: 'parkPath' },
-    { cx: 188, cz: 12, radius: 55, count: 42, key: 'gatewayPurple' },
-    { cx: -204, cz: -88, radius: 26, count: 18, key: 'redBrick' }
-  ];
+    { ...landmarkPoint('Sunway Lagoon & Pyramid', { x: -156, z: -126 }), radius: 34, count: 34, key: 'glassGreen' },
+    { ...landmarkPoint('Shah Alam Blue Mosque', { x: -184, z: -38 }), radius: 30, count: 24, key: 'concreteDark' },
+    { ...landmarkPoint('Mont Kiara Dining Cluster', { x: -92, z: 92 }), radius: 32, count: 28, key: 'blackGlass' },
+    { ...landmarkPoint('Putrajaya Lake & Mosque', { x: 132, z: -136 }), radius: 42, count: 34, key: 'mosqueWhite' },
+    { ...landmarkPoint('Cyberjaya Tech Garden', { x: 114, z: -168 }), radius: 34, count: 26, key: 'glass' },
+    { ...landmarkPoint('Zoo Negara', { x: 142, z: 68 }), radius: 30, count: 20, key: 'parkPath' },
+    { ...landmarkPoint('Taman Negara Gateway', { x: 188, z: 12 }), radius: 55, count: 42, key: 'gatewayPurple' },
+    { ...landmarkPoint('Klang Royal Town', { x: -204, z: -88 }), radius: 26, count: 18, key: 'redBrick' }
+  ].map((cluster) => ({ ...cluster, cx: cluster.x, cz: cluster.z }));
 
   clusters.forEach((cluster) => {
     for (let i = 0; i < cluster.count; i += 1) {
@@ -769,11 +776,14 @@ function addTransit(inst, terrain) {
   addTransitLine(inst, terrain, 'x', -128, -198, 178, 14.8);
   addTransitLine(inst, terrain, 'z', 132, -188, 172, 15.5);
   addTransitLine(inst, terrain, 'x', 92, -204, 188, 15.0);
-  addStation(inst, terrain, -12, -8);
-  addStation(inst, terrain, 18, 22);
-  addStation(inst, terrain, 58, -8);
-  addStation(inst, terrain, -62, -55);
-  [[-156, -128], [-184, -38], [-92, 92], [132, -136], [114, -168], [142, 68], [188, 92], [188, -82]].forEach(([x, z]) => addStation(inst, terrain, x, z, 'gatewayPurple'));
+  ['Petaling Street / Chinatown', 'LRT / MRT Hub', 'KL Tower', 'Old Railway Station'].forEach((name) => {
+    const { x, z } = landmarkPoint(name, { x: 0, z: 0 });
+    addStation(inst, terrain, x, z);
+  });
+  ['Sunway Lagoon & Pyramid', 'Shah Alam Blue Mosque', 'Mont Kiara Dining Cluster', 'Putrajaya Lake & Mosque', 'Cyberjaya Tech Garden', 'Zoo Negara', 'Penang George Town Gateway', 'Sepang / KLIA Gateway'].forEach((name) => {
+    const { x, z } = landmarkPoint(name, { x: 188, z: 92 });
+    addStation(inst, terrain, x, z, 'gatewayPurple');
+  });
 }
 
 export function createKualaLumpurWorld(scene) {
@@ -825,12 +835,12 @@ export function createKualaLumpurWorld(scene) {
       label: 'LRT',
       stations: ['Subang Gateway', 'Pasar Seni', 'KLCC', 'Bukit Bintang Link', 'KL Tower', 'Ampang Park'],
       points: [
-        new THREE.Vector3(-82, 14.4, -8),
-        new THREE.Vector3(-48, 14.4, -8),
-        new THREE.Vector3(-12, 14.4, -8),
-        new THREE.Vector3(18, 17.0, 22),
-        new THREE.Vector3(54, 14.4, -8),
-        new THREE.Vector3(84, 14.4, -8)
+        landmarkVector('Subang Airport Heritage Strip', 14.4, { x: -82, z: -8 }),
+        landmarkVector('Central Market', 14.4, { x: -48, z: -8 }),
+        landmarkVector('Petronas Twin Towers', 14.4, { x: -12, z: -8 }),
+        landmarkVector('Bukit Bintang', 17.0, { x: 18, z: 22 }),
+        landmarkVector('KL Tower', 14.4, { x: 54, z: -8 }),
+        landmarkVector('Ampang Korean Village', 14.4, { x: 84, z: -8 })
       ],
       color: 'blue'
     },
@@ -839,10 +849,10 @@ export function createKualaLumpurWorld(scene) {
       label: 'Monorail',
       stations: ['KL Sentral', 'Imbi', 'Bukit Bintang', 'Titiwangsa'],
       points: [
-        new THREE.Vector3(18, 17.0, -72),
-        new THREE.Vector3(18, 17.0, -28),
-        new THREE.Vector3(18, 17.0, 22),
-        new THREE.Vector3(18, 17.0, 72)
+        landmarkVector('National Museum', 17.0, { x: 18, z: -72 }),
+        landmarkVector('Jalan Alor', 17.0, { x: 18, z: -28 }),
+        landmarkVector('Bukit Bintang', 17.0, { x: 18, z: 22 }),
+        landmarkVector('Titiwangsa Lake Gardens', 17.0, { x: 18, z: 72 })
       ],
       color: 'yellow'
     },
@@ -851,11 +861,11 @@ export function createKualaLumpurWorld(scene) {
       label: 'MRT',
       stations: ['National Museum', 'Merdeka', 'TRX', 'KLCC Park'],
       points: [
-        new THREE.Vector3(-58, 14.4, -66),
-        new THREE.Vector3(-18, 14.4, -42),
-        new THREE.Vector3(35, 14.4, 18),
-        new THREE.Vector3(66, 14.4, 32),
-        new THREE.Vector3(-25, 14.4, 43)
+        landmarkVector('National Museum', 14.4, { x: -58, z: -66 }),
+        landmarkVector('Merdeka 118', 14.4, { x: -18, z: -42 }),
+        landmarkVector('TRX Exchange 106', 14.4, { x: 66, z: 32 }),
+        landmarkVector('Petronas Twin Towers', 14.4, { x: -12, z: 22 }),
+        landmarkVector('KLCC Park', 14.4, { x: -25, z: 43 })
       ],
       color: 'green'
     },
@@ -864,11 +874,11 @@ export function createKualaLumpurWorld(scene) {
       label: 'KTM',
       stations: ['Old Railway Station', 'Batu Caves Gateway', 'Malaysia Highlights'],
       points: [
-        new THREE.Vector3(-36, 14.4, -58),
-        new THREE.Vector3(18, 16, 22),
-        new THREE.Vector3(82, 14.4, 68),
-        new THREE.Vector3(132, 15.5, -136),
-        new THREE.Vector3(188, 15.5, -82)
+        landmarkVector('Old Railway Station', 14.4, { x: -36, z: -58 }),
+        landmarkVector('LRT / MRT Hub', 16, { x: 18, z: 22 }),
+        landmarkVector('Batu Caves Gateway', 14.4, { x: 82, z: 68 }),
+        landmarkVector('Putrajaya Lake & Mosque', 15.5, { x: 132, z: -136 }),
+        landmarkVector('Sepang / KLIA Gateway', 15.5, { x: 188, z: -82 })
       ],
       color: 'purple'
     },
@@ -877,16 +887,16 @@ export function createKualaLumpurWorld(scene) {
       label: 'BRT',
       stations: ['Mont Kiara', 'FRIM', 'Kuala Selangor', 'Shah Alam', 'Sunway', 'Bangsar', 'Kajang', 'Putrajaya', 'Zoo Negara', 'Genting Base'],
       points: [
-        new THREE.Vector3(-92, 15.2, 92),
-        new THREE.Vector3(-138, 15.2, 128),
-        new THREE.Vector3(-204, 15.2, 152),
-        new THREE.Vector3(-184, 15.2, -38),
-        new THREE.Vector3(-156, 15.2, -126),
-        new THREE.Vector3(-94, 15.2, -108),
-        new THREE.Vector3(68, 15.2, -184),
-        new THREE.Vector3(132, 15.2, -136),
-        new THREE.Vector3(142, 15.2, 68),
-        new THREE.Vector3(148, 15.2, 162)
+        landmarkVector('Mont Kiara Dining Cluster', 15.2, { x: -92, z: 92 }),
+        landmarkVector('FRIM Forest Reserve', 15.2, { x: -138, z: 128 }),
+        landmarkVector('Kuala Selangor Fireflies', 15.2, { x: -204, z: 152 }),
+        landmarkVector('Shah Alam Blue Mosque', 15.2, { x: -184, z: -38 }),
+        landmarkVector('Sunway Lagoon & Pyramid', 15.2, { x: -156, z: -126 }),
+        landmarkVector('Bangsar Village', 15.2, { x: -94, z: -108 }),
+        landmarkVector('Kajang Satay Town', 15.2, { x: 68, z: -184 }),
+        landmarkVector('Putrajaya Lake & Mosque', 15.2, { x: 132, z: -136 }),
+        landmarkVector('Zoo Negara', 15.2, { x: 142, z: 68 }),
+        landmarkVector('Genting Highlands Gateway', 15.2, { x: 148, z: 162 })
       ],
       color: 'green'
     },
@@ -897,13 +907,13 @@ export function createKualaLumpurWorld(scene) {
       label: 'Rapid',
       stations: ['TTDI', 'Bandar Utama', 'PJ Old Town', 'SS15', 'Sunway', 'USJ', 'Puchong'],
       points: [
-        new THREE.Vector3(-126, 15.2, 22),
-        new THREE.Vector3(-156, 15.2, 12),
-        new THREE.Vector3(-122, 15.2, -62),
-        new THREE.Vector3(-136, 15.2, -92),
-        new THREE.Vector3(-156, 15.2, -126),
-        new THREE.Vector3(-126, 15.2, -116),
-        new THREE.Vector3(-78, 15.2, -150)
+        landmarkVector('TTDI Market', 15.2, { x: -126, z: 22 }),
+        landmarkVector('1 Utama & Bandar Utama', 15.2, { x: -156, z: 12 }),
+        landmarkVector('PJ Old Town', 15.2, { x: -122, z: -62 }),
+        landmarkVector('SS15 Food Street', 15.2, { x: -136, z: -92 }),
+        landmarkVector('Sunway Lagoon & Pyramid', 15.2, { x: -156, z: -126 }),
+        landmarkVector('USJ Taipan', 15.2, { x: -126, z: -116 }),
+        landmarkVector('Puchong IOI Boulevard', 15.2, { x: -78, z: -150 })
       ],
       color: 'blue'
     },
@@ -912,12 +922,12 @@ export function createKualaLumpurWorld(scene) {
       label: 'Coast',
       stations: ['Shah Alam', 'i-City', 'Klang Little India', 'Port Klang', 'Pulau Ketam Ferry', 'Morib Gate'],
       points: [
-        new THREE.Vector3(-184, 15.2, -38),
-        new THREE.Vector3(-176, 15.2, -8),
-        new THREE.Vector3(-198, 15.2, -72),
-        new THREE.Vector3(-210, 15.2, -150),
-        new THREE.Vector3(-210, 15.2, -126),
-        new THREE.Vector3(-186, 15.2, -198)
+        landmarkVector('Shah Alam Blue Mosque', 15.2, { x: -184, z: -38 }),
+        landmarkVector('i-City Shah Alam', 15.2, { x: -176, z: -8 }),
+        landmarkVector('Klang Little India', 15.2, { x: -198, z: -72 }),
+        landmarkVector('Port Klang Coastal Gate', 15.2, { x: -210, z: -150 }),
+        landmarkVector('Pulau Ketam Ferry Gate', 15.2, { x: -210, z: -126 }),
+        landmarkVector('Morib Beach Gateway', 15.2, { x: -186, z: -198 })
       ],
       color: 'purple'
     },
@@ -926,13 +936,13 @@ export function createKualaLumpurWorld(scene) {
       label: 'ERL',
       stations: ['Mines Lake', 'IOI City', 'Putrajaya Mosque', 'Cyberjaya', 'Sepang Circuit', 'KLIA', 'Nilai'],
       points: [
-        new THREE.Vector3(24, 15.2, -150),
-        new THREE.Vector3(88, 15.2, -144),
-        new THREE.Vector3(124, 15.2, -126),
-        new THREE.Vector3(114, 15.2, -168),
-        new THREE.Vector3(176, 15.2, -116),
-        new THREE.Vector3(198, 15.2, -106),
-        new THREE.Vector3(134, 15.2, -206)
+        landmarkVector('Mines Lake', 15.2, { x: 24, z: -150 }),
+        landmarkVector('IOI City Mall', 15.2, { x: 88, z: -144 }),
+        landmarkVector('Putrajaya Pink Mosque', 15.2, { x: 124, z: -126 }),
+        landmarkVector('Cyberjaya Tech Garden', 15.2, { x: 114, z: -168 }),
+        landmarkVector('Sepang Circuit', 15.2, { x: 176, z: -116 }),
+        landmarkVector('KLIA Terminal Gateway', 15.2, { x: 198, z: -106 }),
+        landmarkVector('Nilai Outlet Corridor', 15.2, { x: 134, z: -206 })
       ],
       color: 'yellow'
     },
@@ -941,13 +951,13 @@ export function createKualaLumpurWorld(scene) {
       label: 'Green',
       stations: ['Titiwangsa', 'Setapak', 'Wangsa Maju', 'Batu Caves', 'Gombak', 'Kanching', 'Rawang Falls'],
       points: [
-        new THREE.Vector3(8, 15.2, 82),
-        new THREE.Vector3(52, 15.2, 62),
-        new THREE.Vector3(76, 15.2, 78),
-        new THREE.Vector3(88, 15.2, 92),
-        new THREE.Vector3(104, 15.2, 112),
-        new THREE.Vector3(18, 15.2, 176),
-        new THREE.Vector3(-28, 15.2, 206)
+        landmarkVector('Titiwangsa Lake Gardens', 15.2, { x: 8, z: 82 }),
+        landmarkVector('Setapak Food Quarter', 15.2, { x: 52, z: 62 }),
+        landmarkVector('Wangsa Maju Town Centre', 15.2, { x: 76, z: 78 }),
+        landmarkVector('Batu Caves Temple Steps', 15.2, { x: 88, z: 92 }),
+        landmarkVector('Gombak Transit Gate', 15.2, { x: 104, z: 112 }),
+        landmarkVector('Kanching Falls', 15.2, { x: 18, z: 176 }),
+        landmarkVector('Rawang Waterfall Gate', 15.2, { x: -28, z: 206 })
       ],
       color: 'green'
     },
@@ -956,15 +966,15 @@ export function createKualaLumpurWorld(scene) {
       label: 'Tour',
       stations: ['Penang Gate', 'Langkawi Gate', 'Malacca Gate', 'Cameron Gate', 'Taman Negara Gate', 'Kinabalu Gate', 'Perhentian Gate', 'Putrajaya Gate', 'KLIA Gate'],
       points: [
-        new THREE.Vector3(188, 15.0, 92),
-        new THREE.Vector3(188, 15.0, 72),
-        new THREE.Vector3(188, 15.0, 52),
-        new THREE.Vector3(188, 15.0, 32),
-        new THREE.Vector3(188, 15.0, 12),
-        new THREE.Vector3(188, 15.0, -8),
-        new THREE.Vector3(188, 15.0, -28),
-        new THREE.Vector3(188, 15.0, -58),
-        new THREE.Vector3(188, 15.0, -82)
+        landmarkVector('Penang George Town Gateway', 15.0, { x: 188, z: 92 }),
+        landmarkVector('Langkawi Gateway', 15.0, { x: 188, z: 72 }),
+        landmarkVector('Malacca Gateway', 15.0, { x: 188, z: 52 }),
+        landmarkVector('Cameron Highlands Gateway', 15.0, { x: 188, z: 32 }),
+        landmarkVector('Taman Negara Gateway', 15.0, { x: 188, z: 12 }),
+        landmarkVector('Kinabalu Gateway', 15.0, { x: 188, z: -8 }),
+        landmarkVector('Perhentian Islands Gateway', 15.0, { x: 188, z: -28 }),
+        landmarkVector('Putrajaya Gateway', 15.0, { x: 188, z: -58 }),
+        landmarkVector('Sepang / KLIA Gateway', 15.0, { x: 188, z: -82 })
       ],
       color: 'yellow'
     }

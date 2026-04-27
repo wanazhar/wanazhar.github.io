@@ -1,4 +1,29 @@
-export const tourismLandmarks = [
+const KL_MAP_BOUNDS = {
+  // Covers the practical Klang Valley / KLIA / Kuala Selangor / Genting / Broga envelope.
+  // Latitude increases northward, longitude increases eastward; projected game x/z keep those proportions.
+  minLat: 2.72,
+  maxLat: 3.45,
+  minLon: 101.23,
+  maxLon: 102.02,
+  minX: -214,
+  maxX: 214,
+  minZ: -214,
+  maxZ: 214
+};
+
+const malaysiaHighlightsGatewayStripX = 188;
+
+function projectLatLonToMap({ lat, lon }) {
+  const xProgress = (lon - KL_MAP_BOUNDS.minLon) / (KL_MAP_BOUNDS.maxLon - KL_MAP_BOUNDS.minLon);
+  const zProgress = (lat - KL_MAP_BOUNDS.minLat) / (KL_MAP_BOUNDS.maxLat - KL_MAP_BOUNDS.minLat);
+  const clampMap = (value) => Math.max(KL_MAP_BOUNDS.minX, Math.min(KL_MAP_BOUNDS.maxX, value));
+  return {
+    x: Math.round(clampMap(KL_MAP_BOUNDS.minX + xProgress * (KL_MAP_BOUNDS.maxX - KL_MAP_BOUNDS.minX))),
+    z: Math.round(clampMap(KL_MAP_BOUNDS.minZ + zProgress * (KL_MAP_BOUNDS.maxZ - KL_MAP_BOUNDS.minZ)))
+  };
+}
+
+const tourismLandmarkEntries = [
   { name: 'Petronas Twin Towers', district: 'KLCC', category: 'skyline', tags: ['architecture', 'shopping'], bestTime: 'Golden Hour', note: 'Twin towers, Suria KLCC, and the classic city skyline photo stop.', tip: 'Walk through the park side for the broadest tower view.', x: -12, z: 22 },
   { name: 'KLCC Park', district: 'KLCC', category: 'park', tags: ['garden', 'family'], bestTime: 'Day', note: 'A landscaped city park with lake views below the towers.', tip: 'Use the shaded paths when the afternoon heat builds.', x: -25, z: 43 },
   { name: 'Merdeka 118', district: 'Merdeka', category: 'skyline', tags: ['architecture'], bestTime: 'Sunset', note: 'A new supertall tower overlooking the historic core.', tip: 'Pair it with Merdeka Square and Chinatown on foot.', x: 35, z: 18 },
@@ -116,6 +141,132 @@ export const tourismLandmarks = [
   { name: 'National Stadium Bukit Jalil', district: 'Bukit Jalil', category: 'sports', tags: ['stadium', 'events'], bestTime: 'Night', note: 'Major stadium and event precinct south of KL.', tip: 'Check event days and rail crowding.', x: 36, z: -126 },
   { name: 'Bukit Jalil Park', district: 'Bukit Jalil', category: 'park', tags: ['park', 'walking'], bestTime: 'Day', note: 'Large park marker near the stadium precinct.', tip: 'Morning and evening are most comfortable.', x: 18, z: -126 }
 ];
+
+const landmarkLatLon = {
+  'Petronas Twin Towers': { lat: 3.1579, lon: 101.7116 },
+  'KLCC Park': { lat: 3.1553, lon: 101.7141 },
+  'Merdeka 118': { lat: 3.1417, lon: 101.7006 },
+  'KL Tower': { lat: 3.1528, lon: 101.7033 },
+  'Merdeka Square': { lat: 3.1478, lon: 101.6937 },
+  'Sultan Abdul Samad Building': { lat: 3.1486, lon: 101.6941 },
+  'Masjid Jamek / River of Life': { lat: 3.1489, lon: 101.6968 },
+  'Royal Selangor Club': { lat: 3.1474, lon: 101.6931 },
+  'Petaling Street / Chinatown': { lat: 3.1442, lon: 101.6979 },
+  'Central Market': { lat: 3.1459, lon: 101.6955 },
+  'Jalan Alor': { lat: 3.1467, lon: 101.7087 },
+  'Bukit Bintang': { lat: 3.1461, lon: 101.7110 },
+  'Pavilion KL': { lat: 3.1491, lon: 101.7135 },
+  'TRX Exchange 106': { lat: 3.1426, lon: 101.7194 },
+  'Masjid Negara': { lat: 3.1416, lon: 101.6915 },
+  'Islamic Arts Museum': { lat: 3.1423, lon: 101.6893 },
+  'National Planetarium': { lat: 3.1396, lon: 101.6885 },
+  'Lake Gardens': { lat: 3.1437, lon: 101.6840 },
+  'Tugu Negara': { lat: 3.1490, lon: 101.6839 },
+  'Old Railway Station': { lat: 3.1395, lon: 101.6935 },
+  'National Museum': { lat: 3.1378, lon: 101.6869 },
+  'Little India Brickfields': { lat: 3.1307, lon: 101.6860 },
+  'Thean Hou Temple': { lat: 3.1216, lon: 101.6877 },
+  'Istana Negara': { lat: 3.1589, lon: 101.6669 },
+  'Batu Caves Gateway': { lat: 3.2379, lon: 101.6840 },
+  'Kampung Baru': { lat: 3.1647, lon: 101.7060 },
+  'Chow Kit Market': { lat: 3.1672, lon: 101.6984 },
+  'LRT / MRT Hub': { lat: 3.1448, lon: 101.6957 },
+  'Putrajaya Lake & Mosque': { lat: 2.9360, lon: 101.6901 },
+  'Sunway Lagoon & Pyramid': { lat: 3.0710, lon: 101.6050 },
+  'Shah Alam Blue Mosque': { lat: 3.0789, lon: 101.5197 },
+  'Genting Highlands Gateway': { lat: 3.4239, lon: 101.7933 },
+  'FRIM Forest Reserve': { lat: 3.2350, lon: 101.6346 },
+  'Zoo Negara': { lat: 3.2073, lon: 101.7582 },
+  'Ampang Lookout Ridge': { lat: 3.1480, lon: 101.7748 },
+  'Bangsar Village': { lat: 3.1288, lon: 101.6700 },
+  'Mid Valley Megamall': { lat: 3.1186, lon: 101.6770 },
+  'Mont Kiara Dining Cluster': { lat: 3.1690, lon: 101.6500 },
+  'Damansara Arts & Cafes': { lat: 3.1530, lon: 101.6130 },
+  'Klang Royal Town': { lat: 3.0449, lon: 101.4456 },
+  'Port Klang Coastal Gate': { lat: 3.0000, lon: 101.3920 },
+  'Kajang Satay Town': { lat: 2.9935, lon: 101.7870 },
+  'Cyberjaya Tech Garden': { lat: 2.9225, lon: 101.6559 },
+  'Broga Hill Sunrise': { lat: 2.9380, lon: 101.9000 },
+  'Kuala Selangor Fireflies': { lat: 3.3400, lon: 101.2500 },
+  'Rawang Forest Gateway': { lat: 3.3213, lon: 101.5767 },
+  'Setia City Park': { lat: 3.1108, lon: 101.4609 },
+  'i-City Shah Alam': { lat: 3.0657, lon: 101.4846 },
+  'Sultan Alam Shah Museum': { lat: 3.0730, lon: 101.5180 },
+  'Subang Airport Heritage Strip': { lat: 3.1306, lon: 101.5497 },
+  'SS15 Food Street': { lat: 3.0755, lon: 101.5881 },
+  'USJ Taipan': { lat: 3.0472, lon: 101.5900 },
+  'Puchong IOI Boulevard': { lat: 3.0467, lon: 101.6177 },
+  'Seri Kembangan Food Quarter': { lat: 3.0220, lon: 101.7050 },
+  'Mines Lake': { lat: 3.0290, lon: 101.7150 },
+  'IOI City Mall': { lat: 2.9705, lon: 101.7139 },
+  'Putrajaya Pink Mosque': { lat: 2.9357, lon: 101.6905 },
+  'Putrajaya Bridge Promenade': { lat: 2.9305, lon: 101.6918 },
+  'Dengkil Kampung Food': { lat: 2.8630, lon: 101.6800 },
+  'Sepang Circuit': { lat: 2.7600, lon: 101.7380 },
+  'KLIA Terminal Gateway': { lat: 2.7456, lon: 101.7072 },
+  'Nilai Outlet Corridor': { lat: 2.8178, lon: 101.7983 },
+  'Cheras Leisure Mall': { lat: 3.0905, lon: 101.7426 },
+  'Taman Connaught Night Market': { lat: 3.0828, lon: 101.7370 },
+  'Ampang Korean Village': { lat: 3.1545, lon: 101.7609 },
+  'Ulu Klang Ridge Trail': { lat: 3.2080, lon: 101.7850 },
+  'Melawati Food & Hills': { lat: 3.2145, lon: 101.7470 },
+  'Gombak Transit Gate': { lat: 3.2319, lon: 101.7245 },
+  'Selayang Market': { lat: 3.2520, lon: 101.6530 },
+  'Kepong Food Row': { lat: 3.2140, lon: 101.6370 },
+  'Desa ParkCity Lake': { lat: 3.1860, lon: 101.6305 },
+  'Publika Arts Mall': { lat: 3.1718, lon: 101.6661 },
+  'Sentul Depot': { lat: 3.1840, lon: 101.6900 },
+  'Titiwangsa Lake Gardens': { lat: 3.1772, lon: 101.7044 },
+  'Wangsa Maju Town Centre': { lat: 3.2057, lon: 101.7315 },
+  'Setapak Food Quarter': { lat: 3.1980, lon: 101.7170 },
+  'PJ Old Town': { lat: 3.0852, lon: 101.6462 },
+  'Section 17 Market': { lat: 3.1230, lon: 101.6350 },
+  'TTDI Market': { lat: 3.1400, lon: 101.6290 },
+  '1 Utama & Bandar Utama': { lat: 3.1500, lon: 101.6150 },
+  'Mutiara Damansara Curve': { lat: 3.1570, lon: 101.6090 },
+  'Bukit Jelutong Park': { lat: 3.0980, lon: 101.5360 },
+  'Klang Little India': { lat: 3.0430, lon: 101.4480 },
+  'Pulau Ketam Ferry Gate': { lat: 3.0010, lon: 101.3920 },
+  'Morib Beach Gateway': { lat: 2.7460, lon: 101.4420 },
+  'Banting Food Stop': { lat: 2.8130, lon: 101.5010 },
+  'Janda Baik Gateway': { lat: 3.3160, lon: 101.8540 },
+  'Bukit Tinggi Village Gate': { lat: 3.3490, lon: 101.8260 },
+  'Rawang Waterfall Gate': { lat: 3.3420, lon: 101.5960 },
+  'Sungai Buloh Nursery Belt': { lat: 3.2110, lon: 101.5650 },
+  'Elmina Rainbow Bridge': { lat: 3.1630, lon: 101.5190 },
+  'Sasaran Sky Mirror Gate': { lat: 3.3500, lon: 101.2480 },
+  'Bukit Melawati': { lat: 3.3417, lon: 101.2469 },
+  'Selangor River Seafood': { lat: 3.3360, lon: 101.2520 },
+  'Batu Caves Temple Steps': { lat: 3.2379, lon: 101.6840 },
+  'Kanching Falls': { lat: 3.2990, lon: 101.6240 },
+  'Templer Park': { lat: 3.2870, lon: 101.6530 },
+  'Bukit Kiara Trails': { lat: 3.1430, lon: 101.6440 },
+  'Rimba Ilmu UM': { lat: 3.1290, lon: 101.6570 },
+  'KL Gateway Mall': { lat: 3.1120, lon: 101.6650 },
+  'Bangsar South Business Park': { lat: 3.1110, lon: 101.6670 },
+  'Saloma Bridge': { lat: 3.1602, lon: 101.7079 },
+  RexKL: { lat: 3.1429, lon: 101.6972 },
+  'Kwong Tong Cemetery View': { lat: 3.1140, lon: 101.7060 },
+  'National Stadium Bukit Jalil': { lat: 3.0548, lon: 101.6912 },
+  'Bukit Jalil Park': { lat: 3.0610, lon: 101.6740 }
+};
+
+export const tourismLandmarks = tourismLandmarkEntries.map((item) => {
+  if (item.district === 'Malaysia Highlights') {
+    return { ...item, isSchematicGateway: true, schematicX: malaysiaHighlightsGatewayStripX, schematicZ: item.z };
+  }
+
+  const latLon = landmarkLatLon[item.name];
+  if (!latLon) return { ...item, coordinateSource: 'schematic' };
+
+  return {
+    ...item,
+    ...projectLatLonToMap(latLon),
+    lat: latLon.lat,
+    lon: latLon.lon,
+    coordinateSource: 'latLon'
+  };
+});
 
 export const tourismZones = [
   { name: 'KLCC and Golden Triangle', summary: 'Towers, parks, malls, nightlife, and modern skyline stops.' },
