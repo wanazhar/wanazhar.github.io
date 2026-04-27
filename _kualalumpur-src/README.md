@@ -23,6 +23,7 @@ A browser game prototype built with **Vite + Three.js**. The scene is a Minecraf
 - Elevated rail / monorail inspired lines with animated voxel trains
 - Browser performance optimizations:
   - static city made with `THREE.InstancedMesh`
+  - in-memory chunk groups for future static map streaming
   - grouped material palette to reduce draw calls
   - adaptive pixel ratio based on frame cost
   - limited dynamic lighting
@@ -76,6 +77,19 @@ The built static site will be created in:
 ```text
 dist/
 ```
+
+## Measurement and budgets
+
+The voxel world has guardrail scripts so large detail passes do not accidentally ship an oversized static scene:
+
+```bash
+npm run measure:world
+npm run validate:budget
+```
+
+`measure:world` builds the scene in Node and reports authored instance totals, material counts, section counts, chunk count, and instanced mesh count. `validate:budget` enforces the Phase 0/1 prototype ceilings before any 2M-detail generation work begins.
+
+Current runtime detail remains bundled in the Vite app for GitHub Pages compatibility. The instancer now releases its CPU-side queued instance arrays after `finalize()` and renders the static world as shared-material chunk groups, which provides the visibility foundation for later external chunk files without changing the current map APIs.
 
 ## Deploy to `wanazhar.github.io/kualalumpur`
 

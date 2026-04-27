@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "id": "1_3",
+  "cx": 1,
+  "cz": 3,
+  "count": 3668,
+  "meshCount": 16,
+  "materialCounts": {
+    "grass": 987,
+    "clay": 512,
+    "dirt": 320,
+    "stoneDark": 512,
+    "grass2": 553,
+    "grassDark": 319,
+    "treeTrunk": 4,
+    "treeLeaf": 12,
+    "treeLeaf2": 4,
+    "road": 85,
+    "lineWhite": 2,
+    "concrete": 177,
+    "lampGlow": 1,
+    "concreteDark": 1,
+    "plaza": 176,
+    "caveLimestone": 3
+  },
+  "path": "summaries/1_3.json"
+}

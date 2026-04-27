@@ -1,0 +1,31 @@
+{
+  "formatVersion": 1,
+  "id": "0_-4",
+  "cx": 0,
+  "cz": -4,
+  "count": 3726,
+  "meshCount": 20,
+  "materialCounts": {
+    "grass": 981,
+    "clay": 512,
+    "dirt": 320,
+    "stoneDark": 512,
+    "grass2": 467,
+    "grassDark": 344,
+    "treeTrunk": 4,
+    "treeLeaf": 12,
+    "treeLeaf2": 4,
+    "road": 69,
+    "lineWhite": 4,
+    "parkPath": 56,
+    "concrete": 232,
+    "lampGlow": 1,
+    "glassGreen": 1,
+    "concreteDark": 5,
+    "plaza": 177,
+    "warning": 2,
+    "glassDark": 20,
+    "station": 3
+  },
+  "path": "summaries/0_-4.json"
+}

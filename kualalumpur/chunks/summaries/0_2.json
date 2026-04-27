@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "id": "0_2",
+  "cx": 0,
+  "cz": 2,
+  "count": 4808,
+  "meshCount": 10,
+  "materialCounts": {
+    "grass": 2211,
+    "grass2": 1186,
+    "grassDark": 700,
+    "treeTrunk": 1,
+    "treeLeaf": 4,
+    "treeLeaf2": 1,
+    "road": 615,
+    "lineWhite": 30,
+    "concrete": 30,
+    "plaza": 30
+  },
+  "path": "summaries/0_2.json"
+}

@@ -1,0 +1,31 @@
+{
+  "formatVersion": 1,
+  "id": "2_-2",
+  "cx": 2,
+  "cz": -2,
+  "count": 5910,
+  "meshCount": 20,
+  "materialCounts": {
+    "grass": 2205,
+    "dirt": 24,
+    "grass2": 1126,
+    "grassDark": 768,
+    "treeTrunk": 2,
+    "treeLeaf": 9,
+    "treeLeaf2": 2,
+    "road": 704,
+    "lineWhite": 38,
+    "parkPath": 289,
+    "concrete": 599,
+    "gatewayPurple": 10,
+    "lampGlow": 4,
+    "glassGreen": 1,
+    "concreteDark": 22,
+    "plaza": 14,
+    "warning": 1,
+    "rail": 90,
+    "station": 1,
+    "stationRoof": 1
+  },
+  "path": "summaries/2_-2.json"
+}

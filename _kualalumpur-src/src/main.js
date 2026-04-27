@@ -17,6 +17,7 @@ import { quests, achievements } from './data/quests.js';
 import { postcardTemplates } from './data/postcards.js';
 import { SaveSystem } from './game/SaveSystem.js';
 import { QuestSystem } from './game/QuestSystem.js';
+import { loadStaticChunkManifest } from './world/chunks/ChunkLoader.js';
 
 const canvas = document.getElementById('game-canvas');
 const adaptive = new AdaptiveRenderer(canvas);
@@ -187,7 +188,7 @@ function applyTimeMode(mode) {
   adaptive.renderer.toneMappingExposure = settings.exposure;
   scene.traverse((object) => {
     if (!object.isInstancedMesh || !object.name.includes('voxels_')) return;
-    const key = object.name.replace('voxels_', '');
+    const key = object.userData.voxelMaterialKey ?? object.name.replace('voxels_', '').split('_chunk_')[0];
     if (['glassDark', 'blackGlass', 'trainWindow', 'lampGlow'].includes(key)) {
       object.material.color.setHex(mode === 'Night' ? 0xffd166 : world.palette[key]);
     } else if (key === 'road') {
@@ -267,6 +268,16 @@ hud.setTimeMode(timeModes[timeModeIndex]);
 applyTimeMode(timeModes[timeModeIndex]);
 hud.showToast('Explore Kuala Lumpur: WASD to move, touch joystick on mobile, routes and guidebook in panels.');
 
+loadStaticChunkManifest()
+  .then((manifest) => {
+    if (!manifest) return;
+    world.staticChunkManifest = manifest;
+    console.info(`Static chunk manifest ready: ${manifest.chunks.length} chunks / ${manifest.totalInstances.toLocaleString()} instances`);
+  })
+  .catch((error) => {
+    console.info('Static chunk manifest not available yet; using bundled world.', error.message);
+  });
+
 const miniMap = setupMiniMap({
   canvas: document.getElementById('mini-map'),
   terrain: world.terrain,
@@ -336,6 +347,7 @@ function loop(now) {
     }
     rain.geometry.attributes.position.needsUpdate = true;
   }
+  const chunksChanged = world.chunkManager?.update(player.group.position).changed ?? false;
   if (trainSystem.ride) {
     const lead = trainSystem.ride.train.cars[0];
     const target = lead.position.clone();
@@ -363,7 +375,7 @@ function loop(now) {
   miniMap.draw({ nextLandmark: tourRoute.current, visited: (landmark) => landmarkProgress.isVisited(landmark) });
   const controlsChanged = controls.update();
 
-  if (playerMoved || trainsMoved || actorsMoved || controlsChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible) {
+  if (playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible) {
     adaptive.render(scene, camera);
     frames += 1;
   }
@@ -374,7 +386,7 @@ function loop(now) {
     fpsClock = now;
   }
 
-  const stillActive = playerMoved || trainsMoved || actorsMoved || controlsChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible;
+  const stillActive = playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible;
   hud.update({
     fps,
     pixelRatio: adaptive.pixelRatio,

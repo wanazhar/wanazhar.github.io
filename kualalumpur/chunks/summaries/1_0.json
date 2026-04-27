@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "id": "1_0",
+  "cx": 1,
+  "cz": 0,
+  "count": 5546,
+  "meshCount": 19,
+  "materialCounts": {
+    "grass": 2210,
+    "dirt": 129,
+    "grass2": 1154,
+    "grassDark": 732,
+    "road": 1023,
+    "lineWhite": 38,
+    "parkPath": 1,
+    "concrete": 122,
+    "lampGlow": 6,
+    "glassGreen": 1,
+    "concreteDark": 9,
+    "plaza": 47,
+    "warning": 1,
+    "glassDark": 45,
+    "mallGold": 1,
+    "glass": 24,
+    "steel": 1,
+    "merdekaGlass": 1,
+    "silver": 1
+  },
+  "path": "summaries/1_0.json"
+}
