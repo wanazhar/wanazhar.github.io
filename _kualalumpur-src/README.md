@@ -91,6 +91,13 @@ npm run validate:budget
 
 Current runtime detail remains bundled in the Vite app for GitHub Pages compatibility. The instancer now releases its CPU-side queued instance arrays after `finalize()` and renders the static world as shared-material chunk groups, which provides the visibility foundation for later external chunk files without changing the current map APIs.
 
+
+## 5M generated detail layer
+
+The map now includes a deterministic high-detail layer targeting **5,000,000 authored regional detail instances** on top of the bundled base world. Runtime rendering keeps the combined base + generated detail visibility target at **950,000 visible instances** across desktop, tablet, and mobile tiers. The generated detail is distributed across 225 static/procedural chunks with higher density around KLCC, Bukit Bintang/TRX, Merdeka/Chinatown, PJ, Subang/Sunway, Shah Alam, Klang, Putrajaya, KLIA/Sepang, Batu Caves/Gombak, Genting foothills, and Kuala Selangor.
+
+This is deliberately a chunked/generated layer rather than 5M simultaneously visible cubes. The 5M authored target is measured by `npm run measure:world`; the shipped GitHub Pages manifest is exported to `public/chunks/metadata.json` by `npm run export:chunks`.
+
 ## Deploy to `wanazhar.github.io/kualalumpur`
 
 This project uses `base: './'` in `vite.config.js`, so the built files can be copied into a subfolder like `/kualalumpur` without changing asset paths.

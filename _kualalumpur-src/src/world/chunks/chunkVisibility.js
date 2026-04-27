@@ -16,17 +16,17 @@ export const DETAIL_BUDGETS = {
   mobile: {
     highRadius: 1,
     mediumRadius: 2,
-    visibleInstanceCap: 500000
+    visibleInstanceCap: 950000
   },
   balanced: {
     highRadius: 2,
     mediumRadius: 3,
-    visibleInstanceCap: 700000
+    visibleInstanceCap: 950000
   },
   desktop: {
     highRadius: 2,
     mediumRadius: 4,
-    visibleInstanceCap: 1000000
+    visibleInstanceCap: 950000
   }
 };
 

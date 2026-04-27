@@ -1,9 +1,11 @@
 {
   "formatVersion": 1,
-  "generatedAt": "2026-04-27T06:40:46.277Z",
-  "mode": "phase2-static-manifest-prototype",
-  "note": "Prototype static chunk metadata for GitHub Pages. Visual voxels remain bundled until binary chunk streaming is implemented.",
+  "generatedAt": "2026-04-27T06:56:43.943Z",
+  "mode": "phase3-5m-generated-detail",
+  "note": "5M authored deterministic KL/Klang Valley detail layer. Base world remains bundled; generated detail chunks are streamed/rendered up to the shared 950k visibility budget.",
   "totalInstances": 306103,
+  "generatedDetailInstances": 5000000,
+  "totalAuthoredWithGeneratedDetail": 5306103,
   "chunkSize": 64,
   "chunks": [
     {
@@ -583,9 +585,2937 @@
       "materialKinds": 11
     }
   ],
+  "generatedDetailChunks": [
+    {
+      "id": "detail_-7_-7",
+      "cx": -7,
+      "cz": -7,
+      "center": {
+        "x": -416,
+        "z": -416
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_-6",
+      "cx": -7,
+      "cz": -6,
+      "center": {
+        "x": -416,
+        "z": -352
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_-5",
+      "cx": -7,
+      "cz": -5,
+      "center": {
+        "x": -416,
+        "z": -288
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_-4",
+      "cx": -7,
+      "cz": -4,
+      "center": {
+        "x": -416,
+        "z": -224
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_-3",
+      "cx": -7,
+      "cz": -3,
+      "center": {
+        "x": -416,
+        "z": -160
+      },
+      "authoredCount": 3861,
+      "density": 0.0803,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_-2",
+      "cx": -7,
+      "cz": -2,
+      "center": {
+        "x": -416,
+        "z": -96
+      },
+      "authoredCount": 3953,
+      "density": 0.0822,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_-1",
+      "cx": -7,
+      "cz": -1,
+      "center": {
+        "x": -416,
+        "z": -32
+      },
+      "authoredCount": 9055,
+      "density": 0.1883,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_0",
+      "cx": -7,
+      "cz": 0,
+      "center": {
+        "x": -416,
+        "z": 32
+      },
+      "authoredCount": 19448,
+      "density": 0.4044,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_1",
+      "cx": -7,
+      "cz": 1,
+      "center": {
+        "x": -416,
+        "z": 96
+      },
+      "authoredCount": 5586,
+      "density": 0.1161,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_2",
+      "cx": -7,
+      "cz": 2,
+      "center": {
+        "x": -416,
+        "z": 160
+      },
+      "authoredCount": 4297,
+      "density": 0.0894,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_3",
+      "cx": -7,
+      "cz": 3,
+      "center": {
+        "x": -416,
+        "z": 224
+      },
+      "authoredCount": 4128,
+      "density": 0.0859,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_4",
+      "cx": -7,
+      "cz": 4,
+      "center": {
+        "x": -416,
+        "z": 288
+      },
+      "authoredCount": 3938,
+      "density": 0.0819,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_5",
+      "cx": -7,
+      "cz": 5,
+      "center": {
+        "x": -416,
+        "z": 352
+      },
+      "authoredCount": 3862,
+      "density": 0.0803,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_6",
+      "cx": -7,
+      "cz": 6,
+      "center": {
+        "x": -416,
+        "z": 416
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-7_7",
+      "cx": -7,
+      "cz": 7,
+      "center": {
+        "x": -416,
+        "z": 480
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_-7",
+      "cx": -6,
+      "cz": -7,
+      "center": {
+        "x": -352,
+        "z": -416
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_-6",
+      "cx": -6,
+      "cz": -6,
+      "center": {
+        "x": -352,
+        "z": -352
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_-5",
+      "cx": -6,
+      "cz": -5,
+      "center": {
+        "x": -352,
+        "z": -288
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_-4",
+      "cx": -6,
+      "cz": -4,
+      "center": {
+        "x": -352,
+        "z": -224
+      },
+      "authoredCount": 3874,
+      "density": 0.0806,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_-3",
+      "cx": -6,
+      "cz": -3,
+      "center": {
+        "x": -352,
+        "z": -160
+      },
+      "authoredCount": 4040,
+      "density": 0.084,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_-2",
+      "cx": -6,
+      "cz": -2,
+      "center": {
+        "x": -352,
+        "z": -96
+      },
+      "authoredCount": 4613,
+      "density": 0.0959,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_-1",
+      "cx": -6,
+      "cz": -1,
+      "center": {
+        "x": -352,
+        "z": -32
+      },
+      "authoredCount": 10414,
+      "density": 0.2166,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_0",
+      "cx": -6,
+      "cz": 0,
+      "center": {
+        "x": -352,
+        "z": 32
+      },
+      "authoredCount": 21384,
+      "density": 0.4447,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_1",
+      "cx": -6,
+      "cz": 1,
+      "center": {
+        "x": -352,
+        "z": 96
+      },
+      "authoredCount": 8114,
+      "density": 0.1687,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_2",
+      "cx": -6,
+      "cz": 2,
+      "center": {
+        "x": -352,
+        "z": 160
+      },
+      "authoredCount": 6925,
+      "density": 0.144,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_3",
+      "cx": -6,
+      "cz": 3,
+      "center": {
+        "x": -352,
+        "z": 224
+      },
+      "authoredCount": 5746,
+      "density": 0.1195,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_4",
+      "cx": -6,
+      "cz": 4,
+      "center": {
+        "x": -352,
+        "z": 288
+      },
+      "authoredCount": 4464,
+      "density": 0.0928,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_5",
+      "cx": -6,
+      "cz": 5,
+      "center": {
+        "x": -352,
+        "z": 352
+      },
+      "authoredCount": 3949,
+      "density": 0.0821,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_6",
+      "cx": -6,
+      "cz": 6,
+      "center": {
+        "x": -352,
+        "z": 416
+      },
+      "authoredCount": 3855,
+      "density": 0.0802,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-6_7",
+      "cx": -6,
+      "cz": 7,
+      "center": {
+        "x": -352,
+        "z": 480
+      },
+      "authoredCount": 3847,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_-7",
+      "cx": -5,
+      "cz": -7,
+      "center": {
+        "x": -288,
+        "z": -416
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_-6",
+      "cx": -5,
+      "cz": -6,
+      "center": {
+        "x": -288,
+        "z": -352
+      },
+      "authoredCount": 3847,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_-5",
+      "cx": -5,
+      "cz": -5,
+      "center": {
+        "x": -288,
+        "z": -288
+      },
+      "authoredCount": 3863,
+      "density": 0.0803,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_-4",
+      "cx": -5,
+      "cz": -4,
+      "center": {
+        "x": -288,
+        "z": -224
+      },
+      "authoredCount": 4051,
+      "density": 0.0843,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_-3",
+      "cx": -5,
+      "cz": -3,
+      "center": {
+        "x": -288,
+        "z": -160
+      },
+      "authoredCount": 5242,
+      "density": 0.109,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_-2",
+      "cx": -5,
+      "cz": -2,
+      "center": {
+        "x": -288,
+        "z": -96
+      },
+      "authoredCount": 8907,
+      "density": 0.1852,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_-1",
+      "cx": -5,
+      "cz": -1,
+      "center": {
+        "x": -288,
+        "z": -32
+      },
+      "authoredCount": 18643,
+      "density": 0.3877,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_0",
+      "cx": -5,
+      "cz": 0,
+      "center": {
+        "x": -288,
+        "z": 32
+      },
+      "authoredCount": 30970,
+      "density": 0.6441,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_1",
+      "cx": -5,
+      "cz": 1,
+      "center": {
+        "x": -288,
+        "z": 96
+      },
+      "authoredCount": 17284,
+      "density": 0.3594,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_2",
+      "cx": -5,
+      "cz": 2,
+      "center": {
+        "x": -288,
+        "z": 160
+      },
+      "authoredCount": 14896,
+      "density": 0.3098,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_3",
+      "cx": -5,
+      "cz": 3,
+      "center": {
+        "x": -288,
+        "z": 224
+      },
+      "authoredCount": 10415,
+      "density": 0.2166,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_4",
+      "cx": -5,
+      "cz": 4,
+      "center": {
+        "x": -288,
+        "z": 288
+      },
+      "authoredCount": 5966,
+      "density": 0.1241,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_5",
+      "cx": -5,
+      "cz": 5,
+      "center": {
+        "x": -288,
+        "z": 352
+      },
+      "authoredCount": 4199,
+      "density": 0.0873,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_6",
+      "cx": -5,
+      "cz": 6,
+      "center": {
+        "x": -288,
+        "z": 416
+      },
+      "authoredCount": 3876,
+      "density": 0.0806,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-5_7",
+      "cx": -5,
+      "cz": 7,
+      "center": {
+        "x": -288,
+        "z": 480
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_-7",
+      "cx": -4,
+      "cz": -7,
+      "center": {
+        "x": -224,
+        "z": -416
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_-6",
+      "cx": -4,
+      "cz": -6,
+      "center": {
+        "x": -224,
+        "z": -352
+      },
+      "authoredCount": 3859,
+      "density": 0.0803,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_-5",
+      "cx": -4,
+      "cz": -5,
+      "center": {
+        "x": -224,
+        "z": -288
+      },
+      "authoredCount": 3954,
+      "density": 0.0822,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_-4",
+      "cx": -4,
+      "cz": -4,
+      "center": {
+        "x": -224,
+        "z": -224
+      },
+      "authoredCount": 4814,
+      "density": 0.1001,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_-3",
+      "cx": -4,
+      "cz": -3,
+      "center": {
+        "x": -224,
+        "z": -160
+      },
+      "authoredCount": 9893,
+      "density": 0.2057,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_-2",
+      "cx": -4,
+      "cz": -2,
+      "center": {
+        "x": -224,
+        "z": -96
+      },
+      "authoredCount": 24807,
+      "density": 0.5159,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_-1",
+      "cx": -4,
+      "cz": -1,
+      "center": {
+        "x": -224,
+        "z": -32
+      },
+      "authoredCount": 47659,
+      "density": 0.9911,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_0",
+      "cx": -4,
+      "cz": 0,
+      "center": {
+        "x": -224,
+        "z": 32
+      },
+      "authoredCount": 60165,
+      "density": 1.2512,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_1",
+      "cx": -4,
+      "cz": 1,
+      "center": {
+        "x": -224,
+        "z": 96
+      },
+      "authoredCount": 36340,
+      "density": 0.7557,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_2",
+      "cx": -4,
+      "cz": 2,
+      "center": {
+        "x": -224,
+        "z": 160
+      },
+      "authoredCount": 25732,
+      "density": 0.5351,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_3",
+      "cx": -4,
+      "cz": 3,
+      "center": {
+        "x": -224,
+        "z": 224
+      },
+      "authoredCount": 15675,
+      "density": 0.326,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_4",
+      "cx": -4,
+      "cz": 4,
+      "center": {
+        "x": -224,
+        "z": 288
+      },
+      "authoredCount": 7576,
+      "density": 0.1575,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_5",
+      "cx": -4,
+      "cz": 5,
+      "center": {
+        "x": -224,
+        "z": 352
+      },
+      "authoredCount": 4465,
+      "density": 0.0929,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_6",
+      "cx": -4,
+      "cz": 6,
+      "center": {
+        "x": -224,
+        "z": 416
+      },
+      "authoredCount": 3899,
+      "density": 0.0811,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-4_7",
+      "cx": -4,
+      "cz": 7,
+      "center": {
+        "x": -224,
+        "z": 480
+      },
+      "authoredCount": 3849,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_-7",
+      "cx": -3,
+      "cz": -7,
+      "center": {
+        "x": -160,
+        "z": -416
+      },
+      "authoredCount": 3864,
+      "density": 0.0804,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_-6",
+      "cx": -3,
+      "cz": -6,
+      "center": {
+        "x": -160,
+        "z": -352
+      },
+      "authoredCount": 3979,
+      "density": 0.0828,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_-5",
+      "cx": -3,
+      "cz": -5,
+      "center": {
+        "x": -160,
+        "z": -288
+      },
+      "authoredCount": 4516,
+      "density": 0.0939,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_-4",
+      "cx": -3,
+      "cz": -4,
+      "center": {
+        "x": -160,
+        "z": -224
+      },
+      "authoredCount": 7293,
+      "density": 0.1517,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_-3",
+      "cx": -3,
+      "cz": -3,
+      "center": {
+        "x": -160,
+        "z": -160
+      },
+      "authoredCount": 21141,
+      "density": 0.4396,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_-2",
+      "cx": -3,
+      "cz": -2,
+      "center": {
+        "x": -160,
+        "z": -96
+      },
+      "authoredCount": 60453,
+      "density": 1.2572,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_-1",
+      "cx": -3,
+      "cz": -1,
+      "center": {
+        "x": -160,
+        "z": -32
+      },
+      "authoredCount": 111800,
+      "density": 2.325,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_0",
+      "cx": -3,
+      "cz": 0,
+      "center": {
+        "x": -160,
+        "z": 32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_1",
+      "cx": -3,
+      "cz": 1,
+      "center": {
+        "x": -160,
+        "z": 96
+      },
+      "authoredCount": 67867,
+      "density": 1.4114,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_2",
+      "cx": -3,
+      "cz": 2,
+      "center": {
+        "x": -160,
+        "z": 160
+      },
+      "authoredCount": 33314,
+      "density": 0.6928,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_3",
+      "cx": -3,
+      "cz": 3,
+      "center": {
+        "x": -160,
+        "z": 224
+      },
+      "authoredCount": 16025,
+      "density": 0.3333,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_4",
+      "cx": -3,
+      "cz": 4,
+      "center": {
+        "x": -160,
+        "z": 288
+      },
+      "authoredCount": 7363,
+      "density": 0.1531,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_5",
+      "cx": -3,
+      "cz": 5,
+      "center": {
+        "x": -160,
+        "z": 352
+      },
+      "authoredCount": 4421,
+      "density": 0.092,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_6",
+      "cx": -3,
+      "cz": 6,
+      "center": {
+        "x": -160,
+        "z": 416
+      },
+      "authoredCount": 3896,
+      "density": 0.081,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-3_7",
+      "cx": -3,
+      "cz": 7,
+      "center": {
+        "x": -160,
+        "z": 480
+      },
+      "authoredCount": 3849,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_-7",
+      "cx": -2,
+      "cz": -7,
+      "center": {
+        "x": -96,
+        "z": -416
+      },
+      "authoredCount": 3968,
+      "density": 0.0825,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_-6",
+      "cx": -2,
+      "cz": -6,
+      "center": {
+        "x": -96,
+        "z": -352
+      },
+      "authoredCount": 4643,
+      "density": 0.0966,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_-5",
+      "cx": -2,
+      "cz": -5,
+      "center": {
+        "x": -96,
+        "z": -288
+      },
+      "authoredCount": 7139,
+      "density": 0.1485,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_-4",
+      "cx": -2,
+      "cz": -4,
+      "center": {
+        "x": -96,
+        "z": -224
+      },
+      "authoredCount": 14467,
+      "density": 0.3009,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_-3",
+      "cx": -2,
+      "cz": -3,
+      "center": {
+        "x": -96,
+        "z": -160
+      },
+      "authoredCount": 40456,
+      "density": 0.8413,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_-2",
+      "cx": -2,
+      "cz": -2,
+      "center": {
+        "x": -96,
+        "z": -96
+      },
+      "authoredCount": 111330,
+      "density": 2.3153,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_-1",
+      "cx": -2,
+      "cz": -1,
+      "center": {
+        "x": -96,
+        "z": -32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_0",
+      "cx": -2,
+      "cz": 0,
+      "center": {
+        "x": -96,
+        "z": 32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_1",
+      "cx": -2,
+      "cz": 1,
+      "center": {
+        "x": -96,
+        "z": 96
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_2",
+      "cx": -2,
+      "cz": 2,
+      "center": {
+        "x": -96,
+        "z": 160
+      },
+      "authoredCount": 48438,
+      "density": 1.0073,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_3",
+      "cx": -2,
+      "cz": 3,
+      "center": {
+        "x": -96,
+        "z": 224
+      },
+      "authoredCount": 15968,
+      "density": 0.3321,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_4",
+      "cx": -2,
+      "cz": 4,
+      "center": {
+        "x": -96,
+        "z": 288
+      },
+      "authoredCount": 6629,
+      "density": 0.1378,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_5",
+      "cx": -2,
+      "cz": 5,
+      "center": {
+        "x": -96,
+        "z": 352
+      },
+      "authoredCount": 4325,
+      "density": 0.09,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_6",
+      "cx": -2,
+      "cz": 6,
+      "center": {
+        "x": -96,
+        "z": 416
+      },
+      "authoredCount": 3909,
+      "density": 0.0813,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-2_7",
+      "cx": -2,
+      "cz": 7,
+      "center": {
+        "x": -96,
+        "z": 480
+      },
+      "authoredCount": 3864,
+      "density": 0.0804,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_-7",
+      "cx": -1,
+      "cz": -7,
+      "center": {
+        "x": -32,
+        "z": -416
+      },
+      "authoredCount": 5773,
+      "density": 0.12,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_-6",
+      "cx": -1,
+      "cz": -6,
+      "center": {
+        "x": -32,
+        "z": -352
+      },
+      "authoredCount": 7862,
+      "density": 0.1635,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_-5",
+      "cx": -1,
+      "cz": -5,
+      "center": {
+        "x": -32,
+        "z": -288
+      },
+      "authoredCount": 15021,
+      "density": 0.3124,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_-4",
+      "cx": -1,
+      "cz": -4,
+      "center": {
+        "x": -32,
+        "z": -224
+      },
+      "authoredCount": 30235,
+      "density": 0.6288,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_-3",
+      "cx": -1,
+      "cz": -3,
+      "center": {
+        "x": -32,
+        "z": -160
+      },
+      "authoredCount": 65774,
+      "density": 1.3679,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_-2",
+      "cx": -1,
+      "cz": -2,
+      "center": {
+        "x": -32,
+        "z": -96
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_-1",
+      "cx": -1,
+      "cz": -1,
+      "center": {
+        "x": -32,
+        "z": -32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_0",
+      "cx": -1,
+      "cz": 0,
+      "center": {
+        "x": -32,
+        "z": 32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_1",
+      "cx": -1,
+      "cz": 1,
+      "center": {
+        "x": -32,
+        "z": 96
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_2",
+      "cx": -1,
+      "cz": 2,
+      "center": {
+        "x": -32,
+        "z": 160
+      },
+      "authoredCount": 87222,
+      "density": 1.8139,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_3",
+      "cx": -1,
+      "cz": 3,
+      "center": {
+        "x": -32,
+        "z": 224
+      },
+      "authoredCount": 27396,
+      "density": 0.5697,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_4",
+      "cx": -1,
+      "cz": 4,
+      "center": {
+        "x": -32,
+        "z": 288
+      },
+      "authoredCount": 10727,
+      "density": 0.2231,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_5",
+      "cx": -1,
+      "cz": 5,
+      "center": {
+        "x": -32,
+        "z": 352
+      },
+      "authoredCount": 6513,
+      "density": 0.1354,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_6",
+      "cx": -1,
+      "cz": 6,
+      "center": {
+        "x": -32,
+        "z": 416
+      },
+      "authoredCount": 5575,
+      "density": 0.1159,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_-1_7",
+      "cx": -1,
+      "cz": 7,
+      "center": {
+        "x": -32,
+        "z": 480
+      },
+      "authoredCount": 5444,
+      "density": 0.1132,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_-7",
+      "cx": 0,
+      "cz": -7,
+      "center": {
+        "x": 32,
+        "z": -416
+      },
+      "authoredCount": 14606,
+      "density": 0.3037,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_-6",
+      "cx": 0,
+      "cz": -6,
+      "center": {
+        "x": 32,
+        "z": -352
+      },
+      "authoredCount": 17937,
+      "density": 0.373,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_-5",
+      "cx": 0,
+      "cz": -5,
+      "center": {
+        "x": 32,
+        "z": -288
+      },
+      "authoredCount": 29023,
+      "density": 0.6036,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_-4",
+      "cx": 0,
+      "cz": -4,
+      "center": {
+        "x": 32,
+        "z": -224
+      },
+      "authoredCount": 49402,
+      "density": 1.0274,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_-3",
+      "cx": 0,
+      "cz": -3,
+      "center": {
+        "x": 32,
+        "z": -160
+      },
+      "authoredCount": 83935,
+      "density": 1.7455,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_-2",
+      "cx": 0,
+      "cz": -2,
+      "center": {
+        "x": 32,
+        "z": -96
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_-1",
+      "cx": 0,
+      "cz": -1,
+      "center": {
+        "x": 32,
+        "z": -32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_0",
+      "cx": 0,
+      "cz": 0,
+      "center": {
+        "x": 32,
+        "z": 32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_1",
+      "cx": 0,
+      "cz": 1,
+      "center": {
+        "x": 32,
+        "z": 96
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_2",
+      "cx": 0,
+      "cz": 2,
+      "center": {
+        "x": 32,
+        "z": 160
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_3",
+      "cx": 0,
+      "cz": 3,
+      "center": {
+        "x": 32,
+        "z": 224
+      },
+      "authoredCount": 51170,
+      "density": 1.0641,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_4",
+      "cx": 0,
+      "cz": 4,
+      "center": {
+        "x": 32,
+        "z": 288
+      },
+      "authoredCount": 25192,
+      "density": 0.5239,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_5",
+      "cx": 0,
+      "cz": 5,
+      "center": {
+        "x": 32,
+        "z": 352
+      },
+      "authoredCount": 16622,
+      "density": 0.3457,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_6",
+      "cx": 0,
+      "cz": 6,
+      "center": {
+        "x": 32,
+        "z": 416
+      },
+      "authoredCount": 14412,
+      "density": 0.2997,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_0_7",
+      "cx": 0,
+      "cz": 7,
+      "center": {
+        "x": 32,
+        "z": 480
+      },
+      "authoredCount": 14091,
+      "density": 0.293,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_-7",
+      "cx": 1,
+      "cz": -7,
+      "center": {
+        "x": 96,
+        "z": -416
+      },
+      "authoredCount": 8143,
+      "density": 0.1693,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_-6",
+      "cx": 1,
+      "cz": -6,
+      "center": {
+        "x": 96,
+        "z": -352
+      },
+      "authoredCount": 10858,
+      "density": 0.2258,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_-5",
+      "cx": 1,
+      "cz": -5,
+      "center": {
+        "x": 96,
+        "z": -288
+      },
+      "authoredCount": 19764,
+      "density": 0.411,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_-4",
+      "cx": 1,
+      "cz": -4,
+      "center": {
+        "x": 96,
+        "z": -224
+      },
+      "authoredCount": 35032,
+      "density": 0.7285,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_-3",
+      "cx": 1,
+      "cz": -3,
+      "center": {
+        "x": 96,
+        "z": -160
+      },
+      "authoredCount": 56301,
+      "density": 1.1708,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_-2",
+      "cx": 1,
+      "cz": -2,
+      "center": {
+        "x": 96,
+        "z": -96
+      },
+      "authoredCount": 103738,
+      "density": 2.1574,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_-1",
+      "cx": 1,
+      "cz": -1,
+      "center": {
+        "x": 96,
+        "z": -32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_0",
+      "cx": 1,
+      "cz": 0,
+      "center": {
+        "x": 96,
+        "z": 32
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_1",
+      "cx": 1,
+      "cz": 1,
+      "center": {
+        "x": 96,
+        "z": 96
+      },
+      "authoredCount": 115405,
+      "density": 2.4,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_2",
+      "cx": 1,
+      "cz": 2,
+      "center": {
+        "x": 96,
+        "z": 160
+      },
+      "authoredCount": 101642,
+      "density": 2.1138,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_3",
+      "cx": 1,
+      "cz": 3,
+      "center": {
+        "x": 96,
+        "z": 224
+      },
+      "authoredCount": 45362,
+      "density": 0.9434,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_4",
+      "cx": 1,
+      "cz": 4,
+      "center": {
+        "x": 96,
+        "z": 288
+      },
+      "authoredCount": 21135,
+      "density": 0.4395,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_5",
+      "cx": 1,
+      "cz": 5,
+      "center": {
+        "x": 96,
+        "z": 352
+      },
+      "authoredCount": 11007,
+      "density": 0.2289,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_6",
+      "cx": 1,
+      "cz": 6,
+      "center": {
+        "x": 96,
+        "z": 416
+      },
+      "authoredCount": 8158,
+      "density": 0.1696,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_1_7",
+      "cx": 1,
+      "cz": 7,
+      "center": {
+        "x": 96,
+        "z": 480
+      },
+      "authoredCount": 7734,
+      "density": 0.1608,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_-7",
+      "cx": 2,
+      "cz": -7,
+      "center": {
+        "x": 160,
+        "z": -416
+      },
+      "authoredCount": 4116,
+      "density": 0.0856,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_-6",
+      "cx": 2,
+      "cz": -6,
+      "center": {
+        "x": 160,
+        "z": -352
+      },
+      "authoredCount": 5246,
+      "density": 0.1091,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_-5",
+      "cx": 2,
+      "cz": -5,
+      "center": {
+        "x": 160,
+        "z": -288
+      },
+      "authoredCount": 8917,
+      "density": 0.1854,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_-4",
+      "cx": 2,
+      "cz": -4,
+      "center": {
+        "x": 160,
+        "z": -224
+      },
+      "authoredCount": 14949,
+      "density": 0.3109,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_-3",
+      "cx": 2,
+      "cz": -3,
+      "center": {
+        "x": 160,
+        "z": -160
+      },
+      "authoredCount": 22396,
+      "density": 0.4657,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_-2",
+      "cx": 2,
+      "cz": -2,
+      "center": {
+        "x": 160,
+        "z": -96
+      },
+      "authoredCount": 38650,
+      "density": 0.8038,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_-1",
+      "cx": 2,
+      "cz": -1,
+      "center": {
+        "x": 160,
+        "z": -32
+      },
+      "authoredCount": 76283,
+      "density": 1.5864,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_0",
+      "cx": 2,
+      "cz": 0,
+      "center": {
+        "x": 160,
+        "z": 32
+      },
+      "authoredCount": 111322,
+      "density": 2.3151,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_1",
+      "cx": 2,
+      "cz": 1,
+      "center": {
+        "x": 160,
+        "z": 96
+      },
+      "authoredCount": 82087,
+      "density": 1.7071,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_2",
+      "cx": 2,
+      "cz": 2,
+      "center": {
+        "x": 160,
+        "z": 160
+      },
+      "authoredCount": 47334,
+      "density": 0.9844,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_3",
+      "cx": 2,
+      "cz": 3,
+      "center": {
+        "x": 160,
+        "z": 224
+      },
+      "authoredCount": 25063,
+      "density": 0.5212,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_4",
+      "cx": 2,
+      "cz": 4,
+      "center": {
+        "x": 160,
+        "z": 288
+      },
+      "authoredCount": 12509,
+      "density": 0.2601,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_5",
+      "cx": 2,
+      "cz": 5,
+      "center": {
+        "x": 160,
+        "z": 352
+      },
+      "authoredCount": 6137,
+      "density": 0.1276,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_6",
+      "cx": 2,
+      "cz": 6,
+      "center": {
+        "x": 160,
+        "z": 416
+      },
+      "authoredCount": 4239,
+      "density": 0.0882,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_2_7",
+      "cx": 2,
+      "cz": 7,
+      "center": {
+        "x": 160,
+        "z": 480
+      },
+      "authoredCount": 3954,
+      "density": 0.0822,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_-7",
+      "cx": 3,
+      "cz": -7,
+      "center": {
+        "x": 224,
+        "z": -416
+      },
+      "authoredCount": 3886,
+      "density": 0.0808,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_-6",
+      "cx": 3,
+      "cz": -6,
+      "center": {
+        "x": 224,
+        "z": -352
+      },
+      "authoredCount": 4126,
+      "density": 0.0858,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_-5",
+      "cx": 3,
+      "cz": -5,
+      "center": {
+        "x": 224,
+        "z": -288
+      },
+      "authoredCount": 4899,
+      "density": 0.1019,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_-4",
+      "cx": 3,
+      "cz": -4,
+      "center": {
+        "x": 224,
+        "z": -224
+      },
+      "authoredCount": 6132,
+      "density": 0.1275,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_-3",
+      "cx": 3,
+      "cz": -3,
+      "center": {
+        "x": 224,
+        "z": -160
+      },
+      "authoredCount": 7528,
+      "density": 0.1565,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_-2",
+      "cx": 3,
+      "cz": -2,
+      "center": {
+        "x": 224,
+        "z": -96
+      },
+      "authoredCount": 10615,
+      "density": 0.2207,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_-1",
+      "cx": 3,
+      "cz": -1,
+      "center": {
+        "x": 224,
+        "z": -32
+      },
+      "authoredCount": 22161,
+      "density": 0.4609,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_0",
+      "cx": 3,
+      "cz": 0,
+      "center": {
+        "x": 224,
+        "z": 32
+      },
+      "authoredCount": 37986,
+      "density": 0.79,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_1",
+      "cx": 3,
+      "cz": 1,
+      "center": {
+        "x": 224,
+        "z": 96
+      },
+      "authoredCount": 21975,
+      "density": 0.457,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_2",
+      "cx": 3,
+      "cz": 2,
+      "center": {
+        "x": 224,
+        "z": 160
+      },
+      "authoredCount": 14824,
+      "density": 0.3083,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_3",
+      "cx": 3,
+      "cz": 3,
+      "center": {
+        "x": 224,
+        "z": 224
+      },
+      "authoredCount": 10240,
+      "density": 0.213,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_4",
+      "cx": 3,
+      "cz": 4,
+      "center": {
+        "x": 224,
+        "z": 288
+      },
+      "authoredCount": 6698,
+      "density": 0.1393,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_5",
+      "cx": 3,
+      "cz": 5,
+      "center": {
+        "x": 224,
+        "z": 352
+      },
+      "authoredCount": 4601,
+      "density": 0.0957,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_6",
+      "cx": 3,
+      "cz": 6,
+      "center": {
+        "x": 224,
+        "z": 416
+      },
+      "authoredCount": 3953,
+      "density": 0.0822,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_3_7",
+      "cx": 3,
+      "cz": 7,
+      "center": {
+        "x": 224,
+        "z": 480
+      },
+      "authoredCount": 3854,
+      "density": 0.0802,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_-7",
+      "cx": 4,
+      "cz": -7,
+      "center": {
+        "x": 288,
+        "z": -416
+      },
+      "authoredCount": 3851,
+      "density": 0.0801,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_-6",
+      "cx": 4,
+      "cz": -6,
+      "center": {
+        "x": 288,
+        "z": -352
+      },
+      "authoredCount": 3877,
+      "density": 0.0806,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_-5",
+      "cx": 4,
+      "cz": -5,
+      "center": {
+        "x": 288,
+        "z": -288
+      },
+      "authoredCount": 3960,
+      "density": 0.0824,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_-4",
+      "cx": 4,
+      "cz": -4,
+      "center": {
+        "x": 288,
+        "z": -224
+      },
+      "authoredCount": 4089,
+      "density": 0.085,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_-3",
+      "cx": 4,
+      "cz": -3,
+      "center": {
+        "x": 288,
+        "z": -160
+      },
+      "authoredCount": 4225,
+      "density": 0.0879,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_-2",
+      "cx": 4,
+      "cz": -2,
+      "center": {
+        "x": 288,
+        "z": -96
+      },
+      "authoredCount": 4576,
+      "density": 0.0952,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_-1",
+      "cx": 4,
+      "cz": -1,
+      "center": {
+        "x": 288,
+        "z": -32
+      },
+      "authoredCount": 10291,
+      "density": 0.214,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_0",
+      "cx": 4,
+      "cz": 0,
+      "center": {
+        "x": 288,
+        "z": 32
+      },
+      "authoredCount": 21225,
+      "density": 0.4414,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_1",
+      "cx": 4,
+      "cz": 1,
+      "center": {
+        "x": 288,
+        "z": 96
+      },
+      "authoredCount": 7149,
+      "density": 0.1487,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_2",
+      "cx": 4,
+      "cz": 2,
+      "center": {
+        "x": 288,
+        "z": 160
+      },
+      "authoredCount": 5358,
+      "density": 0.1114,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_3",
+      "cx": 4,
+      "cz": 3,
+      "center": {
+        "x": 288,
+        "z": 224
+      },
+      "authoredCount": 4874,
+      "density": 0.1014,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_4",
+      "cx": 4,
+      "cz": 4,
+      "center": {
+        "x": 288,
+        "z": 288
+      },
+      "authoredCount": 4336,
+      "density": 0.0902,
+      "lod": "high",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_5",
+      "cx": 4,
+      "cz": 5,
+      "center": {
+        "x": 288,
+        "z": 352
+      },
+      "authoredCount": 3978,
+      "density": 0.0827,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_6",
+      "cx": 4,
+      "cz": 6,
+      "center": {
+        "x": 288,
+        "z": 416
+      },
+      "authoredCount": 3865,
+      "density": 0.0804,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_4_7",
+      "cx": 4,
+      "cz": 7,
+      "center": {
+        "x": 288,
+        "z": 480
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_-7",
+      "cx": 5,
+      "cz": -7,
+      "center": {
+        "x": 352,
+        "z": -416
+      },
+      "authoredCount": 3847,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_-6",
+      "cx": 5,
+      "cz": -6,
+      "center": {
+        "x": 352,
+        "z": -352
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_-5",
+      "cx": 5,
+      "cz": -5,
+      "center": {
+        "x": 352,
+        "z": -288
+      },
+      "authoredCount": 3853,
+      "density": 0.0801,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_-4",
+      "cx": 5,
+      "cz": -4,
+      "center": {
+        "x": 352,
+        "z": -224
+      },
+      "authoredCount": 3859,
+      "density": 0.0803,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_-3",
+      "cx": 5,
+      "cz": -3,
+      "center": {
+        "x": 352,
+        "z": -160
+      },
+      "authoredCount": 3866,
+      "density": 0.0804,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_-2",
+      "cx": 5,
+      "cz": -2,
+      "center": {
+        "x": 352,
+        "z": -96
+      },
+      "authoredCount": 3931,
+      "density": 0.0818,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_-1",
+      "cx": 5,
+      "cz": -1,
+      "center": {
+        "x": 352,
+        "z": -32
+      },
+      "authoredCount": 8997,
+      "density": 0.1871,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_0",
+      "cx": 5,
+      "cz": 0,
+      "center": {
+        "x": 352,
+        "z": 32
+      },
+      "authoredCount": 19322,
+      "density": 0.4018,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_1",
+      "cx": 5,
+      "cz": 1,
+      "center": {
+        "x": 352,
+        "z": 96
+      },
+      "authoredCount": 5313,
+      "density": 0.1105,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_2",
+      "cx": 5,
+      "cz": 2,
+      "center": {
+        "x": 352,
+        "z": 160
+      },
+      "authoredCount": 3962,
+      "density": 0.0824,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_3",
+      "cx": 5,
+      "cz": 3,
+      "center": {
+        "x": 352,
+        "z": 224
+      },
+      "authoredCount": 3933,
+      "density": 0.0818,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_4",
+      "cx": 5,
+      "cz": 4,
+      "center": {
+        "x": 352,
+        "z": 288
+      },
+      "authoredCount": 3890,
+      "density": 0.0809,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_5",
+      "cx": 5,
+      "cz": 5,
+      "center": {
+        "x": 352,
+        "z": 352
+      },
+      "authoredCount": 3858,
+      "density": 0.0802,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_6",
+      "cx": 5,
+      "cz": 6,
+      "center": {
+        "x": 352,
+        "z": 416
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_5_7",
+      "cx": 5,
+      "cz": 7,
+      "center": {
+        "x": 352,
+        "z": 480
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_-7",
+      "cx": 6,
+      "cz": -7,
+      "center": {
+        "x": 416,
+        "z": -416
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_-6",
+      "cx": 6,
+      "cz": -6,
+      "center": {
+        "x": 416,
+        "z": -352
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_-5",
+      "cx": 6,
+      "cz": -5,
+      "center": {
+        "x": 416,
+        "z": -288
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_-4",
+      "cx": 6,
+      "cz": -4,
+      "center": {
+        "x": 416,
+        "z": -224
+      },
+      "authoredCount": 3847,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_-3",
+      "cx": 6,
+      "cz": -3,
+      "center": {
+        "x": 416,
+        "z": -160
+      },
+      "authoredCount": 3847,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_-2",
+      "cx": 6,
+      "cz": -2,
+      "center": {
+        "x": 416,
+        "z": -96
+      },
+      "authoredCount": 3896,
+      "density": 0.081,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_-1",
+      "cx": 6,
+      "cz": -1,
+      "center": {
+        "x": 416,
+        "z": -32
+      },
+      "authoredCount": 8926,
+      "density": 0.1856,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_0",
+      "cx": 6,
+      "cz": 0,
+      "center": {
+        "x": 416,
+        "z": 32
+      },
+      "authoredCount": 19212,
+      "density": 0.3995,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_1",
+      "cx": 6,
+      "cz": 1,
+      "center": {
+        "x": 416,
+        "z": 96
+      },
+      "authoredCount": 5195,
+      "density": 0.108,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_2",
+      "cx": 6,
+      "cz": 2,
+      "center": {
+        "x": 416,
+        "z": 160
+      },
+      "authoredCount": 3854,
+      "density": 0.0802,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_3",
+      "cx": 6,
+      "cz": 3,
+      "center": {
+        "x": 416,
+        "z": 224
+      },
+      "authoredCount": 3850,
+      "density": 0.0801,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_4",
+      "cx": 6,
+      "cz": 4,
+      "center": {
+        "x": 416,
+        "z": 288
+      },
+      "authoredCount": 3848,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_5",
+      "cx": 6,
+      "cz": 5,
+      "center": {
+        "x": 416,
+        "z": 352
+      },
+      "authoredCount": 3847,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_6",
+      "cx": 6,
+      "cz": 6,
+      "center": {
+        "x": 416,
+        "z": 416
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_6_7",
+      "cx": 6,
+      "cz": 7,
+      "center": {
+        "x": 416,
+        "z": 480
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_-7",
+      "cx": 7,
+      "cz": -7,
+      "center": {
+        "x": 480,
+        "z": -416
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_-6",
+      "cx": 7,
+      "cz": -6,
+      "center": {
+        "x": 480,
+        "z": -352
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_-5",
+      "cx": 7,
+      "cz": -5,
+      "center": {
+        "x": 480,
+        "z": -288
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_-4",
+      "cx": 7,
+      "cz": -4,
+      "center": {
+        "x": 480,
+        "z": -224
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_-3",
+      "cx": 7,
+      "cz": -3,
+      "center": {
+        "x": 480,
+        "z": -160
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_-2",
+      "cx": 7,
+      "cz": -2,
+      "center": {
+        "x": 480,
+        "z": -96
+      },
+      "authoredCount": 3895,
+      "density": 0.081,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_-1",
+      "cx": 7,
+      "cz": -1,
+      "center": {
+        "x": 480,
+        "z": -32
+      },
+      "authoredCount": 8924,
+      "density": 0.1856,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_0",
+      "cx": 7,
+      "cz": 0,
+      "center": {
+        "x": 480,
+        "z": 32
+      },
+      "authoredCount": 19209,
+      "density": 0.3995,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_1",
+      "cx": 7,
+      "cz": 1,
+      "center": {
+        "x": 480,
+        "z": 96
+      },
+      "authoredCount": 5191,
+      "density": 0.108,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_2",
+      "cx": 7,
+      "cz": 2,
+      "center": {
+        "x": 480,
+        "z": 160
+      },
+      "authoredCount": 3850,
+      "density": 0.0801,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_3",
+      "cx": 7,
+      "cz": 3,
+      "center": {
+        "x": 480,
+        "z": 224
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_4",
+      "cx": 7,
+      "cz": 4,
+      "center": {
+        "x": 480,
+        "z": 288
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_5",
+      "cx": 7,
+      "cz": 5,
+      "center": {
+        "x": 480,
+        "z": 352
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_6",
+      "cx": 7,
+      "cz": 6,
+      "center": {
+        "x": 480,
+        "z": 416
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    },
+    {
+      "id": "detail_7_7",
+      "cx": 7,
+      "cz": 7,
+      "center": {
+        "x": 480,
+        "z": 480
+      },
+      "authoredCount": 3846,
+      "density": 0.08,
+      "lod": "medium",
+      "format": "deterministic-procedural-v1"
+    }
+  ],
   "runtimeBudget": {
     "tier": "mobile",
-    "visibleInstanceCap": 500000,
+    "visibleInstanceCap": 950000,
+    "generatedDetailVisibleBudget": 950000,
     "visibleRadius": 8
   },
   "sectionCounts": {

@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { createKualaLumpurWorld } from '../src/world/createKualaLumpurWorld.js';
+import { getGeneratedDetailSummary } from '../src/world/detail/generatedDetailConfig.js';
 
 const BUDGETS = {
-  maxAuthoredInstances: 750000,
+  maxAuthoredInstances: 5_400_000,
   maxInstancedMeshes: 1200,
   maxChunks: 100,
-  maxVisibleInstances: 1000000
+  maxVisibleInstances: 950000
 };
 
 const scene = new THREE.Scene();
@@ -14,11 +15,13 @@ world.chunkManager.update(world.startPosition);
 
 const stats = world.voxelStats;
 const chunkStats = world.chunkManager.getStats();
+const generatedDetail = getGeneratedDetailSummary();
 const checks = [
-  ['authored instances', stats.total, BUDGETS.maxAuthoredInstances],
+  ['authored instances incl generated detail', stats.total + generatedDetail.totalAuthored, BUDGETS.maxAuthoredInstances],
   ['instanced meshes', stats.meshes, BUDGETS.maxInstancedMeshes],
   ['chunks', stats.chunks, BUDGETS.maxChunks],
-  ['visible instances', chunkStats.visibleInstances, Math.min(BUDGETS.maxVisibleInstances, chunkStats.visibleInstanceCap)]
+  ['base visible instances', chunkStats.visibleInstances, Math.min(BUDGETS.maxVisibleInstances, chunkStats.visibleInstanceCap)],
+  ['target visible instances incl generated detail', generatedDetail.visibleBudget, BUDGETS.maxVisibleInstances]
 ];
 
 let failed = false;
