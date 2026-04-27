@@ -46,6 +46,35 @@ export function setupHud({
   const highlightList = document.getElementById('highlight-list');
   const questList = document.getElementById('quest-list');
   const tipsList = document.getElementById('tips-list');
+  const app = document.getElementById('app');
+  const modeCaption = document.getElementById('mode-caption');
+  const modeButtons = Array.from(document.querySelectorAll('[data-ui-mode]'));
+  const modePanels = Array.from(document.querySelectorAll('[data-mode-panel]'));
+  const modeCopy = {
+    explore: 'Explore the city',
+    map: 'Map focus drives generation',
+    places: 'Landmarks and routes',
+    debug: 'Performance diagnostics'
+  };
+
+  function setUiMode(mode = 'explore') {
+    app?.setAttribute('data-ui-mode', mode);
+    if (modeCaption) modeCaption.textContent = modeCopy[mode] ?? modeCopy.explore;
+    modeButtons.forEach((button) => {
+      const active = button.dataset.uiMode === mode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    modePanels.forEach((panel) => {
+      panel.hidden = panel.dataset.modePanel !== mode;
+    });
+    requestRender();
+  }
+
+  modeButtons.forEach((button) => {
+    button.addEventListener('click', () => setUiMode(button.dataset.uiMode));
+  });
+  setUiMode('explore');
 
   landmarks.forEach((landmark) => {
     const button = document.createElement('button');
@@ -55,6 +84,7 @@ export function setupHud({
     button.addEventListener('click', () => {
       focusLandmark(landmark);
       setGuidebook(landmark);
+      setUiMode('explore');
       showToast(`Focused: ${landmark.name}`);
     });
     landmarkButtons.set(landmark.name, button);
@@ -194,11 +224,19 @@ export function setupHud({
   document.querySelectorAll('[data-collapse-panel]').forEach((button) => {
     const panel = document.getElementById(button.dataset.collapsePanel);
     if (!panel) return;
+
+    const syncCollapseState = () => {
+      const collapsed = panel.classList.contains('is-collapsed');
+      button.textContent = collapsed ? '+' : '−';
+      button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      button.setAttribute('aria-label', collapsed ? `Restore ${panel.id}` : `Minimize ${panel.id}`);
+    };
+
+    syncCollapseState();
     button.addEventListener('click', (event) => {
       event.stopPropagation();
-      const collapsed = panel.classList.toggle('is-collapsed');
-      button.textContent = collapsed ? '+' : '−';
-      button.setAttribute('aria-label', collapsed ? `Restore ${panel.id}` : `Minimize ${panel.id}`);
+      panel.classList.toggle('is-collapsed');
+      syncCollapseState();
       requestRender();
     });
   });
@@ -321,13 +359,14 @@ export function setupHud({
   let baseVisibleVoxelCount = 0;
 
   function setVoxelStats(stats) {
-    baseVisibleVoxelCount = stats.total;
+    baseVisibleVoxelCount = stats.visibleInstances ?? stats.total;
+    const baseAuthoredCount = stats.authoredTotal ?? stats.total;
     const generated = stats.generatedDetail;
     const generatedVisible = generated?.visibleRendered ?? 0;
     voxelCountEl.textContent = formatCompact(baseVisibleVoxelCount + generatedVisible);
     if (!generated) return;
     generatedAuthoredEl.textContent = formatCompact(generated.authoredTotal);
-    totalAuthoredEl.textContent = formatCompact(stats.total + generated.authoredTotal);
+    totalAuthoredEl.textContent = formatCompact(baseAuthoredCount + generated.authoredTotal);
     visibleBudgetEl.textContent = formatCompact(generated.visibleBudget);
   }
 
@@ -354,10 +393,11 @@ export function setupHud({
     boardTrainButton.hidden = !available;
   }
 
-  function update({ fps, pixelRatio, running, trainsActive, generatedDetail }) {
+  function update({ fps, pixelRatio, running, trainsActive, generatedDetail, baseVisibleInstances }) {
     fpsEl.textContent = fps > 0 ? String(Math.round(fps)) : '--';
     pixelRatioEl.textContent = `${pixelRatio.toFixed(2)}x`;
     renderStateEl.textContent = running ? (trainsActive ? 'Active + transit' : 'Active') : 'Paused';
+    if (Number.isFinite(baseVisibleInstances)) baseVisibleVoxelCount = baseVisibleInstances;
     if (generatedDetail) {
       const visibleTotal = baseVisibleVoxelCount + generatedDetail.visibleRendered;
       voxelCountEl.textContent = formatCompact(visibleTotal);
@@ -377,6 +417,7 @@ export function setupHud({
     update,
     showToast,
     setGuidebook,
-    renderQuests
+    renderQuests,
+    setUiMode
   };
 }

@@ -11,67 +11,89 @@
     <title>Kuala Lumpur</title>
   </head>
   <body>
-    <div id="app">
+    <div id="app" data-ui-mode="explore">
       <canvas id="game-canvas" aria-label="Kuala Lumpur interactive map canvas"></canvas>
 
-      <section id="hud" class="panel glass">
-        <div class="brand">
-          <span class="brand__mark">KL</span>
+      <section id="status-pill" class="status-pill glass" aria-label="Kuala Lumpur status">
+        <span class="brand__mark">KL</span>
+        <div>
+          <h1>Kuala Lumpur</h1>
+          <p id="mode-caption">Explore the city</p>
+        </div>
+      </section>
+
+      <nav id="mode-dock" class="mode-dock glass" aria-label="Overlay navigation">
+        <button type="button" class="is-active" data-ui-mode="explore" aria-pressed="true">Explore</button>
+        <button type="button" data-ui-mode="map" aria-pressed="false">Map</button>
+        <button type="button" data-ui-mode="places" aria-pressed="false">Places</button>
+        <button type="button" data-ui-mode="debug" aria-pressed="false">Debug</button>
+      </nav>
+
+      <section id="map-sheet" class="panel glass mode-sheet mode-sheet--map" data-mode-panel="map" aria-label="Map controls" hidden>
+        <div class="panel-heading">
           <div>
-            <h1>Kuala Lumpur</h1>
-            <p>Interactive Malaysia tourism guide</p>
-            <button id="btn-collapse-hud" class="panel-toggle" type="button" data-collapse-panel="hud" aria-label="Minimize main menu">−</button>
+            <h2>Map</h2>
+            <p>Orbit, pan, and generate detail around the camera focus.</p>
           </div>
         </div>
-        <div class="stats-grid">
-          <span>FPS</span><strong id="fps">--</strong>
-          <span>Pixel ratio</span><strong id="pixel-ratio">--</strong>
-          <span>Visible voxels</span><strong id="voxel-count">--</strong>
-          <span>Gen chunks</span><strong id="generated-chunks">--</strong>
-          <span>Gen visible</span><strong id="generated-visible">--</strong>
-          <span>Gen authored</span><strong id="generated-authored">--</strong>
-          <span>Total authored</span><strong id="total-authored">--</strong>
-          <span>Visible budget</span><strong id="visible-budget">--</strong>
-          <span>Landmarks</span><strong id="stamp-count">0/0</strong>
-          <span>Tour</span><strong id="tour-state">Off</strong>
-          <span>Render loop</span><strong id="render-state">Idle</strong>
-        </div>
+        <canvas id="mini-map" width="180" height="180"></canvas>
         <div class="button-row" aria-label="Camera presets">
           <button id="btn-camera-walk" type="button">Walk</button>
           <button id="btn-camera-landmark" type="button">Landmark</button>
           <button id="btn-camera-skyline" type="button">Skyline</button>
         </div>
-        <div class="button-row" aria-label="Game actions">
-          <button id="btn-tour" type="button">Start KL Tour</button>
-          <button id="btn-time" type="button">Day</button>
-          <button id="btn-photo-mode" type="button">Photo</button>
-        </div>
-        <div class="button-row" aria-label="Tourism panels">
-          <button id="btn-guidebook" type="button">Guidebook</button>
-          <button id="btn-quests" type="button">Quests</button>
-          <button id="btn-tips" type="button">Tips</button>
-        </div>
-        <div id="tour-next" class="status-line">Next destination: none</div>
-        <button id="btn-board-train" class="board-train" type="button" hidden>Board Train</button>
-        <div class="controls-list">
-          <p><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> move</p>
-          <p><kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump</p>
-          <p>Drag / pinch to orbit camera · tap panels for routes</p>
-          <p><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> camera · <kbd>E</kbd> board train</p>
-          <p><kbd>F</kbd> focus player · <kbd>P</kbd> toggle trains</p>
-        </div>
       </section>
 
-      <section id="minimap-panel" class="panel glass" aria-label="Mini-map">
-        <div class="panel-heading"><h2>Map</h2><button class="panel-toggle" type="button" data-collapse-panel="minimap-panel" aria-label="Minimize mini-map">−</button></div>
-        <canvas id="mini-map" width="180" height="180"></canvas>
-      </section>
-
-      <section id="landmarks" class="panel glass">
-        <div class="panel-heading"><h2>Jump to landmark</h2><button class="panel-toggle" type="button" data-collapse-panel="landmarks" aria-label="Minimize landmarks">−</button></div>
+      <section id="places-sheet" class="panel glass mode-sheet mode-sheet--places" data-mode-panel="places" hidden>
+        <div class="panel-heading">
+          <div>
+            <h2>Places</h2>
+            <p>Landmarks, routes, and transit jumps.</p>
+          </div>
+        </div>
         <select id="route-selector" aria-label="Select guided route"></select>
         <select id="station-selector" aria-label="Fast travel station"></select>
         <div id="landmark-buttons" class="landmark-buttons"></div>
+        <div class="button-row" aria-label="Tourism actions">
+          <button id="btn-tour" type="button">Start KL Tour</button>
+          <button id="btn-guidebook" type="button">Guidebook</button>
+          <button id="btn-quests" type="button">Quests</button>
+          <button id="btn-tips" type="button">Tips</button>
+          <button id="btn-time" type="button">Day</button>
+          <button id="btn-photo-mode" type="button">Photo</button>
+        </div>
+        <div id="tour-next" class="status-line">Next destination: none</div>
+        <button id="btn-board-train" class="board-train" type="button" hidden>Board Train</button>
+      </section>
+
+      <section id="debug-sheet" class="panel glass mode-sheet mode-sheet--debug" data-mode-panel="debug" hidden>
+        <div class="brand">
+          <span class="brand__mark">KL</span>
+          <div>
+            <h2>Performance</h2>
+            <p>Visible world budget and render state</p>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <span>FPS</span><strong id="fps">--</strong>
+          <span>Pixel ratio</span><strong id="pixel-ratio">--</strong>
+          <span>Visible world</span><strong id="voxel-count">--</strong>
+          <span>Detail chunks</span><strong id="generated-chunks">--</strong>
+          <span>Detail visible</span><strong id="generated-visible">--</strong>
+          <span>Detail authored</span><strong id="generated-authored">--</strong>
+          <span>Base world + detail</span><strong id="total-authored">--</strong>
+          <span>Shared visible cap</span><strong id="visible-budget">--</strong>
+          <span>Landmarks</span><strong id="stamp-count">0/0</strong>
+          <span>Tour</span><strong id="tour-state">Off</strong>
+          <span>Render loop</span><strong id="render-state">Idle</strong>
+        </div>
+        <div class="controls-list">
+          <p><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> move</p>
+          <p><kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump</p>
+          <p>Drag to orbit · right-drag / two fingers to pan the map focus</p>
+          <p><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> camera · <kbd>E</kbd> board train</p>
+          <p><kbd>F</kbd> focus player · <kbd>P</kbd> toggle trains</p>
+        </div>
       </section>
 
       <section id="guidebook-panel" class="panel glass tourism-panel" hidden>
@@ -96,7 +118,7 @@
       </section>
 
       <section id="touch-overlay" class="touch-overlay" aria-label="Touch navigation overlay">
-        <div class="touch-hint glass">Touch mode · left thumb to move · drag the city to orbit</div>
+        <div class="touch-hint glass">Explore mode · left thumb to move · Map mode to pan the city</div>
 
         <div id="touch-joystick" class="touch-joystick glass" role="application" aria-label="Virtual movement joystick">
           <div class="touch-joystick__ring"></div>

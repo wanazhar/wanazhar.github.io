@@ -53,6 +53,20 @@ export class GeneratedDetailLayer {
     this.visibleRendered = 0;
   }
 
+  setBaseVisibleInstances(count) {
+    const next = Math.max(0, count ?? 0);
+    if (next !== this.baseVisibleInstances) this.lastOrigin = null;
+    this.baseVisibleInstances = next;
+    this.detailBudget = Math.max(0, this.visibleBudget - this.baseVisibleInstances);
+  }
+
+  setVisibleBudget(budget) {
+    const next = Math.max(0, budget ?? 0);
+    if (next !== this.visibleBudget) this.lastOrigin = null;
+    this.visibleBudget = next;
+    this.detailBudget = Math.max(0, this.visibleBudget - this.baseVisibleInstances);
+  }
+
   chooseChunks(position) {
     const origin = chunkCoordsForPosition(position.x, position.z, this.chunkSize);
     const ranked = this.chunkPlan
@@ -61,6 +75,7 @@ export class GeneratedDetailLayer {
 
     const chosen = [];
     let authored = 0;
+    if (this.detailBudget <= 0) return { origin, chunks: [], authored };
     for (const chunk of ranked) {
       if (authored >= this.detailBudget && chosen.length > 0) break;
       if (chunk.distance > 4 && authored > this.detailBudget * 0.85) break;
@@ -135,6 +150,12 @@ export class GeneratedDetailLayer {
     const renderScale = authored > this.detailBudget ? this.detailBudget / authored : 1;
     for (const chunk of chunks) {
       const renderCount = Math.max(1, Math.floor(chunk.authoredCount * renderScale));
+      const loadedGroup = this.loaded.get(chunk.id);
+      if (loadedGroup && loadedGroup.userData.generatedDetail.renderCount !== renderCount) {
+        this.scene.remove(loadedGroup);
+        this.loaded.delete(chunk.id);
+        changed = true;
+      }
       if (!this.loaded.has(chunk.id)) {
         this.loaded.set(chunk.id, this.createChunkGroup(chunk, renderCount));
         changed = true;

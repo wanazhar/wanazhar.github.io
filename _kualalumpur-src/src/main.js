@@ -2,6 +2,7 @@ import './style.css';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AdaptiveRenderer } from './render/AdaptiveRenderer.js';
+import { DetailPerformanceGovernor } from './render/DetailPerformanceGovernor.js';
 import { createKualaLumpurWorld } from './world/createKualaLumpurWorld.js';
 import { PlayerController } from './characters/PlayerController.js';
 import { TrainSystem } from './transport/TrainSystem.js';
@@ -18,10 +19,13 @@ import { postcardTemplates } from './data/postcards.js';
 import { SaveSystem } from './game/SaveSystem.js';
 import { QuestSystem } from './game/QuestSystem.js';
 import { loadStaticChunkManifest } from './world/chunks/ChunkLoader.js';
+import { DETAIL_BUDGETS, getDetailTier } from './world/chunks/chunkVisibility.js';
 import { GeneratedDetailLayer } from './world/detail/GeneratedDetailLayer.js';
 
 const canvas = document.getElementById('game-canvas');
-const adaptive = new AdaptiveRenderer(canvas);
+const detailTier = getDetailTier();
+const visibleBudget = DETAIL_BUDGETS[detailTier].visibleInstanceCap;
+const adaptive = new AdaptiveRenderer(canvas, { lowEndMode: detailTier !== 'desktop' });
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.1, 1800);
 
@@ -36,7 +40,10 @@ sun.position.set(-55, 96, -75);
 scene.add(sun);
 
 const world = createKualaLumpurWorld(scene);
-const generatedDetailLayer = new GeneratedDetailLayer(scene, world.terrain, { baseVisibleInstances: world.voxelStats.total });
+world.chunkManager.update(world.startPosition);
+const initialBaseVisibleInstances = world.chunkManager.getStats().visibleInstances;
+const generatedDetailLayer = new GeneratedDetailLayer(scene, world.terrain, { baseVisibleInstances: initialBaseVisibleInstances, visibleBudget });
+const detailGovernor = new DetailPerformanceGovernor({ maxBudget: visibleBudget, initialBudget: visibleBudget });
 const player = new PlayerController(scene, world.terrain, world.startPosition);
 const trainSystem = new TrainSystem(scene, world.transportPaths);
 const cityActors = new CityActors(scene, world.terrain);
@@ -53,7 +60,9 @@ camera.lookAt(player.group.position);
 const controls = new OrbitControls(camera, adaptive.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.enablePan = false;
+controls.enablePan = true;
+controls.panSpeed = 0.72;
+controls.screenSpacePanning = true;
 controls.minDistance = 7;
 controls.maxDistance = 520;
 controls.maxPolarAngle = Math.PI * 0.495;
@@ -66,7 +75,10 @@ let lastTime = performance.now();
 let fps = 0;
 let frames = 0;
 let fpsClock = performance.now();
+let lastHudUpdate = 0;
+let lastMiniMapDraw = 0;
 let recentCameraTarget = controls.target.clone();
+let previousWorldFocus = controls.target.clone();
 let currentLandmark = world.landmarks[0];
 let timeModeIndex = 0;
 let trainBoardingAvailable = false;
@@ -265,6 +277,8 @@ const hud = setupHud({
 });
 hud.setVoxelStats({
   ...world.voxelStats,
+  authoredTotal: world.voxelStats.total,
+  visibleInstances: initialBaseVisibleInstances,
   generatedDetail: generatedDetailLayer.getStats()
 });
 hud.setProgress(landmarkProgress);
@@ -318,6 +332,11 @@ const photoMode = setupPhotoMode({
   }
 });
 
+function getWorldFocusPosition() {
+  if (trainSystem.ride) return trainSystem.ride.train.cars[0].position;
+  return controls.target;
+}
+
 function updateCameraTarget() {
   const desired = player.group.position.clone().add(new THREE.Vector3(0, 2.05, 0));
   const before = controls.target.clone();
@@ -338,6 +357,10 @@ function loop(now) {
 
   const playerMoved = player.update(deltaSeconds, camera);
   if (playerMoved) updateCameraTarget();
+  const controlsChanged = controls.update();
+  const worldFocusPosition = getWorldFocusPosition();
+  const focusMoved = worldFocusPosition.distanceToSquared(previousWorldFocus) > 1.0;
+  if (focusMoved) previousWorldFocus.copy(worldFocusPosition);
 
   const trainsMoved = trainSystem.update(deltaSeconds);
   const actorsMoved = cityActors.update(deltaSeconds);
@@ -353,8 +376,10 @@ function loop(now) {
     }
     rain.geometry.attributes.position.needsUpdate = true;
   }
-  const chunksChanged = world.chunkManager?.update(player.group.position).changed ?? false;
-  const detailChanged = generatedDetailLayer.update(player.group.position).changed;
+  const chunkUpdate = world.chunkManager?.update(worldFocusPosition) ?? { changed: false, visibleInstances: world.voxelStats.total };
+  const chunksChanged = chunkUpdate.changed;
+  generatedDetailLayer.setBaseVisibleInstances(chunkUpdate.visibleInstances);
+  const detailChanged = generatedDetailLayer.update(worldFocusPosition).changed;
   if (trainSystem.ride) {
     const lead = trainSystem.ride.train.cars[0];
     const target = lead.position.clone();
@@ -379,10 +404,13 @@ function loop(now) {
   const station = trainSystem.findBoardingStation(player.group.position);
   trainBoardingAvailable = Boolean(station) || Boolean(trainSystem.ride);
   hud.setBoardTrainAvailable(trainBoardingAvailable);
-  miniMap.draw({ nextLandmark: tourRoute.current, visited: (landmark) => landmarkProgress.isVisited(landmark) });
-  const controlsChanged = controls.update();
-
-  if (playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || detailChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible) {
+  const mapSheet = document.getElementById('map-sheet');
+  const miniMapVisible = !mapSheet?.hidden;
+  if (miniMapVisible && (playerMoved || focusMoved || chunksChanged || needsRender || tourUpdate.advanced || now - lastMiniMapDraw > 500)) {
+    miniMap.draw({ nextLandmark: tourRoute.current, visited: (landmark) => landmarkProgress.isVisited(landmark) });
+    lastMiniMapDraw = now;
+  }
+  if (playerMoved || trainsMoved || actorsMoved || controlsChanged || focusMoved || chunksChanged || detailChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible) {
     adaptive.render(scene, camera);
     frames += 1;
   }
@@ -391,23 +419,32 @@ function loop(now) {
     fps = (frames * 1000) / (now - fpsClock);
     frames = 0;
     fpsClock = now;
+    const budgetUpdate = detailGovernor.update({ fps, now });
+    if (budgetUpdate.changed) {
+      generatedDetailLayer.setVisibleBudget(budgetUpdate.budget);
+      needsRender = true;
+    }
   }
 
-  const stillActive = playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || detailChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible;
-  hud.update({
-    fps,
-    pixelRatio: adaptive.pixelRatio,
-    running: stillActive,
-    trainsActive: trainSystem.isActive,
-    generatedDetail: generatedDetailLayer.getStats()
-  });
+  const stillActive = playerMoved || trainsMoved || actorsMoved || controlsChanged || focusMoved || chunksChanged || detailChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible;
+  if (now - lastHudUpdate > 250 || !stillActive) {
+    hud.update({
+      fps,
+      pixelRatio: adaptive.pixelRatio,
+      running: stillActive,
+      trainsActive: trainSystem.isActive,
+      baseVisibleInstances: chunkUpdate.visibleInstances,
+      generatedDetail: generatedDetailLayer.getStats()
+    });
+    lastHudUpdate = now;
+  }
   needsRender = false;
 
   if (stillActive) {
     requestAnimationFrame(loop);
   } else {
     loopRunning = false;
-    hud.update({ fps, pixelRatio: adaptive.pixelRatio, running: false, trainsActive: false, generatedDetail: generatedDetailLayer.getStats() });
+    hud.update({ fps, pixelRatio: adaptive.pixelRatio, running: false, trainsActive: false, baseVisibleInstances: chunkUpdate.visibleInstances, generatedDetail: generatedDetailLayer.getStats() });
   }
 }
 
