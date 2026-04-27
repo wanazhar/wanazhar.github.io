@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#060712" />
+    <title>Three.js GSAP Endless Runner</title>
+  </head>
+  <body>
+    <canvas id="game-canvas" aria-label="3D endless runner game canvas"></canvas>
+
+    <div id="hud" class="hud">
+      <div class="hud__topbar">
+        <div class="hud__metric"><span>Score</span><strong data-hud="score">0</strong></div>
+        <div class="hud__metric"><span>Speed</span><strong data-hud="speed">1.00x</strong></div>
+        <div class="hud__metric"><span>Coins</span><strong data-hud="coins">0</strong></div>
+      </div>
+
+      <div class="hud__center" data-hud="menu">
+        <div class="hud__panel">
+          <p class="hud__eyebrow">WebGL Runner Architecture Demo</p>
+          <h1>Curved Horizon Runner</h1>
+          <p>
+            Three lanes, GSAP movement, instanced coins, pooled obstacles,
+            OBB collisions, shader-bent world, and post-processing.
+          </p>
+          <button data-action="start" class="hud__button">Start run</button>
+          <p class="hud__hint">Keyboard: ← → lane, ↑/space jump, ↓ roll. Touch: swipe or use buttons.</p>
+        </div>
+      </div>
+
+      <div class="touch-controls" aria-label="Touch controls">
+        <button data-touch="left" aria-label="Move left">←</button>
+        <button data-touch="jump" aria-label="Jump">↑</button>
+        <button data-touch="roll" aria-label="Roll">↓</button>
+        <button data-touch="right" aria-label="Move right">→</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
