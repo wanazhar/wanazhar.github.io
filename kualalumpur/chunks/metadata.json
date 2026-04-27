@@ -1,11 +1,11 @@
 {
   "formatVersion": 1,
-  "generatedAt": "2026-04-27T06:56:43.943Z",
-  "mode": "phase3-5m-generated-detail",
-  "note": "5M authored deterministic KL/Klang Valley detail layer. Base world remains bundled; generated detail chunks are streamed/rendered up to the shared 950k visibility budget.",
+  "generatedAt": "2026-04-27T07:28:15.114Z",
+  "mode": "phase4-10m-generated-detail",
+  "note": "10M authored deterministic KL/Klang Valley detail layer. Base world remains bundled; generated detail chunks are streamed/rendered up to the shared 1.1M desktop/mobile visibility budget.",
   "totalInstances": 306103,
-  "generatedDetailInstances": 5000000,
-  "totalAuthoredWithGeneratedDetail": 5306103,
+  "generatedDetailInstances": 10000000,
+  "totalAuthoredWithGeneratedDetail": 10306103,
   "chunkSize": 64,
   "chunks": [
     {
@@ -594,7 +594,7 @@
         "x": -416,
         "z": -416
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -607,7 +607,7 @@
         "x": -416,
         "z": -352
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -620,7 +620,7 @@
         "x": -416,
         "z": -288
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -633,7 +633,7 @@
         "x": -416,
         "z": -224
       },
-      "authoredCount": 3848,
+      "authoredCount": 7697,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -646,7 +646,7 @@
         "x": -416,
         "z": -160
       },
-      "authoredCount": 3861,
+      "authoredCount": 7723,
       "density": 0.0803,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -659,7 +659,7 @@
         "x": -416,
         "z": -96
       },
-      "authoredCount": 3953,
+      "authoredCount": 7906,
       "density": 0.0822,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -672,7 +672,7 @@
         "x": -416,
         "z": -32
       },
-      "authoredCount": 9055,
+      "authoredCount": 18110,
       "density": 0.1883,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -685,7 +685,7 @@
         "x": -416,
         "z": 32
       },
-      "authoredCount": 19448,
+      "authoredCount": 38895,
       "density": 0.4044,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -698,7 +698,7 @@
         "x": -416,
         "z": 96
       },
-      "authoredCount": 5586,
+      "authoredCount": 11170,
       "density": 0.1161,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -711,7 +711,7 @@
         "x": -416,
         "z": 160
       },
-      "authoredCount": 4297,
+      "authoredCount": 8595,
       "density": 0.0894,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -724,7 +724,7 @@
         "x": -416,
         "z": 224
       },
-      "authoredCount": 4128,
+      "authoredCount": 8256,
       "density": 0.0859,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -737,7 +737,7 @@
         "x": -416,
         "z": 288
       },
-      "authoredCount": 3938,
+      "authoredCount": 7877,
       "density": 0.0819,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -750,7 +750,7 @@
         "x": -416,
         "z": 352
       },
-      "authoredCount": 3862,
+      "authoredCount": 7724,
       "density": 0.0803,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -763,7 +763,7 @@
         "x": -416,
         "z": 416
       },
-      "authoredCount": 3848,
+      "authoredCount": 7696,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -776,7 +776,7 @@
         "x": -416,
         "z": 480
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -789,7 +789,7 @@
         "x": -352,
         "z": -416
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -802,7 +802,7 @@
         "x": -352,
         "z": -352
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -815,7 +815,7 @@
         "x": -352,
         "z": -288
       },
-      "authoredCount": 3848,
+      "authoredCount": 7697,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -828,7 +828,7 @@
         "x": -352,
         "z": -224
       },
-      "authoredCount": 3874,
+      "authoredCount": 7748,
       "density": 0.0806,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -841,7 +841,7 @@
         "x": -352,
         "z": -160
       },
-      "authoredCount": 4040,
+      "authoredCount": 8081,
       "density": 0.084,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -854,7 +854,7 @@
         "x": -352,
         "z": -96
       },
-      "authoredCount": 4613,
+      "authoredCount": 9226,
       "density": 0.0959,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -867,7 +867,7 @@
         "x": -352,
         "z": -32
       },
-      "authoredCount": 10414,
+      "authoredCount": 20828,
       "density": 0.2166,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -880,7 +880,7 @@
         "x": -352,
         "z": 32
       },
-      "authoredCount": 21384,
+      "authoredCount": 42767,
       "density": 0.4447,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -893,7 +893,7 @@
         "x": -352,
         "z": 96
       },
-      "authoredCount": 8114,
+      "authoredCount": 16228,
       "density": 0.1687,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -906,7 +906,7 @@
         "x": -352,
         "z": 160
       },
-      "authoredCount": 6925,
+      "authoredCount": 13849,
       "density": 0.144,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -919,7 +919,7 @@
         "x": -352,
         "z": 224
       },
-      "authoredCount": 5746,
+      "authoredCount": 11490,
       "density": 0.1195,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -932,7 +932,7 @@
         "x": -352,
         "z": 288
       },
-      "authoredCount": 4464,
+      "authoredCount": 8928,
       "density": 0.0928,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -945,7 +945,7 @@
         "x": -352,
         "z": 352
       },
-      "authoredCount": 3949,
+      "authoredCount": 7899,
       "density": 0.0821,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -958,7 +958,7 @@
         "x": -352,
         "z": 416
       },
-      "authoredCount": 3855,
+      "authoredCount": 7711,
       "density": 0.0802,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -971,7 +971,7 @@
         "x": -352,
         "z": 480
       },
-      "authoredCount": 3847,
+      "authoredCount": 7694,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -984,7 +984,7 @@
         "x": -288,
         "z": -416
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -997,7 +997,7 @@
         "x": -288,
         "z": -352
       },
-      "authoredCount": 3847,
+      "authoredCount": 7695,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1010,7 +1010,7 @@
         "x": -288,
         "z": -288
       },
-      "authoredCount": 3863,
+      "authoredCount": 7727,
       "density": 0.0803,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1023,7 +1023,7 @@
         "x": -288,
         "z": -224
       },
-      "authoredCount": 4051,
+      "authoredCount": 8103,
       "density": 0.0843,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1036,7 +1036,7 @@
         "x": -288,
         "z": -160
       },
-      "authoredCount": 5242,
+      "authoredCount": 10485,
       "density": 0.109,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1049,7 +1049,7 @@
         "x": -288,
         "z": -96
       },
-      "authoredCount": 8907,
+      "authoredCount": 17813,
       "density": 0.1852,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1062,7 +1062,7 @@
         "x": -288,
         "z": -32
       },
-      "authoredCount": 18643,
+      "authoredCount": 37285,
       "density": 0.3877,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1075,7 +1075,7 @@
         "x": -288,
         "z": 32
       },
-      "authoredCount": 30970,
+      "authoredCount": 61939,
       "density": 0.6441,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1088,7 +1088,7 @@
         "x": -288,
         "z": 96
       },
-      "authoredCount": 17284,
+      "authoredCount": 34567,
       "density": 0.3594,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1101,7 +1101,7 @@
         "x": -288,
         "z": 160
       },
-      "authoredCount": 14896,
+      "authoredCount": 29792,
       "density": 0.3098,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1114,7 +1114,7 @@
         "x": -288,
         "z": 224
       },
-      "authoredCount": 10415,
+      "authoredCount": 20829,
       "density": 0.2166,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1127,7 +1127,7 @@
         "x": -288,
         "z": 288
       },
-      "authoredCount": 5966,
+      "authoredCount": 11930,
       "density": 0.1241,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1140,7 +1140,7 @@
         "x": -288,
         "z": 352
       },
-      "authoredCount": 4199,
+      "authoredCount": 8399,
       "density": 0.0873,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1153,7 +1153,7 @@
         "x": -288,
         "z": 416
       },
-      "authoredCount": 3876,
+      "authoredCount": 7753,
       "density": 0.0806,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1166,7 +1166,7 @@
         "x": -288,
         "z": 480
       },
-      "authoredCount": 3848,
+      "authoredCount": 7696,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1179,7 +1179,7 @@
         "x": -224,
         "z": -416
       },
-      "authoredCount": 3848,
+      "authoredCount": 7696,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1192,7 +1192,7 @@
         "x": -224,
         "z": -352
       },
-      "authoredCount": 3859,
+      "authoredCount": 7719,
       "density": 0.0803,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1205,7 +1205,7 @@
         "x": -224,
         "z": -288
       },
-      "authoredCount": 3954,
+      "authoredCount": 7909,
       "density": 0.0822,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1218,7 +1218,7 @@
         "x": -224,
         "z": -224
       },
-      "authoredCount": 4814,
+      "authoredCount": 9629,
       "density": 0.1001,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1231,7 +1231,7 @@
         "x": -224,
         "z": -160
       },
-      "authoredCount": 9893,
+      "authoredCount": 19786,
       "density": 0.2057,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1244,7 +1244,7 @@
         "x": -224,
         "z": -96
       },
-      "authoredCount": 24807,
+      "authoredCount": 49614,
       "density": 0.5159,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1257,7 +1257,7 @@
         "x": -224,
         "z": -32
       },
-      "authoredCount": 47659,
+      "authoredCount": 95317,
       "density": 0.9911,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1270,7 +1270,7 @@
         "x": -224,
         "z": 32
       },
-      "authoredCount": 60165,
+      "authoredCount": 120330,
       "density": 1.2512,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1283,7 +1283,7 @@
         "x": -224,
         "z": 96
       },
-      "authoredCount": 36340,
+      "authoredCount": 72679,
       "density": 0.7557,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1296,7 +1296,7 @@
         "x": -224,
         "z": 160
       },
-      "authoredCount": 25732,
+      "authoredCount": 51464,
       "density": 0.5351,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1309,7 +1309,7 @@
         "x": -224,
         "z": 224
       },
-      "authoredCount": 15675,
+      "authoredCount": 31350,
       "density": 0.326,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1322,7 +1322,7 @@
         "x": -224,
         "z": 288
       },
-      "authoredCount": 7576,
+      "authoredCount": 15152,
       "density": 0.1575,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1335,7 +1335,7 @@
         "x": -224,
         "z": 352
       },
-      "authoredCount": 4465,
+      "authoredCount": 8930,
       "density": 0.0929,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1348,7 +1348,7 @@
         "x": -224,
         "z": 416
       },
-      "authoredCount": 3899,
+      "authoredCount": 7799,
       "density": 0.0811,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1361,7 +1361,7 @@
         "x": -224,
         "z": 480
       },
-      "authoredCount": 3849,
+      "authoredCount": 7698,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1374,7 +1374,7 @@
         "x": -160,
         "z": -416
       },
-      "authoredCount": 3864,
+      "authoredCount": 7728,
       "density": 0.0804,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1387,7 +1387,7 @@
         "x": -160,
         "z": -352
       },
-      "authoredCount": 3979,
+      "authoredCount": 7958,
       "density": 0.0828,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1400,7 +1400,7 @@
         "x": -160,
         "z": -288
       },
-      "authoredCount": 4516,
+      "authoredCount": 9032,
       "density": 0.0939,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1413,7 +1413,7 @@
         "x": -160,
         "z": -224
       },
-      "authoredCount": 7293,
+      "authoredCount": 14585,
       "density": 0.1517,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1426,7 +1426,7 @@
         "x": -160,
         "z": -160
       },
-      "authoredCount": 21141,
+      "authoredCount": 42281,
       "density": 0.4396,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1439,7 +1439,7 @@
         "x": -160,
         "z": -96
       },
-      "authoredCount": 60453,
+      "authoredCount": 120905,
       "density": 1.2572,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1452,7 +1452,7 @@
         "x": -160,
         "z": -32
       },
-      "authoredCount": 111800,
+      "authoredCount": 223600,
       "density": 2.325,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1465,7 +1465,7 @@
         "x": -160,
         "z": 32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1478,7 +1478,7 @@
         "x": -160,
         "z": 96
       },
-      "authoredCount": 67867,
+      "authoredCount": 135734,
       "density": 1.4114,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1491,7 +1491,7 @@
         "x": -160,
         "z": 160
       },
-      "authoredCount": 33314,
+      "authoredCount": 66628,
       "density": 0.6928,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1504,7 +1504,7 @@
         "x": -160,
         "z": 224
       },
-      "authoredCount": 16025,
+      "authoredCount": 32049,
       "density": 0.3333,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1517,7 +1517,7 @@
         "x": -160,
         "z": 288
       },
-      "authoredCount": 7363,
+      "authoredCount": 14725,
       "density": 0.1531,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1530,7 +1530,7 @@
         "x": -160,
         "z": 352
       },
-      "authoredCount": 4421,
+      "authoredCount": 8843,
       "density": 0.092,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1543,7 +1543,7 @@
         "x": -160,
         "z": 416
       },
-      "authoredCount": 3896,
+      "authoredCount": 7792,
       "density": 0.081,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1556,7 +1556,7 @@
         "x": -160,
         "z": 480
       },
-      "authoredCount": 3849,
+      "authoredCount": 7698,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1569,7 +1569,7 @@
         "x": -96,
         "z": -416
       },
-      "authoredCount": 3968,
+      "authoredCount": 7937,
       "density": 0.0825,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1582,7 +1582,7 @@
         "x": -96,
         "z": -352
       },
-      "authoredCount": 4643,
+      "authoredCount": 9286,
       "density": 0.0966,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1595,7 +1595,7 @@
         "x": -96,
         "z": -288
       },
-      "authoredCount": 7139,
+      "authoredCount": 14278,
       "density": 0.1485,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1608,7 +1608,7 @@
         "x": -96,
         "z": -224
       },
-      "authoredCount": 14467,
+      "authoredCount": 28934,
       "density": 0.3009,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1621,7 +1621,7 @@
         "x": -96,
         "z": -160
       },
-      "authoredCount": 40456,
+      "authoredCount": 80911,
       "density": 0.8413,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1634,7 +1634,7 @@
         "x": -96,
         "z": -96
       },
-      "authoredCount": 111330,
+      "authoredCount": 222659,
       "density": 2.3153,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1647,7 +1647,7 @@
         "x": -96,
         "z": -32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1660,7 +1660,7 @@
         "x": -96,
         "z": 32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1673,7 +1673,7 @@
         "x": -96,
         "z": 96
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1686,7 +1686,7 @@
         "x": -96,
         "z": 160
       },
-      "authoredCount": 48438,
+      "authoredCount": 96876,
       "density": 1.0073,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1699,7 +1699,7 @@
         "x": -96,
         "z": 224
       },
-      "authoredCount": 15968,
+      "authoredCount": 31935,
       "density": 0.3321,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1712,7 +1712,7 @@
         "x": -96,
         "z": 288
       },
-      "authoredCount": 6629,
+      "authoredCount": 13257,
       "density": 0.1378,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1725,7 +1725,7 @@
         "x": -96,
         "z": 352
       },
-      "authoredCount": 4325,
+      "authoredCount": 8651,
       "density": 0.09,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1738,7 +1738,7 @@
         "x": -96,
         "z": 416
       },
-      "authoredCount": 3909,
+      "authoredCount": 7818,
       "density": 0.0813,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1751,7 +1751,7 @@
         "x": -96,
         "z": 480
       },
-      "authoredCount": 3864,
+      "authoredCount": 7728,
       "density": 0.0804,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1764,7 +1764,7 @@
         "x": -32,
         "z": -416
       },
-      "authoredCount": 5773,
+      "authoredCount": 11544,
       "density": 0.12,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1777,7 +1777,7 @@
         "x": -32,
         "z": -352
       },
-      "authoredCount": 7862,
+      "authoredCount": 15724,
       "density": 0.1635,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1790,7 +1790,7 @@
         "x": -32,
         "z": -288
       },
-      "authoredCount": 15021,
+      "authoredCount": 30042,
       "density": 0.3124,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1803,7 +1803,7 @@
         "x": -32,
         "z": -224
       },
-      "authoredCount": 30235,
+      "authoredCount": 60469,
       "density": 0.6288,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1816,7 +1816,7 @@
         "x": -32,
         "z": -160
       },
-      "authoredCount": 65774,
+      "authoredCount": 131547,
       "density": 1.3679,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1829,7 +1829,7 @@
         "x": -32,
         "z": -96
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1842,7 +1842,7 @@
         "x": -32,
         "z": -32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1855,7 +1855,7 @@
         "x": -32,
         "z": 32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1868,7 +1868,7 @@
         "x": -32,
         "z": 96
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1881,7 +1881,7 @@
         "x": -32,
         "z": 160
       },
-      "authoredCount": 87222,
+      "authoredCount": 174444,
       "density": 1.8139,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1894,7 +1894,7 @@
         "x": -32,
         "z": 224
       },
-      "authoredCount": 27396,
+      "authoredCount": 54792,
       "density": 0.5697,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1907,7 +1907,7 @@
         "x": -32,
         "z": 288
       },
-      "authoredCount": 10727,
+      "authoredCount": 21453,
       "density": 0.2231,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -1920,7 +1920,7 @@
         "x": -32,
         "z": 352
       },
-      "authoredCount": 6513,
+      "authoredCount": 13025,
       "density": 0.1354,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1933,7 +1933,7 @@
         "x": -32,
         "z": 416
       },
-      "authoredCount": 5575,
+      "authoredCount": 11148,
       "density": 0.1159,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1946,7 +1946,7 @@
         "x": -32,
         "z": 480
       },
-      "authoredCount": 5444,
+      "authoredCount": 10889,
       "density": 0.1132,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1959,7 +1959,7 @@
         "x": 32,
         "z": -416
       },
-      "authoredCount": 14606,
+      "authoredCount": 29211,
       "density": 0.3037,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1972,7 +1972,7 @@
         "x": 32,
         "z": -352
       },
-      "authoredCount": 17937,
+      "authoredCount": 35873,
       "density": 0.373,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1985,7 +1985,7 @@
         "x": 32,
         "z": -288
       },
-      "authoredCount": 29023,
+      "authoredCount": 58046,
       "density": 0.6036,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -1998,7 +1998,7 @@
         "x": 32,
         "z": -224
       },
-      "authoredCount": 49402,
+      "authoredCount": 98803,
       "density": 1.0274,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2011,7 +2011,7 @@
         "x": 32,
         "z": -160
       },
-      "authoredCount": 83935,
+      "authoredCount": 167870,
       "density": 1.7455,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2024,7 +2024,7 @@
         "x": 32,
         "z": -96
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2037,7 +2037,7 @@
         "x": 32,
         "z": -32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2050,7 +2050,7 @@
         "x": 32,
         "z": 32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2063,7 +2063,7 @@
         "x": 32,
         "z": 96
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2076,7 +2076,7 @@
         "x": 32,
         "z": 160
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2089,7 +2089,7 @@
         "x": 32,
         "z": 224
       },
-      "authoredCount": 51170,
+      "authoredCount": 102339,
       "density": 1.0641,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2102,7 +2102,7 @@
         "x": 32,
         "z": 288
       },
-      "authoredCount": 25192,
+      "authoredCount": 50384,
       "density": 0.5239,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2115,7 +2115,7 @@
         "x": 32,
         "z": 352
       },
-      "authoredCount": 16622,
+      "authoredCount": 33244,
       "density": 0.3457,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2128,7 +2128,7 @@
         "x": 32,
         "z": 416
       },
-      "authoredCount": 14412,
+      "authoredCount": 28824,
       "density": 0.2997,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2141,7 +2141,7 @@
         "x": 32,
         "z": 480
       },
-      "authoredCount": 14091,
+      "authoredCount": 28181,
       "density": 0.293,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2154,7 +2154,7 @@
         "x": 96,
         "z": -416
       },
-      "authoredCount": 8143,
+      "authoredCount": 16286,
       "density": 0.1693,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2167,7 +2167,7 @@
         "x": 96,
         "z": -352
       },
-      "authoredCount": 10858,
+      "authoredCount": 21716,
       "density": 0.2258,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2180,7 +2180,7 @@
         "x": 96,
         "z": -288
       },
-      "authoredCount": 19764,
+      "authoredCount": 39528,
       "density": 0.411,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2193,7 +2193,7 @@
         "x": 96,
         "z": -224
       },
-      "authoredCount": 35032,
+      "authoredCount": 70063,
       "density": 0.7285,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2206,7 +2206,7 @@
         "x": 96,
         "z": -160
       },
-      "authoredCount": 56301,
+      "authoredCount": 112601,
       "density": 1.1708,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2219,7 +2219,7 @@
         "x": 96,
         "z": -96
       },
-      "authoredCount": 103738,
+      "authoredCount": 207476,
       "density": 2.1574,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2232,7 +2232,7 @@
         "x": 96,
         "z": -32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2245,7 +2245,7 @@
         "x": 96,
         "z": 32
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2258,7 +2258,7 @@
         "x": 96,
         "z": 96
       },
-      "authoredCount": 115405,
+      "authoredCount": 230810,
       "density": 2.4,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2271,7 +2271,7 @@
         "x": 96,
         "z": 160
       },
-      "authoredCount": 101642,
+      "authoredCount": 203283,
       "density": 2.1138,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2284,7 +2284,7 @@
         "x": 96,
         "z": 224
       },
-      "authoredCount": 45362,
+      "authoredCount": 90724,
       "density": 0.9434,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2297,7 +2297,7 @@
         "x": 96,
         "z": 288
       },
-      "authoredCount": 21135,
+      "authoredCount": 42270,
       "density": 0.4395,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2310,7 +2310,7 @@
         "x": 96,
         "z": 352
       },
-      "authoredCount": 11007,
+      "authoredCount": 22014,
       "density": 0.2289,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2323,7 +2323,7 @@
         "x": 96,
         "z": 416
       },
-      "authoredCount": 8158,
+      "authoredCount": 16315,
       "density": 0.1696,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2336,7 +2336,7 @@
         "x": 96,
         "z": 480
       },
-      "authoredCount": 7734,
+      "authoredCount": 15468,
       "density": 0.1608,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2349,7 +2349,7 @@
         "x": 160,
         "z": -416
       },
-      "authoredCount": 4116,
+      "authoredCount": 8232,
       "density": 0.0856,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2362,7 +2362,7 @@
         "x": 160,
         "z": -352
       },
-      "authoredCount": 5246,
+      "authoredCount": 10492,
       "density": 0.1091,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2375,7 +2375,7 @@
         "x": 160,
         "z": -288
       },
-      "authoredCount": 8917,
+      "authoredCount": 17833,
       "density": 0.1854,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2388,7 +2388,7 @@
         "x": 160,
         "z": -224
       },
-      "authoredCount": 14949,
+      "authoredCount": 29898,
       "density": 0.3109,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2401,7 +2401,7 @@
         "x": 160,
         "z": -160
       },
-      "authoredCount": 22396,
+      "authoredCount": 44792,
       "density": 0.4657,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2414,7 +2414,7 @@
         "x": 160,
         "z": -96
       },
-      "authoredCount": 38650,
+      "authoredCount": 77300,
       "density": 0.8038,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2427,7 +2427,7 @@
         "x": 160,
         "z": -32
       },
-      "authoredCount": 76283,
+      "authoredCount": 152565,
       "density": 1.5864,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2440,7 +2440,7 @@
         "x": 160,
         "z": 32
       },
-      "authoredCount": 111322,
+      "authoredCount": 222643,
       "density": 2.3151,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2453,7 +2453,7 @@
         "x": 160,
         "z": 96
       },
-      "authoredCount": 82087,
+      "authoredCount": 164173,
       "density": 1.7071,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2466,7 +2466,7 @@
         "x": 160,
         "z": 160
       },
-      "authoredCount": 47334,
+      "authoredCount": 94667,
       "density": 0.9844,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2479,7 +2479,7 @@
         "x": 160,
         "z": 224
       },
-      "authoredCount": 25063,
+      "authoredCount": 50126,
       "density": 0.5212,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2492,7 +2492,7 @@
         "x": 160,
         "z": 288
       },
-      "authoredCount": 12509,
+      "authoredCount": 25017,
       "density": 0.2601,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2505,7 +2505,7 @@
         "x": 160,
         "z": 352
       },
-      "authoredCount": 6137,
+      "authoredCount": 12274,
       "density": 0.1276,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2518,7 +2518,7 @@
         "x": 160,
         "z": 416
       },
-      "authoredCount": 4239,
+      "authoredCount": 8479,
       "density": 0.0882,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2531,7 +2531,7 @@
         "x": 160,
         "z": 480
       },
-      "authoredCount": 3954,
+      "authoredCount": 7908,
       "density": 0.0822,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2544,7 +2544,7 @@
         "x": 224,
         "z": -416
       },
-      "authoredCount": 3886,
+      "authoredCount": 7772,
       "density": 0.0808,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2557,7 +2557,7 @@
         "x": 224,
         "z": -352
       },
-      "authoredCount": 4126,
+      "authoredCount": 8252,
       "density": 0.0858,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2570,7 +2570,7 @@
         "x": 224,
         "z": -288
       },
-      "authoredCount": 4899,
+      "authoredCount": 9798,
       "density": 0.1019,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2583,7 +2583,7 @@
         "x": 224,
         "z": -224
       },
-      "authoredCount": 6132,
+      "authoredCount": 12262,
       "density": 0.1275,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2596,7 +2596,7 @@
         "x": 224,
         "z": -160
       },
-      "authoredCount": 7528,
+      "authoredCount": 15055,
       "density": 0.1565,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2609,7 +2609,7 @@
         "x": 224,
         "z": -96
       },
-      "authoredCount": 10615,
+      "authoredCount": 21229,
       "density": 0.2207,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2622,7 +2622,7 @@
         "x": 224,
         "z": -32
       },
-      "authoredCount": 22161,
+      "authoredCount": 44321,
       "density": 0.4609,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2635,7 +2635,7 @@
         "x": 224,
         "z": 32
       },
-      "authoredCount": 37986,
+      "authoredCount": 75971,
       "density": 0.79,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2648,7 +2648,7 @@
         "x": 224,
         "z": 96
       },
-      "authoredCount": 21975,
+      "authoredCount": 43949,
       "density": 0.457,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2661,7 +2661,7 @@
         "x": 224,
         "z": 160
       },
-      "authoredCount": 14824,
+      "authoredCount": 29648,
       "density": 0.3083,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2674,7 +2674,7 @@
         "x": 224,
         "z": 224
       },
-      "authoredCount": 10240,
+      "authoredCount": 20480,
       "density": 0.213,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2687,7 +2687,7 @@
         "x": 224,
         "z": 288
       },
-      "authoredCount": 6698,
+      "authoredCount": 13396,
       "density": 0.1393,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2700,7 +2700,7 @@
         "x": 224,
         "z": 352
       },
-      "authoredCount": 4601,
+      "authoredCount": 9202,
       "density": 0.0957,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2713,7 +2713,7 @@
         "x": 224,
         "z": 416
       },
-      "authoredCount": 3953,
+      "authoredCount": 7906,
       "density": 0.0822,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2726,7 +2726,7 @@
         "x": 224,
         "z": 480
       },
-      "authoredCount": 3854,
+      "authoredCount": 7709,
       "density": 0.0802,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2739,7 +2739,7 @@
         "x": 288,
         "z": -416
       },
-      "authoredCount": 3851,
+      "authoredCount": 7702,
       "density": 0.0801,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2752,7 +2752,7 @@
         "x": 288,
         "z": -352
       },
-      "authoredCount": 3877,
+      "authoredCount": 7754,
       "density": 0.0806,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2765,7 +2765,7 @@
         "x": 288,
         "z": -288
       },
-      "authoredCount": 3960,
+      "authoredCount": 7920,
       "density": 0.0824,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2778,7 +2778,7 @@
         "x": 288,
         "z": -224
       },
-      "authoredCount": 4089,
+      "authoredCount": 8178,
       "density": 0.085,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2791,7 +2791,7 @@
         "x": 288,
         "z": -160
       },
-      "authoredCount": 4225,
+      "authoredCount": 8451,
       "density": 0.0879,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2804,7 +2804,7 @@
         "x": 288,
         "z": -96
       },
-      "authoredCount": 4576,
+      "authoredCount": 9152,
       "density": 0.0952,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2817,7 +2817,7 @@
         "x": 288,
         "z": -32
       },
-      "authoredCount": 10291,
+      "authoredCount": 20582,
       "density": 0.214,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2830,7 +2830,7 @@
         "x": 288,
         "z": 32
       },
-      "authoredCount": 21225,
+      "authoredCount": 42450,
       "density": 0.4414,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2843,7 +2843,7 @@
         "x": 288,
         "z": 96
       },
-      "authoredCount": 7149,
+      "authoredCount": 14298,
       "density": 0.1487,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2856,7 +2856,7 @@
         "x": 288,
         "z": 160
       },
-      "authoredCount": 5358,
+      "authoredCount": 10716,
       "density": 0.1114,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2869,7 +2869,7 @@
         "x": 288,
         "z": 224
       },
-      "authoredCount": 4874,
+      "authoredCount": 9748,
       "density": 0.1014,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2882,7 +2882,7 @@
         "x": 288,
         "z": 288
       },
-      "authoredCount": 4336,
+      "authoredCount": 8673,
       "density": 0.0902,
       "lod": "high",
       "format": "deterministic-procedural-v1"
@@ -2895,7 +2895,7 @@
         "x": 288,
         "z": 352
       },
-      "authoredCount": 3978,
+      "authoredCount": 7957,
       "density": 0.0827,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2908,7 +2908,7 @@
         "x": 288,
         "z": 416
       },
-      "authoredCount": 3865,
+      "authoredCount": 7730,
       "density": 0.0804,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2921,7 +2921,7 @@
         "x": 288,
         "z": 480
       },
-      "authoredCount": 3848,
+      "authoredCount": 7696,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2934,7 +2934,7 @@
         "x": 352,
         "z": -416
       },
-      "authoredCount": 3847,
+      "authoredCount": 7694,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2947,7 +2947,7 @@
         "x": 352,
         "z": -352
       },
-      "authoredCount": 3848,
+      "authoredCount": 7696,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2960,7 +2960,7 @@
         "x": 352,
         "z": -288
       },
-      "authoredCount": 3853,
+      "authoredCount": 7706,
       "density": 0.0801,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2973,7 +2973,7 @@
         "x": 352,
         "z": -224
       },
-      "authoredCount": 3859,
+      "authoredCount": 7719,
       "density": 0.0803,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2986,7 +2986,7 @@
         "x": 352,
         "z": -160
       },
-      "authoredCount": 3866,
+      "authoredCount": 7733,
       "density": 0.0804,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -2999,7 +2999,7 @@
         "x": 352,
         "z": -96
       },
-      "authoredCount": 3931,
+      "authoredCount": 7862,
       "density": 0.0818,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3012,7 +3012,7 @@
         "x": 352,
         "z": -32
       },
-      "authoredCount": 8997,
+      "authoredCount": 17994,
       "density": 0.1871,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3025,7 +3025,7 @@
         "x": 352,
         "z": 32
       },
-      "authoredCount": 19322,
+      "authoredCount": 38644,
       "density": 0.4018,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3038,7 +3038,7 @@
         "x": 352,
         "z": 96
       },
-      "authoredCount": 5313,
+      "authoredCount": 10626,
       "density": 0.1105,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3051,7 +3051,7 @@
         "x": 352,
         "z": 160
       },
-      "authoredCount": 3962,
+      "authoredCount": 7924,
       "density": 0.0824,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3064,7 +3064,7 @@
         "x": 352,
         "z": 224
       },
-      "authoredCount": 3933,
+      "authoredCount": 7867,
       "density": 0.0818,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3077,7 +3077,7 @@
         "x": 352,
         "z": 288
       },
-      "authoredCount": 3890,
+      "authoredCount": 7780,
       "density": 0.0809,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3090,7 +3090,7 @@
         "x": 352,
         "z": 352
       },
-      "authoredCount": 3858,
+      "authoredCount": 7717,
       "density": 0.0802,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3103,7 +3103,7 @@
         "x": 352,
         "z": 416
       },
-      "authoredCount": 3848,
+      "authoredCount": 7696,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3116,7 +3116,7 @@
         "x": 352,
         "z": 480
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3129,7 +3129,7 @@
         "x": 416,
         "z": -416
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3142,7 +3142,7 @@
         "x": 416,
         "z": -352
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3155,7 +3155,7 @@
         "x": 416,
         "z": -288
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3168,7 +3168,7 @@
         "x": 416,
         "z": -224
       },
-      "authoredCount": 3847,
+      "authoredCount": 7694,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3181,7 +3181,7 @@
         "x": 416,
         "z": -160
       },
-      "authoredCount": 3847,
+      "authoredCount": 7694,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3194,7 +3194,7 @@
         "x": 416,
         "z": -96
       },
-      "authoredCount": 3896,
+      "authoredCount": 7792,
       "density": 0.081,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3207,7 +3207,7 @@
         "x": 416,
         "z": -32
       },
-      "authoredCount": 8926,
+      "authoredCount": 17851,
       "density": 0.1856,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3220,7 +3220,7 @@
         "x": 416,
         "z": 32
       },
-      "authoredCount": 19212,
+      "authoredCount": 38424,
       "density": 0.3995,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3233,7 +3233,7 @@
         "x": 416,
         "z": 96
       },
-      "authoredCount": 5195,
+      "authoredCount": 10390,
       "density": 0.108,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3246,7 +3246,7 @@
         "x": 416,
         "z": 160
       },
-      "authoredCount": 3854,
+      "authoredCount": 7709,
       "density": 0.0802,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3259,7 +3259,7 @@
         "x": 416,
         "z": 224
       },
-      "authoredCount": 3850,
+      "authoredCount": 7701,
       "density": 0.0801,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3272,7 +3272,7 @@
         "x": 416,
         "z": 288
       },
-      "authoredCount": 3848,
+      "authoredCount": 7697,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3285,7 +3285,7 @@
         "x": 416,
         "z": 352
       },
-      "authoredCount": 3847,
+      "authoredCount": 7694,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3298,7 +3298,7 @@
         "x": 416,
         "z": 416
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3311,7 +3311,7 @@
         "x": 416,
         "z": 480
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3324,7 +3324,7 @@
         "x": 480,
         "z": -416
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3337,7 +3337,7 @@
         "x": 480,
         "z": -352
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3350,7 +3350,7 @@
         "x": 480,
         "z": -288
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3363,7 +3363,7 @@
         "x": 480,
         "z": -224
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3376,7 +3376,7 @@
         "x": 480,
         "z": -160
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3389,7 +3389,7 @@
         "x": 480,
         "z": -96
       },
-      "authoredCount": 3895,
+      "authoredCount": 7790,
       "density": 0.081,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3402,7 +3402,7 @@
         "x": 480,
         "z": -32
       },
-      "authoredCount": 8924,
+      "authoredCount": 17847,
       "density": 0.1856,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3415,7 +3415,7 @@
         "x": 480,
         "z": 32
       },
-      "authoredCount": 19209,
+      "authoredCount": 38418,
       "density": 0.3995,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3428,7 +3428,7 @@
         "x": 480,
         "z": 96
       },
-      "authoredCount": 5191,
+      "authoredCount": 10382,
       "density": 0.108,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3441,7 +3441,7 @@
         "x": 480,
         "z": 160
       },
-      "authoredCount": 3850,
+      "authoredCount": 7700,
       "density": 0.0801,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3454,7 +3454,7 @@
         "x": 480,
         "z": 224
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3467,7 +3467,7 @@
         "x": 480,
         "z": 288
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3480,7 +3480,7 @@
         "x": 480,
         "z": 352
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3493,7 +3493,7 @@
         "x": 480,
         "z": 416
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3506,7 +3506,7 @@
         "x": 480,
         "z": 480
       },
-      "authoredCount": 3846,
+      "authoredCount": 7693,
       "density": 0.08,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
@@ -3514,8 +3514,8 @@
   ],
   "runtimeBudget": {
     "tier": "mobile",
-    "visibleInstanceCap": 950000,
-    "generatedDetailVisibleBudget": 950000,
+    "visibleInstanceCap": 1100000,
+    "generatedDetailVisibleBudget": 1100000,
     "visibleRadius": 8
   },
   "sectionCounts": {

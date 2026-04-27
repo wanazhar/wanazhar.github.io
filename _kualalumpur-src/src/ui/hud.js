@@ -20,6 +20,11 @@ export function setupHud({
   const fpsEl = document.getElementById('fps');
   const pixelRatioEl = document.getElementById('pixel-ratio');
   const voxelCountEl = document.getElementById('voxel-count');
+  const generatedChunksEl = document.getElementById('generated-chunks');
+  const generatedVisibleEl = document.getElementById('generated-visible');
+  const generatedAuthoredEl = document.getElementById('generated-authored');
+  const totalAuthoredEl = document.getElementById('total-authored');
+  const visibleBudgetEl = document.getElementById('visible-budget');
   const stampCountEl = document.getElementById('stamp-count');
   const tourStateEl = document.getElementById('tour-state');
   const tourNextEl = document.getElementById('tour-next');
@@ -312,8 +317,15 @@ export function setupHud({
     }, 2200);
   }
 
+  const formatCompact = (value) => (Number.isFinite(value) ? Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value) : '--');
+
   function setVoxelStats(stats) {
     voxelCountEl.textContent = stats.total.toLocaleString();
+    const generated = stats.generatedDetail;
+    if (!generated) return;
+    generatedAuthoredEl.textContent = formatCompact(generated.authoredTotal);
+    totalAuthoredEl.textContent = formatCompact(stats.total + generated.authoredTotal);
+    visibleBudgetEl.textContent = formatCompact(generated.visibleBudget);
   }
 
   function setProgress(progress) {
@@ -339,10 +351,16 @@ export function setupHud({
     boardTrainButton.hidden = !available;
   }
 
-  function update({ fps, pixelRatio, running, trainsActive }) {
+  function update({ fps, pixelRatio, running, trainsActive, generatedDetail }) {
     fpsEl.textContent = fps > 0 ? String(Math.round(fps)) : '--';
     pixelRatioEl.textContent = `${pixelRatio.toFixed(2)}x`;
     renderStateEl.textContent = running ? (trainsActive ? 'Active + transit' : 'Active') : 'Paused';
+    if (generatedDetail) {
+      generatedChunksEl.textContent = `${generatedDetail.activeChunks}/${generatedDetail.loadedChunks}`;
+      generatedVisibleEl.textContent = `${formatCompact(generatedDetail.visibleRendered)}/${formatCompact(generatedDetail.visibleAuthored)}`;
+      generatedAuthoredEl.textContent = formatCompact(generatedDetail.authoredTotal);
+      visibleBudgetEl.textContent = formatCompact(generatedDetail.visibleBudget);
+    }
   }
 
   return {

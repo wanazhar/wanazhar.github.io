@@ -29,8 +29,8 @@ await Promise.all(chunks.map((chunk) => writeFile(
 const manifest = {
   formatVersion: CHUNK_FORMAT_VERSION,
   generatedAt: new Date().toISOString(),
-  mode: 'phase3-5m-generated-detail',
-  note: '5M authored deterministic KL/Klang Valley detail layer. Base world remains bundled; generated detail chunks are streamed/rendered up to the shared 950k visibility budget.',
+  mode: 'phase4-10m-generated-detail',
+  note: '10M authored deterministic KL/Klang Valley detail layer. Base world remains bundled; generated detail chunks are streamed/rendered up to the shared 1.1M desktop/mobile visibility budget.',
   totalInstances: world.voxelStats.total,
   generatedDetailInstances: generatedDetail.totalAuthored,
   totalAuthoredWithGeneratedDetail: world.voxelStats.total + generatedDetail.totalAuthored,

@@ -3,10 +3,10 @@ import { createKualaLumpurWorld } from '../src/world/createKualaLumpurWorld.js';
 import { getGeneratedDetailSummary } from '../src/world/detail/generatedDetailConfig.js';
 
 const BUDGETS = {
-  maxAuthoredInstances: 5_400_000,
+  maxAuthoredInstances: 10_400_000,
   maxInstancedMeshes: 1200,
   maxChunks: 100,
-  maxVisibleInstances: 950000
+  maxVisibleInstances: 1100000
 };
 
 const scene = new THREE.Scene();

@@ -160,10 +160,12 @@ export class GeneratedDetailLayer {
   }
 
   getStats() {
+    const activeChunks = [...this.loaded.values()].filter((group) => group.visible).length;
     return {
       authoredTotal: this.chunkPlan.reduce((sum, chunk) => sum + chunk.authoredCount, 0),
       chunks: this.chunkPlan.length,
       loadedChunks: this.loaded.size,
+      activeChunks,
       visibleAuthored: this.visibleAuthored,
       visibleRendered: this.visibleRendered,
       visibleBudget: this.visibleBudget,
