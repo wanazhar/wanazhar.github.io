@@ -22,9 +22,9 @@
     "warning": 1,
     "glassDark": 61,
     "redBrick": 1,
+    "merdekaGlass": 1,
     "stationRoof": 1,
-    "busGreen": 1,
-    "merdekaGlass": 1
+    "busGreen": 1
   },
   "path": "summaries/-2_0.json"
 }

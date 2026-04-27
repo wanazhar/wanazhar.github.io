@@ -18,13 +18,17 @@ function seedForChunk(cx, cz) {
   return ((cx + 101) * 73856093) ^ ((cz + 103) * 19349663) ^ 0x9e3779b9;
 }
 
-function materialForSample(random, localZ) {
+function sampleUrbanUse(random, localZ) {
   const roll = random();
-  if (Math.abs(localZ) < 0.08 && roll < 0.72) return 'road';
-  if (roll < 0.08) return 'lampGlow';
-  if (roll < 0.2) return 'grassDark';
-  if (roll < 0.58) return 'concrete';
+  if (Math.abs(localZ) < 0.055 && roll < 0.55) return 'road';
+  if (roll < 0.035) return 'grassDark';
+  if (roll < 0.075) return 'lampGlow';
+  if (roll < 0.48) return 'concrete';
   return 'glassDark';
+}
+
+function materialForSample(random, localZ) {
+  return sampleUrbanUse(random, localZ);
 }
 
 function createMaterial(key) {
@@ -104,9 +108,10 @@ export class GeneratedDetailLayer {
       const localZ = lz - 0.5;
       const key = materialForSample(random, localZ);
       const towerish = key === 'glassDark';
-      const sx = towerish ? 0.9 + random() * 1.4 : 0.8 + random() * 1.8;
-      const sz = towerish ? 0.9 + random() * 1.4 : 0.8 + random() * 1.8;
-      const sy = key === 'road' ? 0.08 : key === 'lampGlow' ? 0.5 : towerish ? 2 + random() * 10 : 0.4 + random() * 3.8;
+      const midRise = key === 'concrete';
+      const sx = towerish ? 1.1 + random() * 1.9 : midRise ? 1.2 + random() * 2.2 : 0.8 + random() * 1.8;
+      const sz = towerish ? 1.1 + random() * 1.9 : midRise ? 1.2 + random() * 2.2 : 0.8 + random() * 1.8;
+      const sy = key === 'road' ? 0.08 : key === 'lampGlow' ? 0.5 : towerish ? 5 + random() * 18 : midRise ? 2 + random() * 7 : 0.35 + random() * 1.1;
       byMaterial.get(key).push({ x: worldX, y: y + sy / 2 + 0.08, z: worldZ, sx, sy, sz });
     }
 

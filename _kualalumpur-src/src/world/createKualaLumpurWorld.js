@@ -761,6 +761,33 @@ function addOuterDistrictExpansion(inst, terrain) {
   }
 }
 
+function addDenseUrbanInfill(inst, terrain) {
+  const random = mulberry32(2026042701);
+  const anchors = [
+    { ...landmarkPoint('Petronas Twin Towers', { x: -12, z: 22 }), radius: 56, count: 54, key: 'glassDark' },
+    { ...landmarkPoint('Bukit Bintang', { x: 30, z: -22 }), radius: 52, count: 46, key: 'mallGold' },
+    { ...landmarkPoint('TRX Exchange 106', { x: 66, z: 32 }), radius: 48, count: 42, key: 'blackGlass' },
+    { ...landmarkPoint('Merdeka 118', { x: 35, z: 18 }), radius: 52, count: 44, key: 'merdekaGlass' },
+    { ...landmarkPoint('Mid Valley Megamall', { x: -82, z: -88 }), radius: 42, count: 30, key: 'concreteDark' },
+    { ...landmarkPoint('Mont Kiara Dining Cluster', { x: -92, z: 92 }), radius: 40, count: 32, key: 'glassGreen' }
+  ].map((anchor) => ({ ...anchor, cx: anchor.x, cz: anchor.z }));
+
+  anchors.forEach((anchor) => {
+    for (let i = 0; i < anchor.count; i += 1) {
+      const angle = random() * Math.PI * 2;
+      const r = Math.sqrt(random()) * anchor.radius;
+      const x = Math.round(anchor.cx + Math.cos(angle) * r);
+      const z = Math.round(anchor.cz + Math.sin(angle) * r);
+      if (Math.abs(x) > 214 || Math.abs(z) > 214) continue;
+      if (isNearAny(x, z, tourismLandmarks, 8)) continue;
+      const w = rangeInt(random, 4, 8);
+      const d = rangeInt(random, 4, 8);
+      const h = rangeInt(random, anchor.key === 'glassDark' || anchor.key === 'blackGlass' ? 18 : 9, anchor.key === 'glassDark' || anchor.key === 'blackGlass' ? 52 : 26);
+      addGenericBuilding(inst, terrain, x, z, w, d, h, anchor.key, anchor.key === 'mallGold' ? 'glassDark' : 'glass');
+    }
+  });
+}
+
 function addRoads(inst, terrain) {
   addRoadLine(inst, terrain, { x: -88, z: -8 }, { x: 88, z: -8 }, 7);
   addRoadLine(inst, terrain, { x: -86, z: 42 }, { x: 86, z: 42 }, 5);
@@ -796,6 +823,7 @@ export function createKualaLumpurWorld(scene) {
 
   addSection('parksAndWater', () => addParksAndWater(inst, terrain));
   addSection('outerDistrictExpansion', () => addOuterDistrictExpansion(inst, terrain));
+  addSection('denseUrbanInfill', () => addDenseUrbanInfill(inst, terrain));
   addSection('roads', () => addRoads(inst, terrain));
   addSection('transit', () => addTransit(inst, terrain));
   addSection('streetDetails', () => addStreetDetails(inst, terrain));

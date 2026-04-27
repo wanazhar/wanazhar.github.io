@@ -27,6 +27,7 @@
     "blackGlass": 2,
     "glass": 36,
     "steel": 5,
+    "merdekaGlass": 4,
     "rail": 64,
     "station": 1,
     "stationRoof": 3,
@@ -34,7 +35,6 @@
     "riverBlue": 247,
     "museumBrown": 3,
     "pavilionRed": 1,
-    "merdekaGlass": 4,
     "silver": 2
   },
   "path": "summaries/-1_-1.json"

@@ -115,18 +115,21 @@ function requestRender() {
   }
 }
 
-function placeCameraNear(target, distance = 44) {
+function placeCameraNear(target, options = 44) {
+  const settings = typeof options === 'number' ? { distance: options } : options;
+  const distance = settings.distance ?? 44;
+  const heightRatio = settings.heightRatio ?? 0.72;
   controls.target.copy(target);
   recentCameraTarget.copy(target);
-  camera.position.copy(target).add(new THREE.Vector3(distance, distance * 0.72, distance));
+  camera.position.copy(target).add(new THREE.Vector3(distance, distance * heightRatio, distance));
   camera.lookAt(target);
   controls.update();
 }
 
 function setCameraMode(mode, landmark = currentLandmark) {
-  const playerTarget = player.group.position.clone().add(new THREE.Vector3(0, 2, 0));
+  const playerTarget = player.getFocusTarget();
   if (mode === 'walk') {
-    placeCameraNear(playerTarget, 22);
+    placeCameraNear(playerTarget, { distance: 24, heightRatio: 1.05 });
     hud?.showToast('Walk camera.');
   } else if (mode === 'landmark') {
     const target = landmark?.position?.clone() ?? playerTarget;
@@ -338,7 +341,7 @@ function getWorldFocusPosition() {
 }
 
 function updateCameraTarget() {
-  const desired = player.group.position.clone().add(new THREE.Vector3(0, 2.05, 0));
+  const desired = player.getFocusTarget();
   const before = controls.target.clone();
   controls.target.lerp(desired, 0.24);
   const delta = controls.target.clone().sub(before);

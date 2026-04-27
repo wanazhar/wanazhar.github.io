@@ -1,11 +1,11 @@
 {
   "formatVersion": 1,
-  "generatedAt": "2026-04-27T14:04:45.157Z",
+  "generatedAt": "2026-04-27T14:22:47.057Z",
   "mode": "phase4-10m-generated-detail",
   "note": "10M authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.",
-  "totalInstances": 306103,
+  "totalInstances": 309208,
   "generatedDetailInstances": 10000000,
-  "totalAuthoredWithGeneratedDetail": 10306103,
+  "totalAuthoredWithGeneratedDetail": 10309208,
   "chunkSize": 64,
   "chunks": [
     {
@@ -264,7 +264,7 @@
       "id": "-1_0",
       "cx": -1,
       "cz": 0,
-      "count": 7061,
+      "count": 7205,
       "meshCount": 25,
       "path": "summaries/-1_0.json",
       "materialKinds": 25
@@ -273,10 +273,10 @@
       "id": "-1_1",
       "cx": -1,
       "cz": 1,
-      "count": 5608,
-      "meshCount": 17,
+      "count": 5630,
+      "meshCount": 18,
       "path": "summaries/-1_1.json",
-      "materialKinds": 17
+      "materialKinds": 18
     },
     {
       "id": "-1_2",
@@ -327,16 +327,16 @@
       "id": "0_-1",
       "cx": 0,
       "cz": -1,
-      "count": 6827,
-      "meshCount": 26,
+      "count": 7111,
+      "meshCount": 28,
       "path": "summaries/0_-1.json",
-      "materialKinds": 26
+      "materialKinds": 28
     },
     {
       "id": "0_0",
       "cx": 0,
       "cz": 0,
-      "count": 15888,
+      "count": 16755,
       "meshCount": 49,
       "path": "summaries/0_0.json",
       "materialKinds": 49
@@ -345,10 +345,10 @@
       "id": "0_1",
       "cx": 0,
       "cz": 1,
-      "count": 6502,
-      "meshCount": 26,
+      "count": 6882,
+      "meshCount": 29,
       "path": "summaries/0_1.json",
-      "materialKinds": 26
+      "materialKinds": 29
     },
     {
       "id": "0_2",
@@ -408,19 +408,19 @@
       "id": "1_0",
       "cx": 1,
       "cz": 0,
-      "count": 5546,
-      "meshCount": 19,
+      "count": 6835,
+      "meshCount": 20,
       "path": "summaries/1_0.json",
-      "materialKinds": 19
+      "materialKinds": 20
     },
     {
       "id": "1_1",
       "cx": 1,
       "cz": 1,
-      "count": 5503,
-      "meshCount": 23,
+      "count": 5622,
+      "meshCount": 25,
       "path": "summaries/1_1.json",
-      "materialKinds": 23
+      "materialKinds": 25
     },
     {
       "id": "1_2",
@@ -3522,6 +3522,7 @@
     "terrain": 233438,
     "outerDistrictExpansion": 52856,
     "roads": 4952,
+    "denseUrbanInfill": 3105,
     "transit": 2373,
     "tourismExpansion": 1710,
     "petronas": 1508,
@@ -3558,8 +3559,8 @@
     "concrete": 15154,
     "gatewayPurple": 117,
     "lampGlow": 281,
-    "glassGreen": 72,
-    "concreteDark": 705,
+    "glassGreen": 87,
+    "concreteDark": 842,
     "plaza": 5491,
     "templeGold": 33,
     "caveLimestone": 11,
@@ -3568,12 +3569,13 @@
     "mosqueBlue": 10,
     "awningStripe": 46,
     "marketRed": 38,
-    "glassDark": 2727,
-    "mallGold": 31,
-    "blackGlass": 44,
-    "glass": 377,
-    "steel": 26,
+    "glassDark": 3082,
+    "mallGold": 52,
+    "blackGlass": 60,
+    "glass": 2873,
+    "steel": 69,
     "redBrick": 29,
+    "merdekaGlass": 63,
     "rail": 1456,
     "station": 24,
     "stationRoof": 19,
@@ -3587,7 +3589,6 @@
     "marketBlue": 6,
     "littleIndiaPink": 3,
     "pavilionRed": 6,
-    "merdekaGlass": 41,
     "silver": 71,
     "petronasTrim": 312,
     "merdekaTrim": 13,
