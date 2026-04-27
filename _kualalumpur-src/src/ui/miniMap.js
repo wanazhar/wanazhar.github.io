@@ -1,10 +1,17 @@
 export function setupMiniMap({ canvas, terrain, landmarks, player, onLandmarkClick }) {
   const ctx = canvas.getContext('2d');
-  const size = 180;
+  let size = 180;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const dots = [];
 
+  function getResponsiveSize() {
+    if (window.matchMedia('(max-width: 460px)').matches) return 86;
+    if (window.matchMedia('(pointer: coarse), (max-width: 860px)').matches) return 120;
+    return 180;
+  }
+
   function resize() {
+    size = getResponsiveSize();
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     canvas.style.width = `${size}px`;

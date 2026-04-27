@@ -594,6 +594,14 @@ kbd {
 }
 
 @media (pointer: coarse), (max-width: 860px) {
+  #hud {
+    z-index: 10;
+    max-height: min(34vh, 330px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
   #landmarks {
     display: block;
     left: 10px;
@@ -741,7 +749,22 @@ kbd {
 
 @media (max-width: 460px) {
   #hud {
-    width: min(276px, calc(100vw - 20px));
+    width: min(276px, calc(100vw - 134px));
+    min-width: 212px;
+    max-height: 35vh;
+  }
+
+  #minimap-panel {
+    width: 104px;
+  }
+
+  #mini-map {
+    width: 86px;
+    height: 86px;
+  }
+
+  .button-row {
+    grid-template-columns: 1fr;
   }
 
   .brand p {
