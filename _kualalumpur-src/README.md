@@ -87,16 +87,16 @@ npm run measure:world
 npm run validate:budget
 ```
 
-`measure:world` builds the scene in Node and reports authored instance totals, material counts, section counts, chunk count, and instanced mesh count. `validate:budget` enforces the Phase 0/1 prototype ceilings before any 2M-detail generation work begins.
+`measure:world` builds the scene in Node and reports authored instance totals, material counts, section counts, chunk count, generated detail totals, and instanced mesh count. `validate:budget` enforces the current generated-detail ceilings before export.
 
 Current runtime detail remains bundled in the Vite app for GitHub Pages compatibility. The instancer now releases its CPU-side queued instance arrays after `finalize()` and renders the static world as shared-material chunk groups, which provides the visibility foundation for later external chunk files without changing the current map APIs.
 
 
-## 5M generated detail layer
+## 10M generated detail layer
 
-The map now includes a deterministic high-detail layer targeting **5,000,000 authored regional detail instances** on top of the bundled base world. Runtime rendering keeps the combined base + generated detail visibility target at **950,000 visible instances** across desktop, tablet, and mobile tiers. The generated detail is distributed across 225 static/procedural chunks with higher density around KLCC, Bukit Bintang/TRX, Merdeka/Chinatown, PJ, Subang/Sunway, Shah Alam, Klang, Putrajaya, KLIA/Sepang, Batu Caves/Gombak, Genting foothills, and Kuala Selangor.
+The map now includes a deterministic high-detail layer targeting **10,000,000 authored regional detail instances** on top of the bundled base world. Runtime rendering keeps the combined base + generated detail visibility target at **1,100,000 visible instances** across desktop and mobile tiers. The generated detail is distributed across 225 static/procedural chunks with higher density around KLCC, Bukit Bintang/TRX, Merdeka/Chinatown, PJ, Subang/Sunway, Shah Alam, Klang, Putrajaya, KLIA/Sepang, Batu Caves/Gombak, Genting foothills, and Kuala Selangor.
 
-This is deliberately a chunked/generated layer rather than 5M simultaneously visible cubes. The 5M authored target is measured by `npm run measure:world`; the shipped GitHub Pages manifest is exported to `public/chunks/metadata.json` by `npm run export:chunks`.
+This is deliberately a chunked/generated layer rather than 10M simultaneously visible cubes. The 10M authored target is measured by `npm run measure:world`; the shipped GitHub Pages manifest is exported to `public/chunks/metadata.json` by `npm run export:chunks`. The HUD includes a compact debug readout for FPS, active/loaded generated chunks, rendered/authored visible generated detail, authored generated detail, total authored count, and the shared visible budget.
 
 ## Deploy to `wanazhar.github.io/kualalumpur`
 

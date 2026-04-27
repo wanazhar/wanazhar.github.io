@@ -398,7 +398,8 @@ function loop(now) {
     fps,
     pixelRatio: adaptive.pixelRatio,
     running: stillActive,
-    trainsActive: trainSystem.isActive
+    trainsActive: trainSystem.isActive,
+    generatedDetail: generatedDetailLayer.getStats()
   });
   needsRender = false;
 
@@ -406,7 +407,7 @@ function loop(now) {
     requestAnimationFrame(loop);
   } else {
     loopRunning = false;
-    hud.update({ fps, pixelRatio: adaptive.pixelRatio, running: false, trainsActive: false });
+    hud.update({ fps, pixelRatio: adaptive.pixelRatio, running: false, trainsActive: false, generatedDetail: generatedDetailLayer.getStats() });
   }
 }
 
