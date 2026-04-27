@@ -595,7 +595,36 @@ kbd {
 
 @media (pointer: coarse), (max-width: 860px) {
   #landmarks {
-    display: none;
+    display: block;
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: max(154px, env(safe-area-inset-bottom));
+    width: auto;
+    max-height: 36vh;
+    padding: 10px;
+    overflow: auto;
+    z-index: 9;
+  }
+
+  #landmarks .panel-heading {
+    margin-bottom: 8px;
+  }
+
+  #route-selector,
+  #station-selector {
+    margin-bottom: 6px;
+  }
+
+  .landmark-buttons {
+    max-height: min(22vh, 260px);
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .landmark-buttons button {
+    padding: 8px 9px;
+    font-size: 0.68rem;
   }
 
   .tourism-panel {
