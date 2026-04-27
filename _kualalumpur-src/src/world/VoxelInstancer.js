@@ -1,4 +1,6 @@
-import * as THREE from 'three';
+import { ChunkInstancer, bucketInstancesByChunk } from './chunks/ChunkInstancer.js';
+import { ChunkManager } from './chunks/ChunkManager.js';
+import { DEFAULT_CHUNK_SIZE } from './chunks/chunkVisibility.js';
 
 export const VOXEL_PALETTE = {
   grass: 0x3f9b4f,
@@ -73,6 +75,20 @@ export class VoxelInstancer {
     this.instances = new Map();
     this.meshes = [];
     this.total = 0;
+    this.sectionCounts = new Map();
+    this.currentSection = 'world';
+    this.chunkSize = options.chunkSize ?? DEFAULT_CHUNK_SIZE;
+    this.chunkManager = options.chunkManager ?? new ChunkManager({ chunkSize: this.chunkSize });
+  }
+
+  withSection(name, callback) {
+    const previous = this.currentSection;
+    this.currentSection = name;
+    try {
+      return callback();
+    } finally {
+      this.currentSection = previous;
+    }
   }
 
   addVoxel(x, y, z, materialKey) {
@@ -84,6 +100,7 @@ export class VoxelInstancer {
     if (!this.instances.has(materialKey)) this.instances.set(materialKey, []);
     this.instances.get(materialKey).push({ x, y, z, sx, sy, sz });
     this.total += 1;
+    this.sectionCounts.set(this.currentSection, (this.sectionCounts.get(this.currentSection) ?? 0) + 1);
   }
 
   addColumn(x, z, y0, y1, materialKey) {
@@ -115,45 +132,43 @@ export class VoxelInstancer {
   }
 
   finalize() {
-    const box = new THREE.BoxGeometry(1, 1, 1);
-    box.computeBoundingBox();
-    const matrix = new THREE.Matrix4();
-    const position = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
-    const scale = new THREE.Vector3();
+    const chunks = bucketInstancesByChunk(this.instances, { chunkSize: this.chunkSize });
+    const instancer = new ChunkInstancer(this.scene, {
+      palette: this.palette,
+      castShadow: this.castShadow,
+      receiveShadow: this.receiveShadow
+    });
 
-    for (const [key, data] of this.instances.entries()) {
-      const color = this.palette[key];
-      if (color === undefined) {
-        console.warn(`Missing voxel palette color: ${key}`);
-        continue;
-      }
-      const material = new THREE.MeshLambertMaterial({
-        color,
-        flatShading: true,
-        fog: true
+    const chunkManifest = [];
+    for (const chunk of chunks) {
+      const { group, meshCount, materialCounts: chunkMaterialCounts } = instancer.createChunkGroup(chunk);
+      this.chunkManager.addChunk({ id: chunk.id, cx: chunk.cx, cz: chunk.cz, count: chunk.count, group, materialCounts: chunkMaterialCounts });
+      this.meshes.push(...group.children);
+      chunk.meshCount = meshCount;
+      chunkManifest.push({
+        id: chunk.id,
+        cx: chunk.cx,
+        cz: chunk.cz,
+        count: chunk.count,
+        meshCount,
+        materialCounts: chunkMaterialCounts
       });
-      const mesh = new THREE.InstancedMesh(box, material, data.length);
-      mesh.name = `voxels_${key}`;
-      mesh.castShadow = this.castShadow;
-      mesh.receiveShadow = this.receiveShadow;
-      mesh.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-
-      data.forEach((item, index) => {
-        position.set(item.x, item.y, item.z);
-        scale.set(item.sx, item.sy, item.sz);
-        matrix.compose(position, quaternion, scale);
-        mesh.setMatrixAt(index, matrix);
-      });
-
-      mesh.computeBoundingSphere();
-      this.scene.add(mesh);
-      this.meshes.push(mesh);
     }
+
+    const materialCounts = Object.fromEntries([...this.instances.entries()].map(([key, data]) => [key, data.length]));
+    const sectionCounts = Object.fromEntries([...this.sectionCounts.entries()].sort((a, b) => b[1] - a[1]));
+
+    this.instances.clear();
 
     return {
       total: this.total,
-      meshes: this.meshes.length
+      meshes: this.meshes.length,
+      chunks: chunks.length,
+      chunkSize: this.chunkSize,
+      materials: materialCounts,
+      sections: sectionCounts,
+      chunkManifest,
+      chunkManager: this.chunkManager
     };
   }
 }

@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "id": "-2_0",
+  "cx": -2,
+  "cz": 0,
+  "count": 5564,
+  "meshCount": 19,
+  "materialCounts": {
+    "grass": 2195,
+    "dirt": 97,
+    "grass2": 1172,
+    "grassDark": 729,
+    "water": 146,
+    "treeTrunk": 2,
+    "treeLeaf": 6,
+    "treeLeaf2": 3,
+    "road": 1092,
+    "lineWhite": 44,
+    "lampGlow": 3,
+    "concreteDark": 8,
+    "plaza": 1,
+    "warning": 1,
+    "glassDark": 61,
+    "redBrick": 1,
+    "stationRoof": 1,
+    "busGreen": 1,
+    "merdekaGlass": 1
+  },
+  "path": "summaries/-2_0.json"
+}

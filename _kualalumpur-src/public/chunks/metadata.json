@@ -1,0 +1,669 @@
+{
+  "formatVersion": 1,
+  "generatedAt": "2026-04-27T06:40:46.277Z",
+  "mode": "phase2-static-manifest-prototype",
+  "note": "Prototype static chunk metadata for GitHub Pages. Visual voxels remain bundled until binary chunk streaming is implemented.",
+  "totalInstances": 306103,
+  "chunkSize": 64,
+  "chunks": [
+    {
+      "id": "-4_-4",
+      "cx": -4,
+      "cz": -4,
+      "count": 1944,
+      "meshCount": 9,
+      "path": "summaries/-4_-4.json",
+      "materialKinds": 9
+    },
+    {
+      "id": "-4_-3",
+      "cx": -4,
+      "cz": -3,
+      "count": 3248,
+      "meshCount": 12,
+      "path": "summaries/-4_-3.json",
+      "materialKinds": 12
+    },
+    {
+      "id": "-4_-2",
+      "cx": -4,
+      "cz": -2,
+      "count": 3243,
+      "meshCount": 13,
+      "path": "summaries/-4_-2.json",
+      "materialKinds": 13
+    },
+    {
+      "id": "-4_-1",
+      "cx": -4,
+      "cz": -1,
+      "count": 3229,
+      "meshCount": 11,
+      "path": "summaries/-4_-1.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "-4_0",
+      "cx": -4,
+      "cz": 0,
+      "count": 3248,
+      "meshCount": 11,
+      "path": "summaries/-4_0.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "-4_1",
+      "cx": -4,
+      "cz": 1,
+      "count": 3248,
+      "meshCount": 14,
+      "path": "summaries/-4_1.json",
+      "materialKinds": 14
+    },
+    {
+      "id": "-4_2",
+      "cx": -4,
+      "cz": 2,
+      "count": 5160,
+      "meshCount": 24,
+      "path": "summaries/-4_2.json",
+      "materialKinds": 24
+    },
+    {
+      "id": "-4_3",
+      "cx": -4,
+      "cz": 3,
+      "count": 1999,
+      "meshCount": 10,
+      "path": "summaries/-4_3.json",
+      "materialKinds": 10
+    },
+    {
+      "id": "-3_-4",
+      "cx": -3,
+      "cz": -4,
+      "count": 3285,
+      "meshCount": 11,
+      "path": "summaries/-3_-4.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "-3_-3",
+      "cx": -3,
+      "cz": -3,
+      "count": 5051,
+      "meshCount": 6,
+      "path": "summaries/-3_-3.json",
+      "materialKinds": 6
+    },
+    {
+      "id": "-3_-2",
+      "cx": -3,
+      "cz": -2,
+      "count": 5035,
+      "meshCount": 8,
+      "path": "summaries/-3_-2.json",
+      "materialKinds": 8
+    },
+    {
+      "id": "-3_-1",
+      "cx": -3,
+      "cz": -1,
+      "count": 5458,
+      "meshCount": 10,
+      "path": "summaries/-3_-1.json",
+      "materialKinds": 10
+    },
+    {
+      "id": "-3_0",
+      "cx": -3,
+      "cz": 0,
+      "count": 5102,
+      "meshCount": 6,
+      "path": "summaries/-3_0.json",
+      "materialKinds": 6
+    },
+    {
+      "id": "-3_1",
+      "cx": -3,
+      "cz": 1,
+      "count": 5376,
+      "meshCount": 8,
+      "path": "summaries/-3_1.json",
+      "materialKinds": 8
+    },
+    {
+      "id": "-3_2",
+      "cx": -3,
+      "cz": 2,
+      "count": 5388,
+      "meshCount": 7,
+      "path": "summaries/-3_2.json",
+      "materialKinds": 7
+    },
+    {
+      "id": "-3_3",
+      "cx": -3,
+      "cz": 3,
+      "count": 3355,
+      "meshCount": 11,
+      "path": "summaries/-3_3.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "-2_-4",
+      "cx": -2,
+      "cz": -4,
+      "count": 3713,
+      "meshCount": 17,
+      "path": "summaries/-2_-4.json",
+      "materialKinds": 17
+    },
+    {
+      "id": "-2_-3",
+      "cx": -2,
+      "cz": -3,
+      "count": 5013,
+      "meshCount": 14,
+      "path": "summaries/-2_-3.json",
+      "materialKinds": 14
+    },
+    {
+      "id": "-2_-2",
+      "cx": -2,
+      "cz": -2,
+      "count": 4947,
+      "meshCount": 9,
+      "path": "summaries/-2_-2.json",
+      "materialKinds": 9
+    },
+    {
+      "id": "-2_-1",
+      "cx": -2,
+      "cz": -1,
+      "count": 6439,
+      "meshCount": 21,
+      "path": "summaries/-2_-1.json",
+      "materialKinds": 21
+    },
+    {
+      "id": "-2_0",
+      "cx": -2,
+      "cz": 0,
+      "count": 5564,
+      "meshCount": 19,
+      "path": "summaries/-2_0.json",
+      "materialKinds": 19
+    },
+    {
+      "id": "-2_1",
+      "cx": -2,
+      "cz": 1,
+      "count": 5332,
+      "meshCount": 13,
+      "path": "summaries/-2_1.json",
+      "materialKinds": 13
+    },
+    {
+      "id": "-2_2",
+      "cx": -2,
+      "cz": 2,
+      "count": 4700,
+      "meshCount": 5,
+      "path": "summaries/-2_2.json",
+      "materialKinds": 5
+    },
+    {
+      "id": "-2_3",
+      "cx": -2,
+      "cz": 3,
+      "count": 3263,
+      "meshCount": 11,
+      "path": "summaries/-2_3.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "-1_-4",
+      "cx": -1,
+      "cz": -4,
+      "count": 3321,
+      "meshCount": 11,
+      "path": "summaries/-1_-4.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "-1_-3",
+      "cx": -1,
+      "cz": -3,
+      "count": 5622,
+      "meshCount": 12,
+      "path": "summaries/-1_-3.json",
+      "materialKinds": 12
+    },
+    {
+      "id": "-1_-2",
+      "cx": -1,
+      "cz": -2,
+      "count": 5403,
+      "meshCount": 12,
+      "path": "summaries/-1_-2.json",
+      "materialKinds": 12
+    },
+    {
+      "id": "-1_-1",
+      "cx": -1,
+      "cz": -1,
+      "count": 7246,
+      "meshCount": 30,
+      "path": "summaries/-1_-1.json",
+      "materialKinds": 30
+    },
+    {
+      "id": "-1_0",
+      "cx": -1,
+      "cz": 0,
+      "count": 7061,
+      "meshCount": 25,
+      "path": "summaries/-1_0.json",
+      "materialKinds": 25
+    },
+    {
+      "id": "-1_1",
+      "cx": -1,
+      "cz": 1,
+      "count": 5608,
+      "meshCount": 17,
+      "path": "summaries/-1_1.json",
+      "materialKinds": 17
+    },
+    {
+      "id": "-1_2",
+      "cx": -1,
+      "cz": 2,
+      "count": 6016,
+      "meshCount": 14,
+      "path": "summaries/-1_2.json",
+      "materialKinds": 14
+    },
+    {
+      "id": "-1_3",
+      "cx": -1,
+      "cz": 3,
+      "count": 3355,
+      "meshCount": 11,
+      "path": "summaries/-1_3.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "0_-4",
+      "cx": 0,
+      "cz": -4,
+      "count": 3726,
+      "meshCount": 20,
+      "path": "summaries/0_-4.json",
+      "materialKinds": 20
+    },
+    {
+      "id": "0_-3",
+      "cx": 0,
+      "cz": -3,
+      "count": 5518,
+      "meshCount": 17,
+      "path": "summaries/0_-3.json",
+      "materialKinds": 17
+    },
+    {
+      "id": "0_-2",
+      "cx": 0,
+      "cz": -2,
+      "count": 6426,
+      "meshCount": 24,
+      "path": "summaries/0_-2.json",
+      "materialKinds": 24
+    },
+    {
+      "id": "0_-1",
+      "cx": 0,
+      "cz": -1,
+      "count": 6827,
+      "meshCount": 26,
+      "path": "summaries/0_-1.json",
+      "materialKinds": 26
+    },
+    {
+      "id": "0_0",
+      "cx": 0,
+      "cz": 0,
+      "count": 15888,
+      "meshCount": 49,
+      "path": "summaries/0_0.json",
+      "materialKinds": 49
+    },
+    {
+      "id": "0_1",
+      "cx": 0,
+      "cz": 1,
+      "count": 6502,
+      "meshCount": 26,
+      "path": "summaries/0_1.json",
+      "materialKinds": 26
+    },
+    {
+      "id": "0_2",
+      "cx": 0,
+      "cz": 2,
+      "count": 4808,
+      "meshCount": 10,
+      "path": "summaries/0_2.json",
+      "materialKinds": 10
+    },
+    {
+      "id": "0_3",
+      "cx": 0,
+      "cz": 3,
+      "count": 3268,
+      "meshCount": 11,
+      "path": "summaries/0_3.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "1_-4",
+      "cx": 1,
+      "cz": -4,
+      "count": 3330,
+      "meshCount": 14,
+      "path": "summaries/1_-4.json",
+      "materialKinds": 14
+    },
+    {
+      "id": "1_-3",
+      "cx": 1,
+      "cz": -3,
+      "count": 5493,
+      "meshCount": 17,
+      "path": "summaries/1_-3.json",
+      "materialKinds": 17
+    },
+    {
+      "id": "1_-2",
+      "cx": 1,
+      "cz": -2,
+      "count": 5080,
+      "meshCount": 12,
+      "path": "summaries/1_-2.json",
+      "materialKinds": 12
+    },
+    {
+      "id": "1_-1",
+      "cx": 1,
+      "cz": -1,
+      "count": 5448,
+      "meshCount": 20,
+      "path": "summaries/1_-1.json",
+      "materialKinds": 20
+    },
+    {
+      "id": "1_0",
+      "cx": 1,
+      "cz": 0,
+      "count": 5546,
+      "meshCount": 19,
+      "path": "summaries/1_0.json",
+      "materialKinds": 19
+    },
+    {
+      "id": "1_1",
+      "cx": 1,
+      "cz": 1,
+      "count": 5503,
+      "meshCount": 23,
+      "path": "summaries/1_1.json",
+      "materialKinds": 23
+    },
+    {
+      "id": "1_2",
+      "cx": 1,
+      "cz": 2,
+      "count": 5737,
+      "meshCount": 16,
+      "path": "summaries/1_2.json",
+      "materialKinds": 16
+    },
+    {
+      "id": "1_3",
+      "cx": 1,
+      "cz": 3,
+      "count": 3668,
+      "meshCount": 16,
+      "path": "summaries/1_3.json",
+      "materialKinds": 16
+    },
+    {
+      "id": "2_-4",
+      "cx": 2,
+      "cz": -4,
+      "count": 3253,
+      "meshCount": 11,
+      "path": "summaries/2_-4.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "2_-3",
+      "cx": 2,
+      "cz": -3,
+      "count": 5014,
+      "meshCount": 8,
+      "path": "summaries/2_-3.json",
+      "materialKinds": 8
+    },
+    {
+      "id": "2_-2",
+      "cx": 2,
+      "cz": -2,
+      "count": 5910,
+      "meshCount": 20,
+      "path": "summaries/2_-2.json",
+      "materialKinds": 20
+    },
+    {
+      "id": "2_-1",
+      "cx": 2,
+      "cz": -1,
+      "count": 6458,
+      "meshCount": 16,
+      "path": "summaries/2_-1.json",
+      "materialKinds": 16
+    },
+    {
+      "id": "2_0",
+      "cx": 2,
+      "cz": 0,
+      "count": 6531,
+      "meshCount": 16,
+      "path": "summaries/2_0.json",
+      "materialKinds": 16
+    },
+    {
+      "id": "2_1",
+      "cx": 2,
+      "cz": 1,
+      "count": 6166,
+      "meshCount": 18,
+      "path": "summaries/2_1.json",
+      "materialKinds": 18
+    },
+    {
+      "id": "2_2",
+      "cx": 2,
+      "cz": 2,
+      "count": 5200,
+      "meshCount": 12,
+      "path": "summaries/2_2.json",
+      "materialKinds": 12
+    },
+    {
+      "id": "2_3",
+      "cx": 2,
+      "cz": 3,
+      "count": 3321,
+      "meshCount": 11,
+      "path": "summaries/2_3.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "3_-4",
+      "cx": 3,
+      "cz": -4,
+      "count": 1993,
+      "meshCount": 9,
+      "path": "summaries/3_-4.json",
+      "materialKinds": 9
+    },
+    {
+      "id": "3_-3",
+      "cx": 3,
+      "cz": -3,
+      "count": 3314,
+      "meshCount": 11,
+      "path": "summaries/3_-3.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "3_-2",
+      "cx": 3,
+      "cz": -2,
+      "count": 3456,
+      "meshCount": 15,
+      "path": "summaries/3_-2.json",
+      "materialKinds": 15
+    },
+    {
+      "id": "3_-1",
+      "cx": 3,
+      "cz": -1,
+      "count": 3744,
+      "meshCount": 17,
+      "path": "summaries/3_-1.json",
+      "materialKinds": 17
+    },
+    {
+      "id": "3_0",
+      "cx": 3,
+      "cz": 0,
+      "count": 3793,
+      "meshCount": 17,
+      "path": "summaries/3_0.json",
+      "materialKinds": 17
+    },
+    {
+      "id": "3_1",
+      "cx": 3,
+      "cz": 1,
+      "count": 3583,
+      "meshCount": 16,
+      "path": "summaries/3_1.json",
+      "materialKinds": 16
+    },
+    {
+      "id": "3_2",
+      "cx": 3,
+      "cz": 2,
+      "count": 3543,
+      "meshCount": 11,
+      "path": "summaries/3_2.json",
+      "materialKinds": 11
+    },
+    {
+      "id": "3_3",
+      "cx": 3,
+      "cz": 3,
+      "count": 2084,
+      "meshCount": 11,
+      "path": "summaries/3_3.json",
+      "materialKinds": 11
+    }
+  ],
+  "runtimeBudget": {
+    "tier": "mobile",
+    "visibleInstanceCap": 500000,
+    "visibleRadius": 8
+  },
+  "sectionCounts": {
+    "terrain": 233438,
+    "outerDistrictExpansion": 52856,
+    "roads": 4952,
+    "transit": 2373,
+    "tourismExpansion": 1710,
+    "petronas": 1508,
+    "sultanAbdulSamad": 1392,
+    "cityBuildings": 1269,
+    "nationalMosque": 894,
+    "merdeka118": 851,
+    "bukitBintang": 728,
+    "exchange106": 716,
+    "parksAndWater": 597,
+    "nationalMonument": 544,
+    "landmarkPins": 482,
+    "klTower": 448,
+    "nationalMuseum": 435,
+    "theanHouTemple": 404,
+    "centralMarket": 387,
+    "streetDetails": 110,
+    "railwayStation": 9
+  },
+  "materialCounts": {
+    "grass": 104985,
+    "clay": 14080,
+    "dirt": 10797,
+    "stoneDark": 14081,
+    "grass2": 54630,
+    "grassDark": 34893,
+    "water": 437,
+    "treeTrunk": 117,
+    "treeLeaf": 380,
+    "treeLeaf2": 132,
+    "road": 39667,
+    "lineWhite": 1504,
+    "parkPath": 2814,
+    "concrete": 15154,
+    "gatewayPurple": 117,
+    "lampGlow": 281,
+    "glassGreen": 72,
+    "concreteDark": 705,
+    "plaza": 5491,
+    "templeGold": 33,
+    "caveLimestone": 11,
+    "warning": 49,
+    "mosqueWhite": 67,
+    "mosqueBlue": 10,
+    "awningStripe": 46,
+    "marketRed": 38,
+    "glassDark": 2727,
+    "mallGold": 31,
+    "blackGlass": 44,
+    "glass": 377,
+    "steel": 26,
+    "redBrick": 29,
+    "rail": 1456,
+    "station": 24,
+    "stationRoof": 19,
+    "busGreen": 4,
+    "riverBlue": 268,
+    "templeRed": 4,
+    "roofCopper": 10,
+    "museumBrown": 9,
+    "palaceWall": 1,
+    "palaceGold": 2,
+    "marketBlue": 6,
+    "littleIndiaPink": 3,
+    "pavilionRed": 6,
+    "merdekaGlass": 41,
+    "silver": 71,
+    "petronasTrim": 312,
+    "merdekaTrim": 13,
+    "klTowerWhite": 3,
+    "klTowerRed": 2,
+    "stone": 2,
+    "monumentBronze": 22
+  }
+}

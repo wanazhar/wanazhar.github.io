@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "id": "-3_-1",
+  "cx": -3,
+  "cz": -1,
+  "count": 5458,
+  "meshCount": 10,
+  "materialCounts": {
+    "grass": 2208,
+    "dirt": 104,
+    "grass2": 1156,
+    "grassDark": 732,
+    "road": 835,
+    "lineWhite": 27,
+    "parkPath": 49,
+    "concrete": 245,
+    "concreteDark": 4,
+    "plaza": 98
+  },
+  "path": "summaries/-3_-1.json"
+}

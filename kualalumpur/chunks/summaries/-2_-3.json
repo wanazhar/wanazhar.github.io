@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "id": "-2_-3",
+  "cx": -2,
+  "cz": -3,
+  "count": 5013,
+  "meshCount": 14,
+  "materialCounts": {
+    "grass": 2189,
+    "grass2": 1181,
+    "grassDark": 726,
+    "road": 576,
+    "lineWhite": 18,
+    "parkPath": 126,
+    "concrete": 127,
+    "gatewayPurple": 1,
+    "lampGlow": 12,
+    "concreteDark": 15,
+    "warning": 2,
+    "awningStripe": 4,
+    "marketRed": 4,
+    "rail": 32
+  },
+  "path": "summaries/-2_-3.json"
+}

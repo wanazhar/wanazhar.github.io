@@ -791,28 +791,29 @@ export function createKualaLumpurWorld(scene) {
   scene.fog = new THREE.Fog(0x07101f, 170, 620);
 
   const inst = new VoxelInstancer(scene, { castShadow: false, receiveShadow: true });
-  const terrain = createTerrain(inst);
+  const terrain = inst.withSection('terrain', () => createTerrain(inst));
+  const addSection = (name, callback) => inst.withSection(name, callback);
 
-  addParksAndWater(inst, terrain);
-  addOuterDistrictExpansion(inst, terrain);
-  addRoads(inst, terrain);
-  addTransit(inst, terrain);
-  addStreetDetails(inst, terrain);
-  addTourismExpansion(inst, terrain);
-  addCityBuildings(inst, terrain);
-  addAllLandmarkPins(inst, terrain);
-  addPetronas(inst, terrain);
-  addMerdeka118(inst, terrain);
-  addKLTower(inst, terrain);
-  addSultanAbdulSamad(inst, terrain);
-  addNationalMosque(inst, terrain);
-  addNationalMonument(inst, terrain);
-  addExchange106(inst, terrain);
-  addBukitBintang(inst, terrain);
-  addCentralMarket(inst, terrain);
-  addRailwayStation(inst, terrain);
-  addTheanHouTemple(inst, terrain);
-  addNationalMuseum(inst, terrain);
+  addSection('parksAndWater', () => addParksAndWater(inst, terrain));
+  addSection('outerDistrictExpansion', () => addOuterDistrictExpansion(inst, terrain));
+  addSection('roads', () => addRoads(inst, terrain));
+  addSection('transit', () => addTransit(inst, terrain));
+  addSection('streetDetails', () => addStreetDetails(inst, terrain));
+  addSection('tourismExpansion', () => addTourismExpansion(inst, terrain));
+  addSection('cityBuildings', () => addCityBuildings(inst, terrain));
+  addSection('landmarkPins', () => addAllLandmarkPins(inst, terrain));
+  addSection('petronas', () => addPetronas(inst, terrain));
+  addSection('merdeka118', () => addMerdeka118(inst, terrain));
+  addSection('klTower', () => addKLTower(inst, terrain));
+  addSection('sultanAbdulSamad', () => addSultanAbdulSamad(inst, terrain));
+  addSection('nationalMosque', () => addNationalMosque(inst, terrain));
+  addSection('nationalMonument', () => addNationalMonument(inst, terrain));
+  addSection('exchange106', () => addExchange106(inst, terrain));
+  addSection('bukitBintang', () => addBukitBintang(inst, terrain));
+  addSection('centralMarket', () => addCentralMarket(inst, terrain));
+  addSection('railwayStation', () => addRailwayStation(inst, terrain));
+  addSection('theanHouTemple', () => addTheanHouTemple(inst, terrain));
+  addSection('nationalMuseum', () => addNationalMuseum(inst, terrain));
 
   const sunDisc = new THREE.Mesh(
     new THREE.SphereGeometry(6, 16, 8),
@@ -986,6 +987,7 @@ export function createKualaLumpurWorld(scene) {
     landmarks,
     transportPaths,
     voxelStats: stats,
+    chunkManager: stats.chunkManager,
     startPosition: new THREE.Vector3(-38, terrain.surfaceYAt(-38, 8) + 0.1, 8)
   };
 }

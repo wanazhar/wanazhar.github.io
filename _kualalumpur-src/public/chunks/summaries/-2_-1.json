@@ -1,0 +1,32 @@
+{
+  "formatVersion": 1,
+  "id": "-2_-1",
+  "cx": -2,
+  "cz": -1,
+  "count": 6439,
+  "meshCount": 21,
+  "materialCounts": {
+    "grass": 2174,
+    "dirt": 85,
+    "grass2": 1196,
+    "grassDark": 726,
+    "road": 962,
+    "lineWhite": 37,
+    "parkPath": 275,
+    "concrete": 596,
+    "gatewayPurple": 8,
+    "lampGlow": 8,
+    "glassGreen": 1,
+    "concreteDark": 30,
+    "plaza": 156,
+    "templeGold": 2,
+    "warning": 1,
+    "mosqueWhite": 2,
+    "mosqueBlue": 1,
+    "glassDark": 143,
+    "redBrick": 15,
+    "rail": 20,
+    "pavilionRed": 1
+  },
+  "path": "summaries/-2_-1.json"
+}

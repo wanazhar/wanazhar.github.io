@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "id": "2_-3",
+  "cx": 2,
+  "cz": -3,
+  "count": 5014,
+  "meshCount": 8,
+  "materialCounts": {
+    "grass": 2253,
+    "grass2": 1126,
+    "grassDark": 717,
+    "road": 768,
+    "lineWhite": 28,
+    "concrete": 30,
+    "concreteDark": 6,
+    "rail": 86
+  },
+  "path": "summaries/2_-3.json"
+}

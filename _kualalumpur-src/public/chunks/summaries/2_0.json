@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "id": "2_0",
+  "cx": 2,
+  "cz": 0,
+  "count": 6531,
+  "meshCount": 16,
+  "materialCounts": {
+    "grass": 2198,
+    "dirt": 27,
+    "grass2": 1154,
+    "grassDark": 744,
+    "road": 768,
+    "lineWhite": 38,
+    "parkPath": 182,
+    "concrete": 902,
+    "gatewayPurple": 35,
+    "lampGlow": 9,
+    "glassGreen": 2,
+    "concreteDark": 37,
+    "plaza": 211,
+    "templeGold": 1,
+    "glassDark": 159,
+    "rail": 64
+  },
+  "path": "summaries/2_0.json"
+}
