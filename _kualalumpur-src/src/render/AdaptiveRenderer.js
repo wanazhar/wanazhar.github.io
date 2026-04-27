@@ -5,7 +5,7 @@ export class AdaptiveRenderer {
     this.lowEndMode = Boolean(options.lowEndMode);
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: !this.lowEndMode,
+      antialias: true,
       powerPreference: 'high-performance',
       alpha: false
     });
@@ -14,9 +14,9 @@ export class AdaptiveRenderer {
     this.renderer.toneMappingExposure = 1.05;
     this.renderer.shadowMap.enabled = false;
 
-    this.pixelRatio = this.lowEndMode ? Math.min(window.devicePixelRatio || 1, 0.78) : Math.min(window.devicePixelRatio || 1, 1.25);
-    this.minPixelRatio = this.lowEndMode ? 0.5 : 0.62;
-    this.maxPixelRatio = this.lowEndMode ? Math.min(window.devicePixelRatio || 1, 1) : Math.min(window.devicePixelRatio || 1, 1.5);
+    this.pixelRatio = Math.min(window.devicePixelRatio || 1, this.lowEndMode ? 1 : 1.25);
+    this.minPixelRatio = this.lowEndMode ? 0.72 : 0.62;
+    this.maxPixelRatio = Math.min(window.devicePixelRatio || 1, this.lowEndMode ? 1.25 : 1.5);
     this.frameCostEMA = 16.7;
     this.lastPixelChange = 0;
     this.setPixelRatio(this.pixelRatio);
@@ -48,11 +48,11 @@ export class AdaptiveRenderer {
     const now = performance.now();
     if (now - this.lastPixelChange < 1400) return;
 
-    if (this.frameCostEMA > 18.5 && this.pixelRatio > this.minPixelRatio) {
-      this.setPixelRatio(Math.max(this.minPixelRatio, this.pixelRatio - 0.16));
+    if (this.frameCostEMA > 20.5 && this.pixelRatio > this.minPixelRatio) {
+      this.setPixelRatio(Math.max(this.minPixelRatio, this.pixelRatio - 0.08));
       this.lastPixelChange = now;
     } else if (this.frameCostEMA < 12.5 && this.pixelRatio < this.maxPixelRatio) {
-      this.setPixelRatio(Math.min(this.maxPixelRatio, this.pixelRatio + 0.06));
+      this.setPixelRatio(Math.min(this.maxPixelRatio, this.pixelRatio + 0.08));
       this.lastPixelChange = now;
     }
   }

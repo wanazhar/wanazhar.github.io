@@ -9,6 +9,33 @@ function cube(geometry, material, position, scale) {
   return mesh;
 }
 
+function createPlayerLocator() {
+  const locator = new THREE.Group();
+  locator.name = 'explorer-character-locator';
+
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffd166,
+    transparent: true,
+    opacity: 0.86,
+    depthTest: false,
+    depthWrite: false,
+    fog: false
+  });
+
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.055, 6, 28), material);
+  halo.rotation.x = Math.PI / 2;
+  halo.position.y = 3.65;
+  halo.renderOrder = 999;
+
+  const pointer = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.86, 4), material);
+  pointer.position.y = 4.55;
+  pointer.rotation.y = Math.PI / 4;
+  pointer.renderOrder = 1000;
+
+  locator.add(halo, pointer);
+  return locator;
+}
+
 function createVoxelCharacter() {
   const group = new THREE.Group();
   group.name = 'explorer-character';
@@ -46,7 +73,7 @@ function createVoxelCharacter() {
   rightLeg.add(cube(geometry, materials.pants, new THREE.Vector3(0, -0.42, 0), new THREE.Vector3(0.3, 0.86, 0.32)));
   rightLeg.add(cube(geometry, materials.shoes, new THREE.Vector3(0, -0.9, -0.08), new THREE.Vector3(0.34, 0.18, 0.48)));
 
-  group.add(torso, head, hair, bag, leftArm, rightArm, leftLeg, rightLeg);
+  group.add(torso, head, hair, bag, leftArm, rightArm, leftLeg, rightLeg, createPlayerLocator());
   group.userData.parts = { leftArm, rightArm, leftLeg, rightLeg };
   return group;
 }
@@ -110,6 +137,10 @@ export class PlayerController {
     this.group.position.set(position.x, ground + 0.05, position.z);
     this.velocity.set(0, 0, 0);
     this.onGround = true;
+  }
+
+  getFocusTarget() {
+    return this.group.position.clone().add(new THREE.Vector3(0, 4.25, 0));
   }
 
   update(deltaSeconds, camera) {

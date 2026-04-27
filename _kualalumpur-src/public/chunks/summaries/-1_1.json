@@ -3,8 +3,8 @@
   "id": "-1_1",
   "cx": -1,
   "cz": 1,
-  "count": 5608,
-  "meshCount": 17,
+  "count": 5630,
+  "meshCount": 18,
   "materialCounts": {
     "grass": 2182,
     "dirt": 69,
@@ -18,10 +18,11 @@
     "lineWhite": 33,
     "concrete": 106,
     "lampGlow": 2,
-    "concreteDark": 11,
+    "concreteDark": 12,
     "plaza": 72,
     "warning": 2,
-    "glass": 5,
+    "glassDark": 1,
+    "glass": 25,
     "rail": 64
   },
   "path": "summaries/-1_1.json"
