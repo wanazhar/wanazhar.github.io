@@ -18,6 +18,7 @@ import { postcardTemplates } from './data/postcards.js';
 import { SaveSystem } from './game/SaveSystem.js';
 import { QuestSystem } from './game/QuestSystem.js';
 import { loadStaticChunkManifest } from './world/chunks/ChunkLoader.js';
+import { GeneratedDetailLayer } from './world/detail/GeneratedDetailLayer.js';
 
 const canvas = document.getElementById('game-canvas');
 const adaptive = new AdaptiveRenderer(canvas);
@@ -35,6 +36,7 @@ sun.position.set(-55, 96, -75);
 scene.add(sun);
 
 const world = createKualaLumpurWorld(scene);
+const generatedDetailLayer = new GeneratedDetailLayer(scene, world.terrain, { baseVisibleInstances: world.voxelStats.total });
 const player = new PlayerController(scene, world.terrain, world.startPosition);
 const trainSystem = new TrainSystem(scene, world.transportPaths);
 const cityActors = new CityActors(scene, world.terrain);
@@ -261,7 +263,10 @@ const hud = setupHud({
     hud.renderQuests();
   }
 });
-hud.setVoxelStats(world.voxelStats);
+hud.setVoxelStats({
+  ...world.voxelStats,
+  generatedDetail: generatedDetailLayer.getStats()
+});
 hud.setProgress(landmarkProgress);
 updateTourHud();
 hud.setTimeMode(timeModes[timeModeIndex]);
@@ -272,7 +277,8 @@ loadStaticChunkManifest()
   .then((manifest) => {
     if (!manifest) return;
     world.staticChunkManifest = manifest;
-    console.info(`Static chunk manifest ready: ${manifest.chunks.length} chunks / ${manifest.totalInstances.toLocaleString()} instances`);
+    const total = manifest.totalAuthoredWithGeneratedDetail ?? manifest.totalInstances;
+    console.info(`Static chunk manifest ready: ${manifest.chunks.length} base chunks + ${manifest.generatedDetailChunks?.length ?? 0} generated detail chunks / ${total.toLocaleString()} authored instances`);
   })
   .catch((error) => {
     console.info('Static chunk manifest not available yet; using bundled world.', error.message);
@@ -348,6 +354,7 @@ function loop(now) {
     rain.geometry.attributes.position.needsUpdate = true;
   }
   const chunksChanged = world.chunkManager?.update(player.group.position).changed ?? false;
+  const detailChanged = generatedDetailLayer.update(player.group.position).changed;
   if (trainSystem.ride) {
     const lead = trainSystem.ride.train.cars[0];
     const target = lead.position.clone();
@@ -375,7 +382,7 @@ function loop(now) {
   miniMap.draw({ nextLandmark: tourRoute.current, visited: (landmark) => landmarkProgress.isVisited(landmark) });
   const controlsChanged = controls.update();
 
-  if (playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible) {
+  if (playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || detailChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible) {
     adaptive.render(scene, camera);
     frames += 1;
   }
@@ -386,7 +393,7 @@ function loop(now) {
     fpsClock = now;
   }
 
-  const stillActive = playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible;
+  const stillActive = playerMoved || trainsMoved || actorsMoved || controlsChanged || chunksChanged || detailChanged || needsRender || tourRoute.active || trainSystem.ride || rain.visible;
   hud.update({
     fps,
     pixelRatio: adaptive.pixelRatio,
