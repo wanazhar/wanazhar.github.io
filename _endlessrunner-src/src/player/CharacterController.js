@@ -4,6 +4,7 @@ import { OBB } from 'three/addons/math/OBB.js';
 import { GROUND_Y, LANES, PLAYER_Z, PowerUpType } from '../core/Constants.js';
 import { makeOBB, updateWorldOBB } from '../collision/OBBUtils.js';
 import { getTheme } from '../core/ThemePresets.js';
+import { makeDecalPlane, textureBank } from '../assets/AssetRegistry.js';
 
 const RUN_DURATION = 0.48;
 const JUMP_DURATION = 0.72;
@@ -202,15 +203,13 @@ export class CharacterController {
   buildAnimeRunner(theme) {
     const avatar = new THREE.Group();
     avatar.name = 'avatar';
-    const skin = new THREE.MeshStandardMaterial({ color: theme.player.skin, roughness: 0.72, metalness: 0.02 });
-    const hair = new THREE.MeshStandardMaterial({ color: theme.player.hair, roughness: 0.5, metalness: 0.05, emissive: 0x6a2348, emissiveIntensity: 0.05 });
-    const hairDark = new THREE.MeshStandardMaterial({ color: theme.player.hairDark, roughness: 0.56, metalness: 0.04 });
-    const uniform = new THREE.MeshStandardMaterial({ color: theme.player.primary, roughness: 0.42, metalness: 0.05 });
-    const accent = new THREE.MeshStandardMaterial({ color: theme.player.accent, roughness: 0.38, metalness: 0.05, emissive: 0x8e345e, emissiveIntensity: 0.08 });
-    const skirtMat = new THREE.MeshStandardMaterial({ color: theme.player.skirt, roughness: 0.38, metalness: 0.04 });
-    const boot = new THREE.MeshStandardMaterial({ color: theme.player.boot, roughness: 0.36, metalness: 0.05 });
-    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x364b9c, roughness: 0.2, metalness: 0.05, emissive: 0x0c163d, emissiveIntensity: 0.08 });
-    const blushMat = new THREE.MeshStandardMaterial({ color: theme.player.blush, roughness: 0.55, metalness: 0.02 });
+    const skin = new THREE.MeshStandardMaterial({ color: theme.player.skin, roughness: 0.68, metalness: 0.02 });
+    const hair = new THREE.MeshStandardMaterial({ color: theme.player.hair, roughness: 0.42, metalness: 0.04, emissive: 0x6a2348, emissiveIntensity: 0.05 });
+    const hairDark = new THREE.MeshStandardMaterial({ color: theme.player.hairDark, roughness: 0.5, metalness: 0.03 });
+    const uniform = new THREE.MeshStandardMaterial({ color: theme.player.primary, roughness: 0.36, metalness: 0.04 });
+    const accent = new THREE.MeshStandardMaterial({ color: theme.player.accent, roughness: 0.32, metalness: 0.04, emissive: 0x8e345e, emissiveIntensity: 0.08 });
+    const skirtMat = new THREE.MeshStandardMaterial({ color: theme.player.skirt, roughness: 0.34, metalness: 0.04 });
+    const boot = new THREE.MeshStandardMaterial({ color: theme.player.boot, roughness: 0.32, metalness: 0.03 });
 
     const hips = new THREE.Group();
     hips.name = 'hips';
@@ -222,82 +221,85 @@ export class CharacterController {
     torso.position.y = 0.76;
     hips.add(torso);
 
-    const torsoMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.55, 4, 12), uniform);
-    torsoMesh.scale.set(1.25, 1.18, 1);
+    const torsoMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.58, 4, 12), uniform);
+    torsoMesh.scale.set(1.26, 1.2, 1.02);
     torsoMesh.castShadow = true;
     torso.add(torsoMesh);
 
-    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.12, 0.08), accent);
-    ribbon.position.set(0, 0.15, -0.2);
-    torso.add(ribbon);
+    const sailorCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.14, 14, 1, true), new THREE.MeshStandardMaterial({ color: 0xfbf9ff, roughness: 0.36, metalness: 0.02 }));
+    sailorCollar.position.set(0, 0.18, -0.02);
+    sailorCollar.rotation.x = Math.PI / 2;
+    torso.add(sailorCollar);
+
+    const bowCenter = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 12), accent);
+    bowCenter.position.set(0, 0.12, -0.24);
+    torso.add(bowCenter);
+    const chestBow = makeDecalPlane(textureBank.animeBow, 0.34, 0.18);
+    chestBow.position.set(0, 0.13, -0.255);
+    torso.add(chestBow);
+    const brooch = makeDecalPlane(textureBank.animeEmblem, 0.18, 0.18);
+    brooch.position.set(0, -0.02, -0.255);
+    torso.add(brooch);
 
     const skirt = new THREE.Group();
     skirt.name = 'skirt';
     skirt.position.y = -0.42;
-    const skirtMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.52, 0.34, 10, 1, true), skirtMat);
+    const skirtMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.56, 0.38, 12, 1, true), skirtMat);
     skirtMesh.castShadow = true;
     skirt.add(skirtMesh);
-    const skirtHem = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.03, 6, 18), accent);
+    const skirtHem = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.03, 6, 18), accent);
     skirtHem.rotation.x = Math.PI / 2;
-    skirtHem.position.y = -0.17;
+    skirtHem.position.y = -0.18;
     skirt.add(skirtHem);
+    const skirtFront = makeDecalPlane(textureBank.animeSkirt, 0.56, 0.38, { side: THREE.DoubleSide });
+    skirtFront.position.set(0, -0.02, -0.29);
+    skirt.add(skirtFront);
     hips.add(skirt);
 
     const head = new THREE.Group();
     head.name = 'head';
-    head.position.y = 0.82;
+    head.position.y = 0.84;
     torso.add(head);
-    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 20), skin);
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.43, 24, 20), skin);
     headMesh.scale.set(1, 1.08, 1);
     headMesh.castShadow = true;
     head.add(headMesh);
 
-    const fringe = new THREE.Mesh(new THREE.SphereGeometry(0.44, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.6), hair);
-    fringe.position.y = 0.06;
+    const fringe = new THREE.Mesh(new THREE.SphereGeometry(0.46, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.6), hair);
+    fringe.position.y = 0.07;
     head.add(fringe);
 
-    const bangs = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.18, 0.14), hair);
-    bangs.position.set(0, 0.11, -0.28);
+    const bangs = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.18, 0.16), hair);
+    bangs.position.set(0, 0.11, -0.27);
     head.add(bangs);
 
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), eyeMat);
-    eyeL.scale.set(0.85, 1.35, 0.35);
-    eyeL.position.set(-0.12, 0.02, -0.38);
-    head.add(eyeL);
-    const eyeR = eyeL.clone();
-    eyeR.position.x = 0.12;
-    head.add(eyeR);
-
-    const blushL = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), blushMat);
-    blushL.scale.set(1.4, 0.5, 0.2);
-    blushL.position.set(-0.18, -0.1, -0.35);
-    head.add(blushL);
-    const blushR = blushL.clone();
-    blushR.position.x = 0.18;
-    head.add(blushR);
+    const facePlane = makeDecalPlane(textureBank.animeFace, 0.6, 0.6);
+    facePlane.position.set(0, -0.02, -0.44);
+    head.add(facePlane);
 
     const twinTailL = new THREE.Group();
     twinTailL.name = 'twinTailL';
     twinTailL.position.set(-0.32, 0.02, 0.02);
-    const tailRibbonL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.08), accent);
-    tailRibbonL.position.set(-0.02, -0.05, 0.02);
-    twinTailL.add(tailRibbonL);
-    const tailMeshL = new THREE.Mesh(new THREE.CapsuleGeometry(0.095, 0.68, 4, 12), hairDark);
+    const tailMeshL = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.74, 4, 12), hairDark);
     tailMeshL.rotation.z = 0.38;
     tailMeshL.position.set(-0.14, -0.34, 0.02);
+    tailMeshL.castShadow = true;
     twinTailL.add(tailMeshL);
+    const tailBowL = makeDecalPlane(textureBank.animeBow, 0.18, 0.1);
+    tailBowL.position.set(-0.03, -0.06, 0.11);
+    twinTailL.add(tailBowL);
     head.add(twinTailL);
 
     const twinTailR = new THREE.Group();
     twinTailR.name = 'twinTailR';
     twinTailR.position.set(0.32, 0.02, 0.02);
-    const tailRibbonR = tailRibbonL.clone();
-    tailRibbonR.position.x = 0.02;
-    twinTailR.add(tailRibbonR);
     const tailMeshR = tailMeshL.clone();
     tailMeshR.rotation.z = -0.38;
     tailMeshR.position.x = 0.14;
     twinTailR.add(tailMeshR);
+    const tailBowR = makeDecalPlane(textureBank.animeBow, 0.18, 0.1);
+    tailBowR.position.set(0.03, -0.06, 0.11);
+    twinTailR.add(tailBowR);
     head.add(twinTailR);
 
     const leftArm = this.makeAnimeLimb('leftArm', skin, uniform, 0.13, 0.75);
@@ -326,7 +328,7 @@ export class CharacterController {
     runTrail.position.y = 0.08;
     avatar.add(runTrail);
 
-    const jumpHalo = new THREE.Mesh(new THREE.TorusGeometry(0.76, 0.04, 8, 42), new THREE.MeshBasicMaterial({ color: theme.player.jetpack, transparent: true, opacity: 0.62, depthWrite: false }));
+    const jumpHalo = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.045, 8, 42), new THREE.MeshBasicMaterial({ color: theme.player.jetpack, transparent: true, opacity: 0.62, depthWrite: false }));
     jumpHalo.name = 'jumpHalo';
     jumpHalo.rotation.x = Math.PI / 2;
     jumpHalo.position.y = 1.16;
@@ -417,7 +419,17 @@ export class CharacterController {
       wingR.position.x = 0.33;
       wingR.rotation.z = -0.35;
       group.add(wingR);
+      const bow = makeDecalPlane(textureBank.animeBow, 0.34, 0.18);
+      bow.position.set(0, 0.02, 0.125);
+      group.add(bow);
+      const crest = makeDecalPlane(textureBank.animeEmblem, 0.18, 0.18);
+      crest.position.set(0, 0.2, 0.126);
+      group.add(crest);
     }
+
+    group.traverse((object) => {
+      if (object.isMesh) object.castShadow = true;
+    });
 
     return group;
   }

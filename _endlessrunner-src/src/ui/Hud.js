@@ -27,6 +27,7 @@ export class Hud {
     this.swipeSlider = document.querySelector('[data-swipe-threshold]');
     this.swipeValue = document.querySelector('[data-swipe-threshold-value]');
     this.themeButtons = Array.from(document.querySelectorAll('[data-theme-button]'));
+    this.themeLabel = document.querySelector('[data-theme-label]');
 
     this.bind();
     this.stateManager.subscribe((state) => this.render(state));
@@ -60,35 +61,33 @@ export class Hud {
   }
 
   setSwipeText(value) {
-    if (!this.swipeValue) return;
-    this.swipeValue.textContent = `${value}px`;
+    if (this.swipeValue) this.swipeValue.textContent = `${value}px`;
   }
 
   renderTheme(themeId) {
     this.themeButtons.forEach((button) => {
       button.classList.toggle('is-active', button.dataset.themeButton === themeId);
+      button.setAttribute('aria-pressed', String(button.dataset.themeButton === themeId));
     });
-    const label = THEMES[themeId]?.uiLabel ?? 'Theme';
-    document.querySelector('[data-theme-label]')?.replaceChildren(document.createTextNode(label));
+    if (this.themeLabel) this.themeLabel.textContent = THEMES[themeId]?.uiLabel ?? 'Theme';
   }
 
   render(state) {
     this.scoreValue.textContent = Math.floor(state.score).toLocaleString();
     this.coinsValue.textContent = state.coins.toLocaleString();
     this.highScoreValue.textContent = Math.floor(state.highScore).toLocaleString();
-
     this.renderPowerUps(state.activePowerUps);
 
     if (state.gameState === GameState.START) {
       this.overlay.hidden = false;
-      this.overlayTitle.textContent = 'Endless Runner v4';
-      this.overlayBody.textContent = 'Same core gameplay, now with a neon/anime theme switcher, refreshed character states, collectible specials, and persistent high scores.';
+      this.overlayTitle.textContent = 'Endless Runner v5';
+      this.overlayBody.textContent = 'Redesigned anime mode now uses dedicated art assets, while gameplay stays fast and unobstructed.';
       this.overlayMeta.innerHTML = `High Score <strong>${Math.floor(state.highScore).toLocaleString()}</strong>`;
       this.startButton.textContent = 'Start Run';
     } else if (state.gameState === GameState.GAME_OVER) {
       this.overlay.hidden = false;
       this.overlayTitle.textContent = 'Run Over';
-      this.overlayBody.textContent = 'Tap start to jump back in. You can switch themes anytime without changing gameplay.';
+      this.overlayBody.textContent = 'Swap themes or adjust controls in Settings, then jump straight back in.';
       this.overlayMeta.innerHTML = `Run Score <strong>${state.lastRunScore.toLocaleString()}</strong> · High Score <strong>${Math.floor(state.highScore).toLocaleString()}</strong>`;
       this.startButton.textContent = 'Restart';
     } else {
@@ -102,7 +101,7 @@ export class Hud {
     const entries = Object.entries(activePowerUps).filter(([, remaining]) => remaining > 0);
 
     if (!entries.length) {
-      this.powerUps.innerHTML = '<span class="pill pill-muted">Collect power-ups</span>';
+      this.powerUps.innerHTML = '<span class="pill pill-muted">No active power-ups</span>';
       return;
     }
 

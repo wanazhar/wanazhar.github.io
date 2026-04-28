@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { LANES, RECYCLE_Z, PowerUpType, POWER_UP_DURATIONS } from '../core/Constants.js';
 import { applyCurvedWorldToObject } from '../graphics/ShaderUtils.js';
 import { getTheme } from '../core/ThemePresets.js';
+import { makeDecalPlane, textureBank } from '../assets/AssetRegistry.js';
 
 const playerPosition = new THREE.Vector3();
 
@@ -198,6 +199,9 @@ function buildAnimePowerUp(type, theme) {
     point.position.set(0, -0.18, 0);
     point.rotation.z = Math.PI;
     group.add(heartA, heartB, point);
+    const icon = makeDecalPlane(textureBank.animePowerMagnet, 0.54, 0.54);
+    icon.position.set(0, 0.02, 0.3);
+    group.add(icon);
   } else if (type === PowerUpType.MULTIPLIER) {
     const star = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), gold);
     group.add(star);
@@ -205,6 +209,9 @@ function buildAnimePowerUp(type, theme) {
     halo.rotation.x = Math.PI / 2;
     halo.position.y = 0.02;
     group.add(halo);
+    const icon = makeDecalPlane(textureBank.animePower2x, 0.56, 0.56);
+    icon.position.set(0, 0.02, 0.3);
+    group.add(icon);
   } else if (type === PowerUpType.JETPACK) {
     const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.24, 0.18), pink);
     const loopL = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.05, 8, 22, Math.PI), blue);
@@ -217,10 +224,16 @@ function buildAnimePowerUp(type, theme) {
     const tailR = tailL.clone();
     tailR.position.x = 0.12;
     group.add(ribbon, loopL, loopR, tailL, tailR);
+    const icon = makeDecalPlane(textureBank.animePowerJet, 0.58, 0.58);
+    icon.position.set(0, 0.02, 0.3);
+    group.add(icon);
   } else {
     const bubble = new THREE.Mesh(new THREE.SphereGeometry(0.4, 18, 14), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.1 }));
     const star = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), blue);
     group.add(bubble, star);
+    const icon = makeDecalPlane(textureBank.animePowerShield, 0.54, 0.54);
+    icon.position.set(0, 0.02, 0.3);
+    group.add(icon);
   }
 
   return group;
