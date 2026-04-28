@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { OBB } from 'three/addons/math/OBB.js';
-import { GROUND_Y, LANES, PLAYER_Z } from '../core/Constants.js';
+import { GROUND_Y, LANES, PLAYER_Z, PowerUpType } from '../core/Constants.js';
 import { makeOBB, updateWorldOBB } from '../collision/OBBUtils.js';
 
 const RUN_DURATION = 0.48;
@@ -20,9 +20,12 @@ export class CharacterController {
     this.jumpHeight = 3.2;
     this.isJumping = false;
     this.isRolling = false;
+    this.isFlying = false;
+    this.flyY = 4.35;
     this.jumpDriver = { t: 0 };
 
     this.parts = this.buildProceduralRunner();
+    this.powerVisuals = this.buildPowerVisuals();
     this.scene.add(this.root);
 
     this.mixer = new THREE.AnimationMixer(this.root);
@@ -48,9 +51,11 @@ export class CharacterController {
     this.laneIndex = 1;
     this.isJumping = false;
     this.isRolling = false;
+    this.isFlying = false;
     this.jumpDriver.t = 0;
     this.root.position.set(LANES[1], this.groundY, PLAYER_Z);
     this.root.scale.setScalar(1);
+    this.setPowerVisuals({});
     this.playAnimation('run', 0.08);
   }
 
@@ -144,6 +149,83 @@ export class CharacterController {
     return limb;
   }
 
+  buildPowerVisuals() {
+    const shield = new THREE.Mesh(
+      new THREE.SphereGeometry(1.05, 18, 12),
+      new THREE.MeshBasicMaterial({ color: 0x8aa9ff, transparent: true, opacity: 0.16, wireframe: true, depthWrite: false })
+    );
+    shield.name = 'ShieldBubble';
+    shield.position.y = 1.1;
+    shield.visible = false;
+    this.root.add(shield);
+
+    const magnetAura = new THREE.Mesh(
+      new THREE.TorusGeometry(0.95, 0.035, 8, 42),
+      new THREE.MeshBasicMaterial({ color: 0x6ef3ff, transparent: true, opacity: 0.42, depthWrite: false })
+    );
+    magnetAura.name = 'MagnetAura';
+    magnetAura.position.y = 1.05;
+    magnetAura.rotation.x = Math.PI / 2;
+    magnetAura.visible = false;
+    this.root.add(magnetAura);
+
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0xffd95a, transparent: true, opacity: 0.86, depthWrite: false });
+    const jetpackFlameLeft = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.55, 10), flameMat);
+    jetpackFlameLeft.name = 'JetpackFlameLeft';
+    jetpackFlameLeft.position.set(-0.22, 0.78, 0.5);
+    jetpackFlameLeft.rotation.x = Math.PI;
+    const jetpackFlameRight = jetpackFlameLeft.clone();
+    jetpackFlameRight.name = 'JetpackFlameRight';
+    jetpackFlameRight.position.x = 0.22;
+    jetpackFlameLeft.visible = false;
+    jetpackFlameRight.visible = false;
+    this.root.add(jetpackFlameLeft, jetpackFlameRight);
+
+    return { shield, magnetAura, jetpackFlameLeft, jetpackFlameRight };
+  }
+
+  setPowerVisuals(activePowerUps = {}) {
+    if (!this.powerVisuals) return;
+    const shieldActive = (activePowerUps[PowerUpType.SHIELD] ?? 0) > 0;
+    const magnetActive = (activePowerUps[PowerUpType.MAGNET] ?? 0) > 0;
+    const jetpackActive = (activePowerUps[PowerUpType.JETPACK] ?? 0) > 0;
+    this.powerVisuals.shield.visible = shieldActive;
+    this.powerVisuals.magnetAura.visible = magnetActive;
+    this.powerVisuals.jetpackFlameLeft.visible = jetpackActive;
+    this.powerVisuals.jetpackFlameRight.visible = jetpackActive;
+  }
+
+  applyPowerUps(activePowerUps = {}) {
+    this.setPowerVisuals(activePowerUps);
+    const shouldFly = (activePowerUps[PowerUpType.JETPACK] ?? 0) > 0;
+    if (shouldFly === this.isFlying) return;
+
+    this.isFlying = shouldFly;
+    this.isJumping = false;
+    this.isRolling = false;
+    gsap.killTweensOf(this.jumpDriver);
+    gsap.killTweensOf(this.root.position);
+
+    gsap.to(this.root.position, {
+      y: shouldFly ? this.flyY : this.groundY,
+      duration: shouldFly ? 0.42 : 0.34,
+      ease: shouldFly ? 'power3.out' : 'power2.inOut',
+      overwrite: 'auto',
+      onComplete: () => {
+        if (!this.isFlying) this.root.position.y = this.groundY;
+      }
+    });
+    this.playAnimation('run', 0.12);
+  }
+
+  flashShield() {
+    if (!this.powerVisuals?.shield) return;
+    const shield = this.powerVisuals.shield;
+    shield.visible = true;
+    gsap.fromTo(shield.scale, { x: 1.6, y: 1.6, z: 1.6 }, { x: 1, y: 1, z: 1, duration: 0.35, ease: 'power2.out' });
+    gsap.fromTo(shield.material, { opacity: 0.42 }, { opacity: 0.16, duration: 0.35, ease: 'power2.out' });
+  }
+
   createActions() {
     const tracks = {
       run: [
@@ -235,7 +317,7 @@ export class CharacterController {
   }
 
   jump() {
-    if (this.isJumping || this.isRolling) return;
+    if (this.isJumping || this.isRolling || this.isFlying) return;
     this.isJumping = true;
     this.jumpDriver.t = 0;
     this.playAnimation('jump', 0.08);
@@ -262,7 +344,7 @@ export class CharacterController {
   }
 
   roll() {
-    if (this.isRolling || this.isJumping) return;
+    if (this.isRolling || this.isJumping || this.isFlying) return;
     this.isRolling = true;
     this.playAnimation('roll', 0.07);
 
@@ -281,6 +363,25 @@ export class CharacterController {
 
   update(deltaSeconds) {
     this.mixer.update(deltaSeconds);
+    if (this.powerVisuals?.magnetAura?.visible) {
+      this.powerVisuals.magnetAura.rotation.z += deltaSeconds * 4.4;
+      const pulse = 1 + Math.sin(performance.now() * 0.008) * 0.08;
+      this.powerVisuals.magnetAura.scale.setScalar(pulse);
+    }
+    if (this.powerVisuals?.shield?.visible) {
+      this.powerVisuals.shield.rotation.y += deltaSeconds * 1.8;
+      this.powerVisuals.shield.rotation.x += deltaSeconds * 0.9;
+    }
+    if (this.powerVisuals?.jetpackFlameLeft?.visible) {
+      const scale = 0.75 + Math.sin(performance.now() * 0.03) * 0.2;
+      this.powerVisuals.jetpackFlameLeft.scale.setScalar(scale);
+      this.powerVisuals.jetpackFlameRight.scale.setScalar(1.05 - scale * 0.18);
+      this.parts.shadow.scale.setScalar(THREE.MathUtils.lerp(this.parts.shadow.scale.x, 0.46, deltaSeconds * 4));
+      this.parts.shadow.material.opacity = THREE.MathUtils.lerp(this.parts.shadow.material.opacity, 0.1, deltaSeconds * 4);
+    } else if (!this.isJumping) {
+      this.parts.shadow.scale.setScalar(THREE.MathUtils.lerp(this.parts.shadow.scale.x, 1, deltaSeconds * 4));
+      this.parts.shadow.material.opacity = THREE.MathUtils.lerp(this.parts.shadow.material.opacity, 0.25, deltaSeconds * 4);
+    }
   }
 
   getOBB() {

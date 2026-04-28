@@ -1,15 +1,15 @@
-# Endless Runner v2
+# Endless Runner v3
 
-A refreshed 3-lane endless runner prototype built with Vite, vanilla Three.js, GSAP tweens, a custom observer state manager, shader-curved world geometry, pooled obstacles, instanced collectibles, OBB collisions, and post-processing.
+A Vite + Three.js + GSAP 3-lane endless runner prototype with Subway Surfers-style collectable tools and power-ups.
 
-## What's new in v2
+## v3 additions
 
-- Renamed the game to **Endless Runner**
-- Removed bottom touch arrow buttons
-- Added adjustable swipe sensitivity with localStorage persistence
-- Simplified the UI copy
-- Updated the visual direction toward a neon skyline style
-- Keeps GitHub Pages subfolder support through `base: './'`
+- **Jetpack / sky flight**: collecting the jetpack lifts the runner into the sky with GSAP and spawns elevated halo coin paths.
+- **Coin magnet**: pulls nearby halo coins into the player while active.
+- **2x score multiplier**: doubles passive score gain and coin score value for the active duration.
+- **Shield**: absorbs one collision and grants a short grace window.
+- **Power-up HUD**: active timers show at the top of the screen.
+- Keeps v2 improvements: simplified UI, adjustable swipe sensitivity, no bottom mobile arrows, and a GitHub Pages build for `/endlessrunner/`.
 
 ## Run locally
 
@@ -24,4 +24,10 @@ npm run dev
 npm run build
 ```
 
-Deploy the contents of `dist/` to your `/endlessrunner/` GitHub Pages folder.
+This repo builds directly into `../endlessrunner` for GitHub Pages. `vite.config.js` uses `base: '/endlessrunner/'`, `build.outDir: '../endlessrunner'`, and `emptyOutDir: true`.
+
+## Controls
+
+Desktop: arrow keys, WASD, or Space.
+
+Touch: swipe left/right/up/down. Swipe sensitivity can be adjusted in the HUD.

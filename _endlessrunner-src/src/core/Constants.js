@@ -4,6 +4,20 @@ export const GameState = Object.freeze({
   GAME_OVER: 'GameOver'
 });
 
+export const PowerUpType = Object.freeze({
+  MAGNET: 'magnet',
+  MULTIPLIER: 'multiplier',
+  JETPACK: 'jetpack',
+  SHIELD: 'shield'
+});
+
+export const POWER_UP_DURATIONS = Object.freeze({
+  [PowerUpType.MAGNET]: 9,
+  [PowerUpType.MULTIPLIER]: 10,
+  [PowerUpType.JETPACK]: 8,
+  [PowerUpType.SHIELD]: 7
+});
+
 export const LANES = Object.freeze([-2.45, 0, 2.45]);
 export const LANE_WIDTH = 2.45;
 export const GROUND_Y = 0;
