@@ -14,7 +14,7 @@ export class CoinManager {
     this.rng = mulberry32(12188);
     this.coins = [];
 
-    const geometry = new THREE.TorusGeometry(0.24, 0.065, 8, 18);
+    const geometry = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 6);
     const material = applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({
       color: 0xffd95a,
       roughness: 0.24,
@@ -95,7 +95,7 @@ export class CoinManager {
       const coin = this.coins[i];
       const scale = coin.active ? 1 : 0.0001;
       dummy.position.set(LANES[coin.laneIndex], coin.y, coin.z);
-      dummy.rotation.set(Math.PI / 2, coin.angle, 0);
+      dummy.rotation.set(Math.PI / 2, coin.angle, Math.PI / 6);
       dummy.scale.setScalar(scale);
       dummy.updateMatrix();
       this.mesh.setMatrixAt(i, dummy.matrix);

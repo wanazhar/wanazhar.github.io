@@ -1,10 +1,13 @@
+const STORAGE_KEY = 'endless-runner-swipe-threshold';
+
 export class InputManager {
   constructor(target = window) {
     this.target = target;
     this.actions = new Map();
     this.touchStart = null;
-    this.deadZone = 34;
+    this.deadZone = this.readStoredThreshold();
     this.enabled = true;
+    this.axisBias = 1.05;
 
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handlePointerDown = this.handlePointerDown.bind(this);
@@ -16,13 +19,6 @@ export class InputManager {
     window.addEventListener('keydown', this.handleKeyDown, { passive: false });
     window.addEventListener('pointerdown', this.handlePointerDown, { passive: true });
     window.addEventListener('pointerup', this.handlePointerUp, { passive: true });
-
-    document.querySelectorAll('[data-touch]').forEach((button) => {
-      button.addEventListener('pointerdown', (event) => {
-        event.preventDefault();
-        this.emit(button.dataset.touch);
-      });
-    });
   }
 
   destroy() {
@@ -33,6 +29,24 @@ export class InputManager {
 
   setEnabled(enabled) {
     this.enabled = enabled;
+  }
+
+  setSwipeThreshold(value) {
+    this.deadZone = Math.max(24, Math.min(96, Math.round(Number(value) || 52)));
+    try { window.localStorage.setItem(STORAGE_KEY, String(this.deadZone)); } catch {}
+    return this.deadZone;
+  }
+
+  getSwipeThreshold() {
+    return this.deadZone;
+  }
+
+  readStoredThreshold() {
+    try {
+      const stored = Number(window.localStorage.getItem(STORAGE_KEY));
+      if (Number.isFinite(stored) && stored >= 24 && stored <= 96) return Math.round(stored);
+    } catch {}
+    return 52;
   }
 
   emit(action) {
@@ -62,22 +76,31 @@ export class InputManager {
   }
 
   handlePointerDown(event) {
-    if (event.target?.closest?.('button')) return;
+    if (event.target?.closest?.('button, input, label')) return;
     this.touchStart = { x: event.clientX, y: event.clientY, time: performance.now() };
   }
 
   handlePointerUp(event) {
-    if (!this.touchStart || event.target?.closest?.('button')) return;
+    if (!this.touchStart || event.target?.closest?.('button, input, label')) return;
+
     const dx = event.clientX - this.touchStart.x;
     const dy = event.clientY - this.touchStart.y;
     this.touchStart = null;
 
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < this.deadZone) return;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+    if (Math.max(absX, absY) < this.deadZone) return;
 
-    if (Math.abs(dx) > Math.abs(dy)) {
+    if (absX > absY * this.axisBias) {
       this.emit(dx < 0 ? 'left' : 'right');
-    } else {
-      this.emit(dy < 0 ? 'jump' : 'roll');
+      return;
     }
+
+    if (absY > absX * this.axisBias) {
+      this.emit(dy < 0 ? 'jump' : 'roll');
+      return;
+    }
+
+    this.emit(absX >= absY ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'jump' : 'roll'));
   }
 }
