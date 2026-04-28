@@ -14,7 +14,7 @@ test('Vite app is configured for GitHub Pages endlessrunner subpath', () => {
 });
 
 test('endless runner source remains maintainable and runnable', () => {
-  assert.equal(packageJson.name, 'three-gsap-endless-runner');
+  assert.equal(packageJson.name, 'endless-runner', 'package should use the public app name');
   assert.equal(packageJson.type, 'module');
   assert.ok(packageJson.dependencies.three, 'Three dependency should be declared');
   assert.ok(packageJson.dependencies.gsap, 'GSAP dependency should be declared');
@@ -24,5 +24,5 @@ test('endless runner source remains maintainable and runnable', () => {
 test('HTML exposes the endless runner canvas and start action', () => {
   assert.match(indexHtml, /id="game-canvas"/, 'game canvas should be present');
   assert.match(indexHtml, /data-action="start"/, 'start action should be present');
-  assert.match(indexHtml, /Touch controls/, 'touch controls should be present for mobile');
+  assert.match(indexHtml, /data-action="swipe-threshold"/, 'v2 swipe sensitivity control should be present for touch tuning');
 });

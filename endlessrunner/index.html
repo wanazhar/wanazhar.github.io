@@ -4,38 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#060712" />
-    <title>Three.js GSAP Endless Runner</title>
-    <script type="module" crossorigin src="./assets/index-DGJeXt-0.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CGPsHquB.css">
+    <title>Endless Runner</title>
+    <script type="module" crossorigin src="./assets/index-BB1rprQ_.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DEP8m5XA.css">
   </head>
   <body>
     <canvas id="game-canvas" aria-label="3D endless runner game canvas"></canvas>
 
     <div id="hud" class="hud">
-      <div class="hud__topbar">
-        <div class="hud__metric"><span>Score</span><strong data-hud="score">0</strong></div>
-        <div class="hud__metric"><span>Speed</span><strong data-hud="speed">1.00x</strong></div>
-        <div class="hud__metric"><span>Coins</span><strong data-hud="coins">0</strong></div>
+      <div class="hud__header">
+        <div class="hud__brand">
+          <span>Arcade</span>
+          <strong>Endless Runner</strong>
+        </div>
+
+        <div class="hud__topbar">
+          <div class="hud__metric"><span>Score</span><strong data-hud="score">0</strong></div>
+          <div class="hud__metric"><span>Speed</span><strong data-hud="speed">1.00x</strong></div>
+          <div class="hud__metric"><span>Coins</span><strong data-hud="coins">0</strong></div>
+        </div>
+
+        <div class="hud__control">
+          <label for="swipe-threshold">Swipe sensitivity</label>
+          <input id="swipe-threshold" class="hud__slider" type="range" min="24" max="96" step="2" value="52" data-action="swipe-threshold" />
+          <strong data-hud="swipe-threshold-label">Balanced · 52px</strong>
+        </div>
       </div>
 
       <div class="hud__center" data-hud="menu">
         <div class="hud__panel">
-          <p class="hud__eyebrow">WebGL Runner Architecture Demo</p>
-          <h1>Curved Horizon Runner</h1>
-          <p>
-            Three lanes, GSAP movement, instanced coins, pooled obstacles,
-            OBB collisions, shader-bent world, and post-processing.
-          </p>
+          <p class="hud__eyebrow">Neon skyline edition</p>
+          <h1 data-hud="panel-title">Endless Runner</h1>
+          <p data-hud="panel-copy">Swipe to dodge, jump, and roll.</p>
           <button data-action="start" class="hud__button">Start run</button>
-          <p class="hud__hint">Keyboard: ← → lane, ↑/space jump, ↓ roll. Touch: swipe or use buttons.</p>
+          <p class="hud__hint">Keyboard works on desktop. Swipe works on touch devices.</p>
         </div>
-      </div>
-
-      <div class="touch-controls" aria-label="Touch controls">
-        <button data-touch="left" aria-label="Move left">←</button>
-        <button data-touch="jump" aria-label="Jump">↑</button>
-        <button data-touch="roll" aria-label="Roll">↓</button>
-        <button data-touch="right" aria-label="Move right">→</button>
       </div>
     </div>
 

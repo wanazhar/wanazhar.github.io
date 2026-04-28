@@ -32,8 +32,11 @@ export class Game {
     this.world.attachPlayer(this.character.root);
 
     this.post = new PostProcessing(this.renderer, this.scene, this.camera);
-    this.hud = new Hud(this.stateManager);
     this.input = new InputManager(window);
+    this.hud = new Hud(this.stateManager, {
+      onSwipeThresholdChange: (value) => this.input.setSwipeThreshold(value),
+      getSwipeThreshold: () => this.input.getSwipeThreshold()
+    });
     this.input.bind({
       left: () => this.whenPlaying(() => this.character.moveLeft()),
       right: () => this.whenPlaying(() => this.character.moveRight()),
@@ -85,14 +88,14 @@ export class Game {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.04;
+    this.renderer.toneMappingExposure = 1.08;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
   }
 
   createScene() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x070a18);
-    this.scene.fog = new THREE.FogExp2(0x070a18, 0.022);
+    this.scene.background = new THREE.Color(0x08101f);
+    this.scene.fog = new THREE.FogExp2(0x08101f, 0.019);
   }
 
   createCamera() {
@@ -102,7 +105,7 @@ export class Game {
   }
 
   createLights() {
-    const hemi = new THREE.HemisphereLight(0x8fb9ff, 0x16161f, 2.2);
+    const hemi = new THREE.HemisphereLight(0x87c6ff, 0x171520, 2.0);
     this.scene.add(hemi);
 
     const sun = new THREE.DirectionalLight(0xffffff, 2.35);
@@ -117,9 +120,13 @@ export class Game {
     sun.shadow.camera.far = 40;
     this.scene.add(sun);
 
-    const rim = new THREE.PointLight(0x55d8ff, 16, 18, 2);
-    rim.position.set(0, 3.5, -4.5);
-    this.scene.add(rim);
+    const magentaFill = new THREE.PointLight(0xff5ea8, 14, 20, 2);
+    magentaFill.position.set(4.5, 2.5, -6);
+    this.scene.add(magentaFill);
+
+    const cyanRim = new THREE.PointLight(0x55d8ff, 18, 22, 2);
+    cyanRim.position.set(-1.5, 3.8, -4.5);
+    this.scene.add(cyanRim);
   }
 
   whenPlaying(callback) {

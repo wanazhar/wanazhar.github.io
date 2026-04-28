@@ -1,17 +1,34 @@
 import { GameState } from '../core/Constants.js';
 
 export class Hud {
-  constructor(stateManager) {
+  constructor(stateManager, { onSwipeThresholdChange = null, getSwipeThreshold = null } = {}) {
     this.stateManager = stateManager;
+    this.onSwipeThresholdChange = onSwipeThresholdChange;
+    this.getSwipeThreshold = getSwipeThreshold;
+
     this.scoreEl = document.querySelector('[data-hud="score"]');
     this.speedEl = document.querySelector('[data-hud="speed"]');
     this.coinsEl = document.querySelector('[data-hud="coins"]');
     this.menuEl = document.querySelector('[data-hud="menu"]');
     this.buttonEl = document.querySelector('[data-action="start"]');
-    this.panelTitle = document.querySelector('.hud__panel h1');
-    this.panelCopy = document.querySelector('.hud__panel p:nth-of-type(2)');
+    this.panelTitle = document.querySelector('[data-hud="panel-title"]');
+    this.panelCopy = document.querySelector('[data-hud="panel-copy"]');
+    this.swipeRange = document.querySelector('[data-action="swipe-threshold"]');
+    this.swipeLabel = document.querySelector('[data-hud="swipe-threshold-label"]');
 
     this.buttonEl?.addEventListener('click', () => this.stateManager.startGame());
+
+    if (this.swipeRange) {
+      const initialValue = getSwipeThreshold ? getSwipeThreshold() : Number(this.swipeRange.value);
+      this.swipeRange.value = String(initialValue);
+      this.updateSwipeLabel(initialValue);
+      this.swipeRange.addEventListener('input', (event) => {
+        const value = Number(event.target.value);
+        const applied = this.onSwipeThresholdChange ? this.onSwipeThresholdChange(value) : value;
+        this.updateSwipeLabel(applied);
+      });
+    }
+
     this.unsubscribe = this.stateManager.subscribe((state, previous) => this.render(state, previous));
   }
 
@@ -26,16 +43,22 @@ export class Hud {
     this.menuEl.classList.toggle('is-hidden', isPlaying);
 
     if (state.gameState === GameState.START) {
-      this.panelTitle.textContent = 'Curved Horizon Runner';
-      this.panelCopy.textContent = 'Three lanes, GSAP movement, instanced coins, pooled obstacles, OBB collisions, shader-bent world, and post-processing.';
-      this.buttonEl.textContent = 'Start run';
+      if (this.panelTitle) this.panelTitle.textContent = 'Endless Runner';
+      if (this.panelCopy) this.panelCopy.textContent = 'Swipe to dodge, jump, and roll.';
+      if (this.buttonEl) this.buttonEl.textContent = 'Start run';
     }
 
     if (state.gameState === GameState.GAME_OVER) {
-      this.panelTitle.textContent = 'Run complete';
-      this.panelCopy.textContent = `Final score: ${state.lastRunScore.toLocaleString()}. The engine recycled every obstacle instead of destroying it.`;
-      this.buttonEl.textContent = 'Run again';
+      if (this.panelTitle) this.panelTitle.textContent = 'Run over';
+      if (this.panelCopy) this.panelCopy.textContent = `Final score ${state.lastRunScore.toLocaleString()}. Tap below to run again.`;
+      if (this.buttonEl) this.buttonEl.textContent = 'Run again';
     }
+  }
+
+  updateSwipeLabel(value) {
+    if (!this.swipeLabel) return;
+    const mode = value <= 40 ? 'Fast' : value <= 64 ? 'Balanced' : 'Precise';
+    this.swipeLabel.textContent = `${mode} · ${Math.round(value)}px`;
   }
 
   destroy() {

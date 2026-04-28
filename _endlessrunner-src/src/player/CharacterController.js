@@ -56,20 +56,20 @@ export class CharacterController {
 
   buildProceduralRunner() {
     const material = new THREE.MeshStandardMaterial({
-      color: 0x6ef3ff,
+      color: 0x3c52ff,
       roughness: 0.36,
       metalness: 0.08,
-      emissive: 0x112844,
+      emissive: 0x0e1558,
       emissiveIntensity: 0.28
     });
     const accent = new THREE.MeshStandardMaterial({
-      color: 0xfff06a,
+      color: 0xff6aa9,
       roughness: 0.45,
       metalness: 0.2,
-      emissive: 0x332500,
+      emissive: 0x4a0f27,
       emissiveIntensity: 0.22
     });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x161a2f, roughness: 0.5, metalness: 0.2 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x11172b, roughness: 0.5, metalness: 0.2 });
 
     const hips = new THREE.Group();
     hips.name = 'hips';
@@ -85,20 +85,25 @@ export class CharacterController {
     torsoMesh.castShadow = true;
     torso.add(torsoMesh);
 
-    const chestGlow = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.12, 0.44), accent);
-    chestGlow.position.set(0, 0.15, -0.225);
+    const chestGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.08, 6), accent);
+    chestGlow.rotation.z = Math.PI / 2;
+    chestGlow.position.set(0, 0.15, -0.255);
     torso.add(chestGlow);
+
+    const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.52, 0.18), dark);
+    backpack.position.set(0, 0.02, 0.28);
+    torso.add(backpack);
 
     const head = new THREE.Group();
     head.name = 'head';
     head.position.y = 0.78;
     torso.add(head);
-    const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.48, 0.48), material);
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 18, 14), material);
     headMesh.castShadow = true;
     head.add(headMesh);
 
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.04), dark);
-    visor.position.set(0, 0.04, -0.255);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.12, 0.06), accent);
+    visor.position.set(0, 0.04, -0.265);
     head.add(visor);
 
     const leftArm = this.makeLimb('leftArm', material, 0.18, 0.78, 0.18);

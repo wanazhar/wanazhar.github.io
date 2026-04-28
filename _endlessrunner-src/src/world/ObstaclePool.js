@@ -140,11 +140,11 @@ export class ObstaclePool {
 
 function buildTrain() {
   const group = new THREE.Group();
-  group.name = 'TrainObstacle';
+  group.name = 'MaglevObstacle';
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x263a72, roughness: 0.42, metalness: 0.22 });
-  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xff4f8f, roughness: 0.35, metalness: 0.18, emissive: 0x250513, emissiveIntensity: 0.16 });
-  const windowMat = new THREE.MeshStandardMaterial({ color: 0x9df2ff, roughness: 0.18, metalness: 0.1, emissive: 0x124556, emissiveIntensity: 0.4 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x232f68, roughness: 0.42, metalness: 0.22 });
+  const stripeMat = new THREE.MeshStandardMaterial({ color: 0xff69ad, roughness: 0.35, metalness: 0.18, emissive: 0x250513, emissiveIntensity: 0.16 });
+  const windowMat = new THREE.MeshStandardMaterial({ color: 0xaff9ff, roughness: 0.18, metalness: 0.1, emissive: 0x124556, emissiveIntensity: 0.4 });
 
   const body = new THREE.Mesh(new THREE.BoxGeometry(1.62, 1.9, 6.1), bodyMat);
   body.position.y = 1.0;
@@ -171,7 +171,7 @@ function buildTrain() {
 function buildBarrier() {
   const group = new THREE.Group();
   group.name = 'BarrierObstacle';
-  const mat = new THREE.MeshStandardMaterial({ color: 0xffd15c, roughness: 0.48, metalness: 0.12, emissive: 0x302000, emissiveIntensity: 0.18 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffd56e, roughness: 0.48, metalness: 0.12, emissive: 0x302000, emissiveIntensity: 0.18 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x17213c, roughness: 0.55, metalness: 0.14 });
 
   const base = new THREE.Mesh(new THREE.BoxGeometry(1.45, 1.1, 0.9), mat);
@@ -193,7 +193,7 @@ function buildBarrier() {
 function buildGate() {
   const group = new THREE.Group();
   group.name = 'GateObstacle';
-  const mat = new THREE.MeshStandardMaterial({ color: 0x6f7dff, roughness: 0.38, metalness: 0.3, emissive: 0x10164b, emissiveIntensity: 0.22 });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x6376ff, roughness: 0.38, metalness: 0.3, emissive: 0x10164b, emissiveIntensity: 0.22 });
   const warning = new THREE.MeshStandardMaterial({ color: 0xfff06a, roughness: 0.4, metalness: 0.12, emissive: 0x2b2200, emissiveIntensity: 0.2 });
 
   const left = new THREE.Mesh(new THREE.BoxGeometry(0.26, 3.0, 0.62), mat);

@@ -42,12 +42,12 @@ export class WorldGenerator {
 
   createMaterials() {
     return {
-      ground: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x222743, roughness: 0.76, metalness: 0.08 }), this.curvedWorldOptions),
-      lane: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x44517f, roughness: 0.62, metalness: 0.08 }), this.curvedWorldOptions),
-      rail: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x586786, roughness: 0.38, metalness: 0.52 }), this.curvedWorldOptions),
-      neon: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x55d8ff, roughness: 0.35, metalness: 0.12, emissive: 0x0a6c8a, emissiveIntensity: 0.75 }), this.curvedWorldOptions),
-      buildingA: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x141a33, roughness: 0.66, metalness: 0.06, emissive: 0x070b18, emissiveIntensity: 0.25 }), this.curvedWorldOptions),
-      buildingB: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x242b55, roughness: 0.62, metalness: 0.1, emissive: 0x080b2d, emissiveIntensity: 0.22 }), this.curvedWorldOptions)
+      ground: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x151c37, roughness: 0.76, metalness: 0.08 }), this.curvedWorldOptions),
+      lane: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x202a55, roughness: 0.62, metalness: 0.08 }), this.curvedWorldOptions),
+      rail: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x32457b, roughness: 0.38, metalness: 0.52 }), this.curvedWorldOptions),
+      neon: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x6ed9ff, roughness: 0.35, metalness: 0.12, emissive: 0x2277b8, emissiveIntensity: 0.75 }), this.curvedWorldOptions),
+      buildingA: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x11172c, roughness: 0.66, metalness: 0.06, emissive: 0x070b18, emissiveIntensity: 0.25 }), this.curvedWorldOptions),
+      buildingB: applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({ color: 0x27335d, roughness: 0.62, metalness: 0.1, emissive: 0x080b2d, emissiveIntensity: 0.22 }), this.curvedWorldOptions)
     };
   }
 
