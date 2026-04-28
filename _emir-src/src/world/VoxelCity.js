@@ -24,13 +24,13 @@ export class VoxelCity {
   async load() {
     const base = import.meta.env.BASE_URL || '/';
     try {
-      const response = await fetch(`${base}data/kl-voxels.json`);
+      const response = await fetch(`${base}data/city-blocks.json`);
       if (!response.ok) throw new Error(`City data HTTP ${response.status}`);
       const data = await response.json();
       this.cellSize = data.cellSize || 4;
       this.voxels = data.voxels || [];
     } catch (error) {
-      console.warn('Falling back to procedural KL micro-grid', error);
+      console.warn('Falling back to procedural toy city grid', error);
       this.voxels = makeFallbackVoxels();
       this.cellSize = 4;
     }
@@ -69,7 +69,7 @@ export class VoxelCity {
 
     for (const [key, voxels] of grouped.entries()) {
       const group = new THREE.Group();
-      group.name = `kl_chunk_${key}`;
+      group.name = `city_chunk_${key}`;
       const byType = new Map();
       for (const voxel of voxels) {
         const type = voxel.type || 'building';
