@@ -5,6 +5,7 @@ import { ObjectPool } from '../utils/ObjectPool.js';
 import { makeOBB, updateWorldOBB } from '../collision/OBBUtils.js';
 import { applyCurvedWorldToObject } from '../graphics/ShaderUtils.js';
 import { getTheme } from '../core/ThemePresets.js';
+import { makeDecalPlane, textureBank } from '../assets/AssetRegistry.js';
 
 const obstacleTypes = Object.freeze([
   {
@@ -226,6 +227,9 @@ function buildAnimeObstacle(type, theme) {
     const catEarR = catEarL.clone();
     catEarR.position.x = 0.32;
     group.add(catEarL, catEarR);
+    const decal = makeDecalPlane(textureBank.animeBusDecal, 1.1, 0.55);
+    decal.position.set(0, 1.0, 3.07);
+    group.add(decal);
     return group;
   }
 
@@ -258,6 +262,9 @@ function buildAnimeObstacle(type, theme) {
   const lowBar = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.22, 0.64), lilac);
   lowBar.position.set(0, 0.55, -0.01);
   group.add(left, right, top, charm, lowBar);
+  const sign = makeDecalPlane(textureBank.animeGateCharm, 0.7, 0.7);
+  sign.position.set(0, 2.05, 0.33);
+  group.add(sign);
   return group;
 }
 

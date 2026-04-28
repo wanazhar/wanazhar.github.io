@@ -4,94 +4,72 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#060712" />
-    <title>Endless Runner v4</title>
-    <script type="module" crossorigin src="./assets/index-C1ftd--m.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-B_E5kP1i.css">
+    <title>Endless Runner v5</title>
+    <script type="module" crossorigin src="./assets/index-Cgu8uj-A.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CMJe3bbj.css">
   </head>
   <body>
     <canvas id="game-canvas" aria-label="Endless Runner game canvas"></canvas>
 
     <div class="hud-shell">
-      <header class="topbar panel glassy">
-        <div class="brand-block">
+      <header class="hud-top">
+        <div class="brand-chip panel glassy" aria-label="Game title and active theme">
           <p class="eyebrow">Three.js endless runner</p>
-          <h1>Endless Runner</h1>
-          <p class="subtext">Neon Future and Anime Mode share the same gameplay loop.</p>
+          <h1>Endless Runner <span class="version-badge">v5</span></h1>
+          <p class="subtext">Theme: <strong data-theme-label>Neon Future</strong></p>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-card">
+        <div class="stats-strip" aria-label="Run statistics">
+          <div class="stat-chip panel glassy">
             <span class="stat-label">Score</span>
             <strong data-score-value>0</strong>
           </div>
-          <div class="stat-card">
+          <div class="stat-chip panel glassy">
             <span class="stat-label">Coins</span>
             <strong data-coins-value>0</strong>
           </div>
-          <div class="stat-card">
+          <div class="stat-chip panel glassy">
             <span class="stat-label">High Score</span>
             <strong data-high-score-value>0</strong>
           </div>
         </div>
       </header>
 
-      <aside class="control-column">
-        <section class="panel glassy">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Theme switcher</p>
-              <h2 data-theme-label>Neon Future</h2>
-            </div>
-          </div>
-          <div class="theme-switcher" role="tablist" aria-label="Theme switcher">
-            <button class="theme-button is-active" data-theme-button="neon">Neon Future</button>
-            <button class="theme-button" data-theme-button="anime">Anime Mode</button>
-          </div>
-        </section>
+      <div class="powerup-strip panel glassy" data-powerups aria-live="polite" aria-label="Active power ups"></div>
 
-        <section class="panel glassy">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Run options</p>
-              <h2>Touch sensitivity</h2>
+      <details class="settings-drawer panel glassy">
+        <summary aria-label="Open gameplay settings">Settings</summary>
+        <div class="drawer-content">
+          <section>
+            <p class="eyebrow">Theme switcher</p>
+            <div class="theme-switcher" role="tablist" aria-label="Theme switcher">
+              <button class="theme-button is-active" type="button" data-theme-button="neon" aria-label="Switch to Neon Future theme">Neon Future</button>
+              <button class="theme-button" type="button" data-theme-button="anime" aria-label="Switch to Anime Mode theme">Anime Mode</button>
             </div>
-          </div>
-          <label class="slider-label" for="swipe-threshold">Swipe threshold <span data-swipe-threshold-value>42px</span></label>
-          <input id="swipe-threshold" data-swipe-threshold type="range" min="24" max="90" step="2" value="42" />
-          <div class="button-row">
-            <button class="ghost-button" data-reset-scores-button>Reset Scores</button>
-          </div>
-        </section>
+          </section>
 
-        <section class="panel glassy">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Collectibles</p>
-              <h2>Power-up feed</h2>
+          <section>
+            <p class="eyebrow">Touch control</p>
+            <label class="slider-label" for="swipe-threshold">Swipe threshold <span data-swipe-threshold-value>42px</span></label>
+            <input id="swipe-threshold" data-swipe-threshold type="range" min="24" max="90" step="2" value="42" aria-label="Swipe threshold" />
+          </section>
+
+          <section>
+            <p class="eyebrow">Data</p>
+            <div class="button-row">
+              <button class="ghost-button" type="button" data-reset-scores-button aria-label="Reset stored scores">Reset Scores</button>
             </div>
-          </div>
-          <div class="pills" data-powerups></div>
-          <p class="panel-note">Collect jetpacks, magnets, score multipliers and shields while dodging themed obstacles.</p>
-        </section>
-      </aside>
+          </section>
+        </div>
+      </details>
 
-      <section class="overlay panel glassy" data-overlay>
-        <p class="eyebrow">Runner control</p>
-        <h2 data-overlay-title>Endless Runner v4</h2>
+      <section class="overlay panel glassy" data-overlay aria-live="polite">
+        <p class="eyebrow">Ready to run</p>
+        <h2 data-overlay-title>Endless Runner v5</h2>
         <p class="overlay-body" data-overlay-body></p>
         <p class="overlay-meta" data-overlay-meta></p>
         <div class="button-row">
-          <button class="cta-button" data-start-button>Start Run</button>
-        </div>
-        <div class="help-grid">
-          <div>
-            <span class="help-label">Keyboard</span>
-            <p>← → move, ↑ jump, ↓ roll</p>
-          </div>
-          <div>
-            <span class="help-label">Touch</span>
-            <p>Swipe left/right/up/down. Tune the threshold above.</p>
-          </div>
+          <button class="cta-button" type="button" data-start-button>Start Run</button>
         </div>
       </section>
     </div>

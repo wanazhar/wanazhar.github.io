@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 256">
+  <rect width="512" height="256" rx="48" fill="#fff8fd"/>
+  <circle cx="134" cy="118" r="52" fill="#ffe36f"/>
+  <path d="M101 120c15-15 51-15 66 0 0 20-14 41-33 41s-33-21-33-41z" fill="#ff8fc6"/>
+  <circle cx="121" cy="111" r="7" fill="#ffffff"/>
+  <circle cx="147" cy="111" r="7" fill="#ffffff"/>
+  <text x="216" y="114" font-size="52" font-weight="700" font-family="Arial, sans-serif" fill="#6f66a4">Sakura</text>
+  <text x="216" y="164" font-size="44" font-weight="600" font-family="Arial, sans-serif" fill="#ff76b2">Express</text>
+</svg>
