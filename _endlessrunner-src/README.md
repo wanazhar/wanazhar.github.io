@@ -9,7 +9,7 @@ A Vite + Three.js + GSAP 3-lane endless runner prototype with Subway Surfers-sty
 - **2x score multiplier**: doubles passive score gain and coin score value for the active duration.
 - **Shield**: absorbs one collision and grants a short grace window.
 - **Power-up HUD**: active timers show at the top of the screen.
-- Keeps v2 improvements: simplified UI, adjustable swipe sensitivity, no bottom mobile arrows, and a GitHub Pages build for `/endlessrunner/`.
+- Keeps v2 improvements: simplified UI, adjustable swipe sensitivity, no bottom mobile arrows, and subfolder-friendly GitHub Pages build.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ npm run dev
 npm run build
 ```
 
-This repo builds directly into `../endlessrunner` for GitHub Pages. `vite.config.js` uses `base: '/endlessrunner/'`, `build.outDir: '../endlessrunner'`, and `emptyOutDir: true`.
+Deploy the contents of `dist/` to your GitHub Pages `/endlessrunner/` folder. `vite.config.js` still uses `base: './'`.
 
 ## Controls
 

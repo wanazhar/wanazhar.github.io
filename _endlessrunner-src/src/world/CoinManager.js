@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { LANES, RECYCLE_Z, PowerUpType } from '../core/Constants.js';
 import { applyCurvedWorldMaterial } from '../graphics/ShaderUtils.js';
+import { getTheme } from '../core/ThemePresets.js';
 
 const dummy = new THREE.Object3D();
 const playerPosition = new THREE.Vector3();
@@ -11,30 +12,44 @@ const SKY_COIN_MIN_Y = 4.55;
 const SKY_COIN_MAX_Y = 5.9;
 
 export class CoinManager {
-  constructor(scene, { count = 132, curvedWorldOptions = {}, onCollect = null } = {}) {
+  constructor(scene, { count = 132, curvedWorldOptions = {}, onCollect = null, themeId = 'neon' } = {}) {
     this.scene = scene;
     this.count = count;
     this.onCollect = onCollect;
+    this.curvedWorldOptions = curvedWorldOptions;
     this.rng = mulberry32(12188);
     this.coins = [];
+    this.mesh = null;
+    this.themeId = themeId;
 
-    const geometry = new THREE.TorusGeometry(0.24, 0.065, 8, 18);
+    this.setTheme(themeId);
+    this.reset();
+  }
+
+  setTheme(themeId) {
+    this.themeId = themeId;
+    const theme = getTheme(themeId);
+    if (this.mesh) this.scene.remove(this.mesh);
+
+    const geometry = themeId === 'anime'
+      ? new THREE.IcosahedronGeometry(0.24, 0)
+      : new THREE.TorusGeometry(0.24, 0.065, 8, 18);
+
     const material = applyCurvedWorldMaterial(new THREE.MeshStandardMaterial({
-      color: 0xffd95a,
-      roughness: 0.24,
-      metalness: 0.55,
-      emissive: 0xffbf20,
-      emissiveIntensity: 1.15
-    }), curvedWorldOptions);
+      color: theme.items.coinColor,
+      roughness: themeId === 'anime' ? 0.32 : 0.24,
+      metalness: themeId === 'anime' ? 0.18 : 0.55,
+      emissive: theme.items.coinEmissive,
+      emissiveIntensity: themeId === 'anime' ? 0.72 : 1.15
+    }), this.curvedWorldOptions);
 
-    this.mesh = new THREE.InstancedMesh(geometry, material, count);
+    this.mesh = new THREE.InstancedMesh(geometry, material, this.count);
     this.mesh.name = 'InstancedHaloCoins';
     this.mesh.castShadow = false;
     this.mesh.receiveShadow = false;
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     this.scene.add(this.mesh);
-
-    this.reset();
+    this.updateMatrices();
   }
 
   reset() {
@@ -122,11 +137,12 @@ export class CoinManager {
   }
 
   updateMatrices() {
+    if (!this.mesh) return;
     for (let i = 0; i < this.count; i += 1) {
-      const coin = this.coins[i];
+      const coin = this.coins[i] ?? { x: 0, y: 0, z: -999, angle: 0, active: false };
       const scale = coin.active ? 1 : 0.0001;
       dummy.position.set(coin.x, coin.y + Math.sin(coin.angle * 1.3) * 0.045, coin.z);
-      dummy.rotation.set(Math.PI / 2, coin.angle, Math.PI / 6);
+      dummy.rotation.set(this.themeId === 'anime' ? coin.angle * 0.5 : Math.PI / 2, coin.angle, Math.PI / 6);
       dummy.scale.setScalar(scale);
       dummy.updateMatrix();
       this.mesh.setMatrixAt(i, dummy.matrix);

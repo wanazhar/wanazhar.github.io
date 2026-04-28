@@ -1,22 +1,24 @@
 import * as THREE from 'three';
 import { LANES, RECYCLE_Z, PowerUpType, POWER_UP_DURATIONS } from '../core/Constants.js';
 import { applyCurvedWorldToObject } from '../graphics/ShaderUtils.js';
+import { getTheme } from '../core/ThemePresets.js';
 
 const playerPosition = new THREE.Vector3();
 
-const DEFINITIONS = Object.freeze([
-  { type: PowerUpType.MAGNET, label: 'MAG', color: 0x6ef3ff, emissive: 0x2086aa, build: buildMagnet },
-  { type: PowerUpType.MULTIPLIER, label: '2X', color: 0xffd95a, emissive: 0x8d5f00, build: buildMultiplier },
-  { type: PowerUpType.JETPACK, label: 'JET', color: 0xff6aa9, emissive: 0x7d173d, build: buildJetpack },
-  { type: PowerUpType.SHIELD, label: 'SHD', color: 0x8aa9ff, emissive: 0x1a2d8c, build: buildShield }
+const BASE_DEFINITIONS = Object.freeze([
+  { type: PowerUpType.MAGNET, label: 'MAG' },
+  { type: PowerUpType.MULTIPLIER, label: '2X' },
+  { type: PowerUpType.JETPACK, label: 'JET' },
+  { type: PowerUpType.SHIELD, label: 'SHD' }
 ]);
 
 export class PowerUpManager {
-  constructor(scene, { size = 11, curvedWorldOptions = {}, onCollect = null } = {}) {
+  constructor(scene, { size = 11, curvedWorldOptions = {}, onCollect = null, themeId = 'neon' } = {}) {
     this.scene = scene;
     this.size = size;
     this.curvedWorldOptions = curvedWorldOptions;
     this.onCollect = onCollect;
+    this.themeId = themeId;
     this.rng = mulberry32(90491);
     this.items = [];
 
@@ -38,6 +40,11 @@ export class PowerUpManager {
     this.reset();
   }
 
+  setTheme(themeId) {
+    this.themeId = themeId;
+    this.items.forEach((item, index) => this.resetPowerUp(item, item.z, index));
+  }
+
   reset() {
     let z = -52;
     this.items.forEach((item, index) => {
@@ -49,7 +56,7 @@ export class PowerUpManager {
   resetPowerUp(item, z, index = 0) {
     item.group.clear();
     const definition = this.pickDefinition(index);
-    const model = definition.build(definition);
+    const model = this.buildModel(definition.type);
     applyCurvedWorldToObject(model, this.curvedWorldOptions);
     item.group.add(model);
 
@@ -62,6 +69,12 @@ export class PowerUpManager {
     item.group.visible = true;
     item.group.position.set(LANES[item.laneIndex], item.baseY, item.z);
     item.group.rotation.set(0, this.rng() * Math.PI * 2, 0);
+  }
+
+  buildModel(type) {
+    return this.themeId === 'anime'
+      ? buildAnimePowerUp(type, getTheme(this.themeId))
+      : buildNeonPowerUp(type, getTheme(this.themeId));
   }
 
   update(deltaSeconds, speed, playerRoot) {
@@ -100,8 +113,8 @@ export class PowerUpManager {
   }
 
   pickDefinition(index) {
-    if (index < DEFINITIONS.length) return DEFINITIONS[index];
-    return DEFINITIONS[this.randomInt(0, DEFINITIONS.length - 1)];
+    if (index < BASE_DEFINITIONS.length) return BASE_DEFINITIONS[index];
+    return BASE_DEFINITIONS[this.randomInt(0, BASE_DEFINITIONS.length - 1)];
   }
 
   randomRange(min, max) {
@@ -113,82 +126,103 @@ export class PowerUpManager {
   }
 }
 
-function material(color, emissive) {
+function themedMaterial(color, emissive) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.24, metalness: 0.22, emissive, emissiveIntensity: 0.68 });
 }
 
-function buildMagnet(definition) {
+function buildNeonPowerUp(type, theme) {
+  const colorMap = {
+    [PowerUpType.MAGNET]: [theme.items.powerA, 0x2086aa],
+    [PowerUpType.MULTIPLIER]: [theme.items.powerC, 0x8d5f00],
+    [PowerUpType.JETPACK]: [theme.items.powerB, 0x7d173d],
+    [PowerUpType.SHIELD]: [0x8aa9ff, 0x1a2d8c]
+  };
+  const [color, emissive] = colorMap[type];
+  const main = themedMaterial(color, emissive);
+  const hot = themedMaterial(theme.items.powerB, 0x8a1642);
+  const metal = themedMaterial(0x8aa9ff, 0x182b82);
   const group = new THREE.Group();
-  const main = material(definition.color, definition.emissive);
-  const hot = material(0xff6aa9, 0x8a1642);
 
-  const left = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.88, 0.18), main);
-  left.position.set(-0.36, 0, 0);
-  const right = left.clone();
-  right.position.x = 0.36;
-  const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.18, 0.18), main);
-  top.position.y = 0.36;
-  const poleL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.22), hot);
-  poleL.position.set(-0.36, -0.5, 0);
-  const poleR = poleL.clone();
-  poleR.position.x = 0.36;
-  group.add(left, right, top, poleL, poleR);
-  group.scale.setScalar(1.05);
+  if (type === PowerUpType.MAGNET) {
+    const left = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.88, 0.18), main);
+    left.position.set(-0.36, 0, 0);
+    const right = left.clone();
+    right.position.x = 0.36;
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.18, 0.18), main);
+    top.position.y = 0.36;
+    const poleL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.22), hot);
+    poleL.position.set(-0.36, -0.5, 0);
+    const poleR = poleL.clone();
+    poleR.position.x = 0.36;
+    group.add(left, right, top, poleL, poleR);
+  } else if (type === PowerUpType.MULTIPLIER) {
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.48, 0), main);
+    star.rotation.z = Math.PI / 4;
+    group.add(star);
+  } else if (type === PowerUpType.JETPACK) {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.72, 0.34), main);
+    body.position.y = 0.08;
+    const tankL = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.82, 10), metal);
+    tankL.rotation.z = Math.PI / 2;
+    tankL.position.set(-0.33, 0.02, 0);
+    const tankR = tankL.clone();
+    tankR.position.x = 0.33;
+    const flameL = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.42, 10), themedMaterial(theme.player.jetpack, 0x9b5c00));
+    flameL.position.set(-0.22, -0.56, 0);
+    flameL.rotation.x = Math.PI;
+    const flameR = flameL.clone();
+    flameR.position.x = 0.22;
+    group.add(body, tankL, tankR, flameL, flameR);
+  } else {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.06, 10, 28), main);
+    ring.rotation.x = Math.PI / 2;
+    const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 1), main);
+    core.scale.set(0.9, 1.14, 0.9);
+    group.add(ring, core);
+  }
   return group;
 }
 
-function buildMultiplier(definition) {
+function buildAnimePowerUp(type, theme) {
   const group = new THREE.Group();
-  const main = material(definition.color, definition.emissive);
-  const dark = material(0x161a2f, 0x000000);
+  const pink = themedMaterial(theme.items.powerA, 0x7f2852);
+  const blue = themedMaterial(theme.items.powerB, 0x27527f);
+  const gold = themedMaterial(theme.items.powerC, 0x8d6500);
 
-  const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.48, 0), main);
-  star.rotation.z = Math.PI / 4;
-  group.add(star);
+  if (type === PowerUpType.MAGNET) {
+    const heartA = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 14), pink);
+    heartA.position.set(-0.14, 0.1, 0);
+    const heartB = heartA.clone();
+    heartB.position.x = 0.14;
+    const point = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 16), pink);
+    point.position.set(0, -0.18, 0);
+    point.rotation.z = Math.PI;
+    group.add(heartA, heartB, point);
+  } else if (type === PowerUpType.MULTIPLIER) {
+    const star = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), gold);
+    group.add(star);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.03, 6, 30), blue);
+    halo.rotation.x = Math.PI / 2;
+    halo.position.y = 0.02;
+    group.add(halo);
+  } else if (type === PowerUpType.JETPACK) {
+    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.24, 0.18), pink);
+    const loopL = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.05, 8, 22, Math.PI), blue);
+    loopL.position.set(-0.25, 0.03, 0);
+    loopL.rotation.z = Math.PI / 2;
+    const loopR = loopL.clone();
+    loopR.position.x = 0.25;
+    const tailL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.42, 0.08), gold);
+    tailL.position.set(-0.12, -0.28, 0);
+    const tailR = tailL.clone();
+    tailR.position.x = 0.12;
+    group.add(ribbon, loopL, loopR, tailL, tailR);
+  } else {
+    const bubble = new THREE.Mesh(new THREE.SphereGeometry(0.4, 18, 14), new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.1 }));
+    const star = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), blue);
+    group.add(bubble, star);
+  }
 
-  const twoA = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.62, 0.12), dark);
-  twoA.position.set(-0.22, 0.02, -0.5);
-  const twoB = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.12), dark);
-  twoB.position.set(-0.11, 0.27, -0.5);
-  const xA = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.12), dark);
-  xA.position.set(0.28, -0.02, -0.5);
-  xA.rotation.z = 0.72;
-  const xB = xA.clone();
-  xB.rotation.z = -0.72;
-  group.add(twoA, twoB, xA, xB);
-  return group;
-}
-
-function buildJetpack(definition) {
-  const group = new THREE.Group();
-  const main = material(definition.color, definition.emissive);
-  const flame = material(0xffd95a, 0x9b5c00);
-  const metal = material(0x8aa9ff, 0x182b82);
-
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.72, 0.34), main);
-  body.position.y = 0.08;
-  const tankL = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.82, 10), metal);
-  tankL.rotation.z = Math.PI / 2;
-  tankL.position.set(-0.33, 0.02, 0);
-  const tankR = tankL.clone();
-  tankR.position.x = 0.33;
-  const flameL = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.42, 10), flame);
-  flameL.position.set(-0.22, -0.56, 0);
-  flameL.rotation.x = Math.PI;
-  const flameR = flameL.clone();
-  flameR.position.x = 0.22;
-  group.add(body, tankL, tankR, flameL, flameR);
-  return group;
-}
-
-function buildShield(definition) {
-  const group = new THREE.Group();
-  const main = material(definition.color, definition.emissive);
-  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.06, 10, 28), main);
-  ring.rotation.x = Math.PI / 2;
-  const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 1), main);
-  core.scale.set(0.9, 1.14, 0.9);
-  group.add(ring, core);
   return group;
 }
 
