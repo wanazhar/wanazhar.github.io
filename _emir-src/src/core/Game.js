@@ -23,8 +23,8 @@ export class Game {
   async start() {
     await RAPIER.init();
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xf7f4ed);
-    this.scene.fog = new THREE.Fog(0xf7f4ed, 160, 460);
+    this.scene.background = new THREE.Color(0x87ceeb);
+    this.scene.fog = new THREE.Fog(0x87ceeb, 190, 520);
 
     this.camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.set(0, 9, 20);
@@ -74,18 +74,31 @@ export class Game {
   }
 
   #setupLighting() {
-    const hemi = new THREE.HemisphereLight(0xffffff, 0xd9d0bf, 2.4);
+    const hemi = new THREE.HemisphereLight(0xfff4cc, 0x65c18c, 2.2);
     this.scene.add(hemi);
-    const key = new THREE.DirectionalLight(0xffffff, 2.8);
-    key.position.set(-38, 72, 32);
+    const fill = new THREE.AmbientLight(0xfff1c7, 0.75);
+    this.scene.add(fill);
+    const key = new THREE.DirectionalLight(0xfff0b3, 3.1);
+    key.position.set(-42, 82, 36);
     key.castShadow = true;
-    key.shadow.mapSize.set(1536, 1536);
-    key.shadow.camera.left = -120; key.shadow.camera.right = 120; key.shadow.camera.top = 120; key.shadow.camera.bottom = -120;
-    key.shadow.camera.near = 5; key.shadow.camera.far = 180;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.left = -140; key.shadow.camera.right = 140; key.shadow.camera.top = 140; key.shadow.camera.bottom = -140;
+    key.shadow.camera.near = 5; key.shadow.camera.far = 220;
     this.scene.add(key);
-    const ambientGrid = new THREE.GridHelper(640, 160, 0x111111, 0xd0c8b9);
-    ambientGrid.position.y = -0.02;
-    ambientGrid.material.opacity = 0.22;
+    const rim = new THREE.DirectionalLight(0x6cc6ff, 1.15);
+    rim.position.set(44, 26, -58);
+    this.scene.add(rim);
+    const sun = new THREE.Mesh(
+      new THREE.SphereGeometry(8, 24, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffd166 })
+    );
+    sun.name = 'warm_sky_sun';
+    sun.position.set(-120, 118, -210);
+    this.scene.add(sun);
+    const ambientGrid = new THREE.GridHelper(640, 160, 0xffffff, 0x7cbf6d);
+    ambientGrid.name = 'subtle_grass_grid';
+    ambientGrid.position.y = -0.01;
+    ambientGrid.material.opacity = 0.12;
     ambientGrid.material.transparent = true;
     this.scene.add(ambientGrid);
   }

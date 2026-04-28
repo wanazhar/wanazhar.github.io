@@ -9,6 +9,9 @@ const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const game = readFileSync(new URL('../src/core/Game.js', import.meta.url), 'utf8');
 const uiManager = readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+const city = readFileSync(new URL('../src/world/VoxelCity.js', import.meta.url), 'utf8');
+const assetLoader = readFileSync(new URL('../src/core/AssetLoader.js', import.meta.url), 'utf8');
+const vehicleProfiles = readFileSync(new URL('../src/physics/VehicleProfiles.js', import.meta.url), 'utf8');
 
 test('Vite app is configured for GitHub Pages emir subpath', () => {
   assert.match(viteConfig, /base:\s*['"]\/emir\/['"]/, 'Vite base should target /emir/');
@@ -42,5 +45,28 @@ test('UI overlays start hidden with a visible toggle and correct public name', (
   assert.doesNotMatch(uiManager, new RegExp(['Voxel', 'Kuala', 'Lumpur'].join(' ')), 'old heading should not appear in UI');
   assert.doesNotMatch(uiManager, new RegExp(['Instanced', 'OSM', 'voxel', 'chunks'].join(' ')), 'old technical map copy should not appear in UI');
   assert.match(styles, /\.hidden-ui \.ui-overlay/, 'hidden state should target bulky overlays');
-  assert.doesNotMatch(styles, /\.hidden-ui[^\n]*\.touch-pad/, 'touch driving controls should not be hidden by the overlay state');
+  assert.doesNotMatch(styles, /\.hidden-ui[^\n]*\.(touch-pad|touch-controls)/, 'touch driving controls should not be hidden by the overlay state');
+});
+
+test('Touch driving controls are split and readable on mobile', () => {
+  assert.match(uiManager, /class="touch-controls"/, 'touch navigation shell should be present');
+  assert.match(uiManager, /class="touch-cluster touch-steer"/, 'steering should be split into its own thumb cluster');
+  assert.match(uiManager, /class="touch-cluster touch-actions"/, 'pedals should be split into their own thumb cluster');
+  assert.match(uiManager, /data-control="throttle"/, 'accelerate control should be touch-bindable');
+  assert.match(uiManager, /data-control="steerLeft"/, 'left steering control should be touch-bindable');
+  assert.match(uiManager, /data-control="steerRight"/, 'right steering control should be touch-bindable');
+  assert.match(uiManager, /data-control="brake"/, 'brake control should be touch-bindable');
+  assert.match(uiManager, /data-control="handbrake"/, 'drift handbrake should be touch-bindable');
+  assert.match(styles, /@media \(max-width: 680px\), \(pointer: coarse\)/, 'touch controls should have a coarse-pointer/mobile layout');
+});
+
+test('World and vehicles use a colorful toy-car art direction', () => {
+  assert.match(game, /0x87ceeb/, 'scene should use a blue sky instead of a white void');
+  assert.match(city, /vertexColors:\s*true/, 'city instances should support per-building color variation');
+  assert.match(city, /sunny_grass_ground/, 'world should include a colored grass ground plane');
+  assert.match(city, /lane_markings/, 'roads should include visible lane markings');
+  assert.match(assetLoader, /warm_headlight/, 'vehicles should include headlights');
+  assert.match(assetLoader, /cabin_glass/, 'fallback vehicles should include glass cabins');
+  assert.match(assetLoader, /roof_rack|bright_cargo_box|excavator_bucket/, 'vehicle classes should get distinctive detail parts');
+  assert.match(vehicleProfiles, /0xe63946|0x06d6a0|0x3a86ff/, 'vehicle palette should use saturated colors');
 });

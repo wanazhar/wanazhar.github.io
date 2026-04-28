@@ -31,7 +31,11 @@ export class InputController {
       if (pressed) this.touch.set(control, true); else this.touch.delete(control);
       element.dataset.pressed = pressed ? 'true' : 'false';
     };
-    element.addEventListener('pointerdown', (event) => { event.preventDefault(); element.setPointerCapture?.(event.pointerId); setPressed(true); });
+    element.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      setPressed(true);
+      try { element.setPointerCapture?.(event.pointerId); } catch { /* synthetic/test pointers may not be capturable */ }
+    });
     element.addEventListener('pointerup', () => setPressed(false));
     element.addEventListener('pointercancel', () => setPressed(false));
     element.addEventListener('pointerleave', () => setPressed(false));
