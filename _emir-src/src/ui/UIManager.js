@@ -66,10 +66,16 @@ export class UIManager {
         <p class="mt-3 text-xs leading-5">Nearby city blocks stream around the active vehicle so the drive stays smooth.</p>
       </section>
 
-      <nav class="touch-pad absolute bottom-4 right-4 grid grid-cols-3 gap-2" aria-label="touch driving controls">
-        <span></span><button class="touch-button" data-control="throttle">Go</button><span></span>
-        <button class="touch-button" data-control="steerLeft">Left</button><button class="touch-button" data-control="brake">Brake</button><button class="touch-button" data-control="steerRight">Right</button>
-        <span></span><button class="touch-button" data-control="handbrake">Hold</button><span></span>
+      <nav class="touch-controls" aria-label="touch driving controls">
+        <div class="touch-cluster touch-steer" aria-label="steering controls">
+          <button class="touch-button touch-button--steer" data-control="steerLeft" aria-label="Steer left">‹</button>
+          <button class="touch-button touch-button--steer" data-control="steerRight" aria-label="Steer right">›</button>
+        </div>
+        <div class="touch-cluster touch-actions" aria-label="pedal controls">
+          <button class="touch-button touch-button--go" data-control="throttle" aria-label="Accelerate">GO</button>
+          <button class="touch-button" data-control="brake" aria-label="Brake">BRAKE</button>
+          <button class="touch-button touch-button--drift" data-control="handbrake" aria-label="Drift handbrake">DRIFT</button>
+        </div>
       </nav>
     `;
     parent.appendChild(this.root);
