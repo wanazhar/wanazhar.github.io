@@ -7,11 +7,14 @@ import { PostProcessing } from '../graphics/PostProcessing.js';
 import { CharacterController } from '../player/CharacterController.js';
 import { WorldGenerator } from '../world/WorldGenerator.js';
 import { Hud } from '../ui/Hud.js';
+import { ThemeManager } from '../core/ThemeManager.js';
+import { getTheme } from '../core/ThemePresets.js';
 
 export class Game {
   constructor({ canvas }) {
     this.canvas = canvas;
     this.stateManager = stateManager;
+    this.themeManager = new ThemeManager();
     this.clock = new THREE.Clock();
     this.paused = false;
     this.pixelRatioCap = 1.75;
@@ -28,15 +31,19 @@ export class Game {
     this.createCamera();
     this.createLights();
 
-    this.character = new CharacterController(this.scene);
-    this.world = new WorldGenerator(this.scene, this.stateManager);
+    const themeId = this.themeManager.getTheme();
+    this.character = new CharacterController(this.scene, { themeId });
+    this.world = new WorldGenerator(this.scene, this.stateManager, { themeId });
     this.world.attachPlayer(this.character.root);
 
     this.post = new PostProcessing(this.renderer, this.scene, this.camera);
     this.input = new InputManager(window);
-    this.hud = new Hud(this.stateManager, {
+    this.hud = new Hud(this.stateManager, this.themeManager, {
       onSwipeThresholdChange: (value) => this.input.setSwipeThreshold(value),
-      getSwipeThreshold: () => this.input.getSwipeThreshold()
+      getSwipeThreshold: () => this.input.getSwipeThreshold(),
+      onStart: () => this.stateManager.startGame(),
+      onResetScores: () => this.stateManager.resetScores(),
+      onThemeChange: (theme) => this.themeManager.setTheme(theme)
     });
 
     this.input.bind({
@@ -51,6 +58,8 @@ export class Game {
         this.resetRun();
       }
     });
+
+    this.unsubscribeTheme = this.themeManager.subscribe((theme) => this.applyTheme(theme));
 
     window.__runnerGame = this;
     this.installDemoHooks();
@@ -94,8 +103,9 @@ export class Game {
 
   createScene() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x08101f);
-    this.scene.fog = new THREE.FogExp2(0x08101f, 0.019);
+    const theme = getTheme(this.themeManager.getTheme());
+    this.scene.background = new THREE.Color(theme.scene.background);
+    this.scene.fog = new THREE.FogExp2(theme.scene.fog, this.themeManager.getTheme() === 'anime' ? 0.015 : 0.019);
   }
 
   createCamera() {
@@ -105,28 +115,43 @@ export class Game {
   }
 
   createLights() {
-    const hemi = new THREE.HemisphereLight(0x87c6ff, 0x171520, 2.0);
-    this.scene.add(hemi);
+    this.hemi = new THREE.HemisphereLight(0x87c6ff, 0x171520, 2.0);
+    this.scene.add(this.hemi);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-    sun.position.set(-5.5, 10, 6.5);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.left = -10;
-    sun.shadow.camera.right = 10;
-    sun.shadow.camera.top = 10;
-    sun.shadow.camera.bottom = -10;
-    sun.shadow.camera.near = 0.5;
-    sun.shadow.camera.far = 40;
-    this.scene.add(sun);
+    this.sun = new THREE.DirectionalLight(0xffffff, 2.2);
+    this.sun.position.set(-5.5, 10, 6.5);
+    this.sun.castShadow = true;
+    this.sun.shadow.mapSize.set(1024, 1024);
+    this.sun.shadow.camera.left = -10;
+    this.sun.shadow.camera.right = 10;
+    this.sun.shadow.camera.top = 10;
+    this.sun.shadow.camera.bottom = -10;
+    this.sun.shadow.camera.near = 0.5;
+    this.sun.shadow.camera.far = 40;
+    this.scene.add(this.sun);
 
-    const magentaFill = new THREE.PointLight(0xff5ea8, 14, 20, 2);
-    magentaFill.position.set(4.5, 2.5, -6);
-    this.scene.add(magentaFill);
+    this.magentaFill = new THREE.PointLight(0xff5ea8, 14, 20, 2);
+    this.magentaFill.position.set(4.5, 2.5, -6);
+    this.scene.add(this.magentaFill);
 
-    const cyanRim = new THREE.PointLight(0x55d8ff, 18, 22, 2);
-    cyanRim.position.set(-1.5, 3.8, -4.5);
-    this.scene.add(cyanRim);
+    this.cyanRim = new THREE.PointLight(0x55d8ff, 18, 22, 2);
+    this.cyanRim.position.set(-1.5, 3.8, -4.5);
+    this.scene.add(this.cyanRim);
+  }
+
+  applyTheme(themeId) {
+    const theme = getTheme(themeId);
+    this.scene.background = new THREE.Color(theme.scene.background);
+    if (this.scene.fog) this.scene.fog.color.setHex(theme.scene.fog);
+    this.scene.fog.density = themeId === 'anime' ? 0.015 : 0.019;
+    this.hemi.color.setHex(theme.scene.hemiSky);
+    this.hemi.groundColor.setHex(theme.scene.hemiGround);
+    this.magentaFill.color.setHex(theme.scene.magenta);
+    this.cyanRim.color.setHex(theme.scene.cyan);
+    document.documentElement.dataset.theme = themeId;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeId === 'anime' ? '#ffdced' : '#060712');
+    this.character?.setTheme(themeId);
+    this.world?.setTheme(themeId);
   }
 
   whenPlaying(callback) {

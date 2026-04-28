@@ -1,90 +1,118 @@
 import { GameState, PowerUpType } from '../core/Constants.js';
+import { THEMES } from '../core/ThemePresets.js';
 
-const powerLabels = Object.freeze({
-  [PowerUpType.MAGNET]: ['MAG', 'Magnet'],
-  [PowerUpType.MULTIPLIER]: ['2X', 'Score'],
-  [PowerUpType.JETPACK]: ['JET', 'Flight'],
-  [PowerUpType.SHIELD]: ['SHD', 'Shield']
-});
+const powerUpLabels = {
+  [PowerUpType.MAGNET]: 'Magnet',
+  [PowerUpType.MULTIPLIER]: '2x Score',
+  [PowerUpType.JETPACK]: 'Jetpack',
+  [PowerUpType.SHIELD]: 'Shield'
+};
 
 export class Hud {
-  constructor(stateManager, { onSwipeThresholdChange = null, getSwipeThreshold = null } = {}) {
+  constructor(stateManager, themeManager, options = {}) {
     this.stateManager = stateManager;
-    this.onSwipeThresholdChange = onSwipeThresholdChange;
-    this.getSwipeThreshold = getSwipeThreshold;
+    this.themeManager = themeManager;
+    this.options = options;
 
-    this.scoreEl = document.querySelector('[data-hud="score"]');
-    this.speedEl = document.querySelector('[data-hud="speed"]');
-    this.coinsEl = document.querySelector('[data-hud="coins"]');
-    this.powerupsEl = document.querySelector('[data-hud="powerups"]');
-    this.menuEl = document.querySelector('[data-hud="menu"]');
-    this.buttonEl = document.querySelector('[data-action="start"]');
-    this.panelTitle = document.querySelector('[data-hud="panel-title"]');
-    this.panelCopy = document.querySelector('[data-hud="panel-copy"]');
-    this.swipeRange = document.querySelector('[data-action="swipe-threshold"]');
-    this.swipeLabel = document.querySelector('[data-hud="swipe-threshold-label"]');
+    this.scoreValue = document.querySelector('[data-score-value]');
+    this.coinsValue = document.querySelector('[data-coins-value]');
+    this.highScoreValue = document.querySelector('[data-high-score-value]');
+    this.startButton = document.querySelector('[data-start-button]');
+    this.resetScoresButton = document.querySelector('[data-reset-scores-button]');
+    this.overlay = document.querySelector('[data-overlay]');
+    this.overlayTitle = document.querySelector('[data-overlay-title]');
+    this.overlayBody = document.querySelector('[data-overlay-body]');
+    this.overlayMeta = document.querySelector('[data-overlay-meta]');
+    this.powerUps = document.querySelector('[data-powerups]');
+    this.swipeSlider = document.querySelector('[data-swipe-threshold]');
+    this.swipeValue = document.querySelector('[data-swipe-threshold-value]');
+    this.themeButtons = Array.from(document.querySelectorAll('[data-theme-button]'));
 
-    this.buttonEl?.addEventListener('click', () => this.stateManager.startGame());
+    this.bind();
+    this.stateManager.subscribe((state) => this.render(state));
+    this.themeManager.subscribe((themeId) => this.renderTheme(themeId));
+  }
 
-    if (this.swipeRange) {
-      const initialValue = getSwipeThreshold ? getSwipeThreshold() : Number(this.swipeRange.value);
-      this.swipeRange.value = String(initialValue);
-      this.updateSwipeLabel(initialValue);
-      this.swipeRange.addEventListener('input', (event) => {
+  bind() {
+    this.startButton?.addEventListener('click', () => this.options.onStart?.());
+    this.resetScoresButton?.addEventListener('click', () => {
+      this.options.onResetScores?.();
+      this.render(this.stateManager.getState());
+    });
+
+    if (this.swipeSlider) {
+      const initial = this.options.getSwipeThreshold?.() ?? Number(this.swipeSlider.value);
+      this.swipeSlider.value = String(initial);
+      this.setSwipeText(initial);
+      this.swipeSlider.addEventListener('input', (event) => {
         const value = Number(event.target.value);
-        const applied = this.onSwipeThresholdChange ? this.onSwipeThresholdChange(value) : value;
-        this.updateSwipeLabel(applied);
+        this.setSwipeText(value);
+        this.options.onSwipeThresholdChange?.(value);
       });
     }
 
-    this.unsubscribe = this.stateManager.subscribe((state, previous) => this.render(state, previous));
+    this.themeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const theme = button.dataset.themeButton;
+        if (theme) this.options.onThemeChange?.(theme);
+      });
+    });
+  }
+
+  setSwipeText(value) {
+    if (!this.swipeValue) return;
+    this.swipeValue.textContent = `${value}px`;
+  }
+
+  renderTheme(themeId) {
+    this.themeButtons.forEach((button) => {
+      button.classList.toggle('is-active', button.dataset.themeButton === themeId);
+    });
+    const label = THEMES[themeId]?.uiLabel ?? 'Theme';
+    document.querySelector('[data-theme-label]')?.replaceChildren(document.createTextNode(label));
   }
 
   render(state) {
-    if (this.scoreEl) this.scoreEl.textContent = `${Math.floor(state.score).toLocaleString()}`;
-    if (this.speedEl) this.speedEl.textContent = `${state.speedMultiplier.toFixed(2)}x`;
-    if (this.coinsEl) this.coinsEl.textContent = `${state.coins.toLocaleString()}`;
-    this.renderPowerUps(state.activePowerUps ?? {});
+    this.scoreValue.textContent = Math.floor(state.score).toLocaleString();
+    this.coinsValue.textContent = state.coins.toLocaleString();
+    this.highScoreValue.textContent = Math.floor(state.highScore).toLocaleString();
 
-    if (!this.menuEl) return;
-
-    const isPlaying = state.gameState === GameState.PLAYING;
-    this.menuEl.classList.toggle('is-hidden', isPlaying);
+    this.renderPowerUps(state.activePowerUps);
 
     if (state.gameState === GameState.START) {
-      if (this.panelTitle) this.panelTitle.textContent = 'Endless Runner';
-      if (this.panelCopy) this.panelCopy.textContent = 'Collect magnets, jetpacks, shields, and 2x score boosts while dodging the skyline traffic.';
-      if (this.buttonEl) this.buttonEl.textContent = 'Start run';
-    }
-
-    if (state.gameState === GameState.GAME_OVER) {
-      if (this.panelTitle) this.panelTitle.textContent = 'Run over';
-      if (this.panelCopy) this.panelCopy.textContent = `Final score ${state.lastRunScore.toLocaleString()}. Tap below to run again.`;
-      if (this.buttonEl) this.buttonEl.textContent = 'Run again';
+      this.overlay.hidden = false;
+      this.overlayTitle.textContent = 'Endless Runner v4';
+      this.overlayBody.textContent = 'Same core gameplay, now with a neon/anime theme switcher, refreshed character states, collectible specials, and persistent high scores.';
+      this.overlayMeta.innerHTML = `High Score <strong>${Math.floor(state.highScore).toLocaleString()}</strong>`;
+      this.startButton.textContent = 'Start Run';
+    } else if (state.gameState === GameState.GAME_OVER) {
+      this.overlay.hidden = false;
+      this.overlayTitle.textContent = 'Run Over';
+      this.overlayBody.textContent = 'Tap start to jump back in. You can switch themes anytime without changing gameplay.';
+      this.overlayMeta.innerHTML = `Run Score <strong>${state.lastRunScore.toLocaleString()}</strong> · High Score <strong>${Math.floor(state.highScore).toLocaleString()}</strong>`;
+      this.startButton.textContent = 'Restart';
+    } else {
+      this.overlay.hidden = true;
     }
   }
 
-  renderPowerUps(activePowerUps) {
-    if (!this.powerupsEl) return;
-    const chips = Object.entries(powerLabels)
-      .filter(([type]) => (activePowerUps[type] ?? 0) > 0)
-      .map(([type, [shortLabel, label]]) => {
-        const seconds = Math.ceil(activePowerUps[type]);
-        return `<span class="power-chip power-chip--${type}"><b>${shortLabel}</b><em>${label}</em><strong>${seconds}s</strong></span>`;
+  renderPowerUps(activePowerUps = {}) {
+    if (!this.powerUps) return;
+    this.powerUps.innerHTML = '';
+    const entries = Object.entries(activePowerUps).filter(([, remaining]) => remaining > 0);
+
+    if (!entries.length) {
+      this.powerUps.innerHTML = '<span class="pill pill-muted">Collect power-ups</span>';
+      return;
+    }
+
+    entries
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([type, remaining]) => {
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        pill.textContent = `${powerUpLabels[type] ?? type} ${remaining.toFixed(1)}s`;
+        this.powerUps.appendChild(pill);
       });
-
-    this.powerupsEl.innerHTML = chips.length
-      ? chips.join('')
-      : '<span class="hud__powerups-empty">Collect power-ups</span>';
-  }
-
-  updateSwipeLabel(value) {
-    if (!this.swipeLabel) return;
-    const mode = value <= 40 ? 'Fast' : value <= 64 ? 'Balanced' : 'Precise';
-    this.swipeLabel.textContent = `${mode} · ${Math.round(value)}px`;
-  }
-
-  destroy() {
-    this.unsubscribe?.();
   }
 }

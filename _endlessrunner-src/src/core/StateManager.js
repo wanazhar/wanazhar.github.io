@@ -1,4 +1,5 @@
 import { GameState, PowerUpType, POWER_UP_DURATIONS } from './Constants.js';
+import { readHighScore, resetStoredScores, writeHighScore } from '../utils/ScoreStorage.js';
 
 const emptyPowerUps = () => ({
   [PowerUpType.MAGNET]: 0,
@@ -7,7 +8,7 @@ const emptyPowerUps = () => ({
   [PowerUpType.SHIELD]: 0
 });
 
-const initialState = Object.freeze({
+const createInitialState = () => ({
   gameState: GameState.START,
   score: 0,
   coins: 0,
@@ -15,13 +16,14 @@ const initialState = Object.freeze({
   scoreMultiplierBoost: 1,
   distance: 0,
   lastRunScore: 0,
+  highScore: readHighScore(),
   activePowerUps: emptyPowerUps(),
   lastCollectedPowerUp: null
 });
 
 export class StateManager {
   constructor() {
-    this.state = { ...initialState, activePowerUps: emptyPowerUps() };
+    this.state = createInitialState();
     this.listeners = new Set();
   }
 
@@ -43,11 +45,12 @@ export class StateManager {
   }
 
   resetToMenu() {
-    this.setState({ ...initialState, activePowerUps: emptyPowerUps(), gameState: GameState.START });
+    const fresh = createInitialState();
+    this.setState({ ...fresh, gameState: GameState.START, highScore: this.state.highScore });
   }
 
   startGame() {
-    this.setState({
+    this.setState((state) => ({
       gameState: GameState.PLAYING,
       score: 0,
       coins: 0,
@@ -55,15 +58,33 @@ export class StateManager {
       scoreMultiplierBoost: 1,
       distance: 0,
       lastRunScore: 0,
+      highScore: state.highScore,
       activePowerUps: emptyPowerUps(),
       lastCollectedPowerUp: null
-    });
+    }));
   }
 
   gameOver() {
+    this.setState((state) => {
+      const lastRunScore = Math.floor(state.score);
+      const highScore = Math.max(state.highScore, lastRunScore);
+      if (highScore !== state.highScore) writeHighScore(highScore);
+      return {
+        gameState: GameState.GAME_OVER,
+        lastRunScore,
+        highScore
+      };
+    });
+  }
+
+  resetScores() {
+    resetStoredScores();
     this.setState((state) => ({
-      gameState: GameState.GAME_OVER,
-      lastRunScore: Math.floor(state.score)
+      ...state,
+      score: 0,
+      coins: 0,
+      lastRunScore: 0,
+      highScore: 0
     }));
   }
 
