@@ -9,7 +9,7 @@ export class UIManager {
     this.stats = stats;
     this.onVehicleSelect = onVehicleSelect;
     this.onReset = onReset;
-    this.hidden = false;
+    this.hidden = true;
     this.elapsed = 0;
   }
 
@@ -17,11 +17,13 @@ export class UIManager {
     this.root = document.createElement('div');
     this.root.className = 'ui-shell';
     this.root.innerHTML = `
-      <header class="ui-panel absolute left-4 top-4 w-[min(420px,calc(100vw-32px))] p-4">
+      <button class="ui-toggle" data-action="toggle-ui" aria-pressed="false" aria-label="Show overlays">HUD</button>
+
+      <header class="ui-panel ui-overlay absolute left-4 top-16 w-[min(420px,calc(100vw-32px))] p-4">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <p class="label-kicker">Emir's Car World</p>
-            <h1 class="mt-1 text-2xl font-semibold tracking-[-0.04em]">Voxel Kuala Lumpur</h1>
+            <p class="label-kicker">Emir’s Car World</p>
+            <h1 class="mt-1 text-2xl font-semibold">Drive, explore, collect</h1>
           </div>
           <button class="ui-button" data-action="reset">Reset</button>
         </div>
@@ -33,7 +35,7 @@ export class UIManager {
         </div>
       </header>
 
-      <aside class="garage-drawer ui-panel absolute bottom-4 left-4 w-[min(420px,calc(100vw-32px))] p-4">
+      <aside class="garage-drawer ui-panel ui-overlay absolute bottom-4 left-4 w-[min(420px,calc(100vw-32px))] p-4">
         <div class="flex items-end justify-between gap-3">
           <div>
             <p class="label-kicker">Garage</p>
@@ -52,7 +54,7 @@ export class UIManager {
         </div>
       </aside>
 
-      <section class="ui-panel absolute right-4 top-4 hidden w-[min(360px,calc(100vw-32px))] p-4 md:block">
+      <section class="ui-panel ui-overlay absolute right-4 top-16 hidden w-[min(360px,calc(100vw-32px))] p-4 md:block">
         <p class="label-kicker">Map</p>
         <div class="mt-3 aspect-square border border-black bg-[#ede8dc] p-3">
           <div class="relative h-full w-full overflow-hidden border border-black/30">
@@ -61,7 +63,7 @@ export class UIManager {
             <div class="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 border border-black bg-black" data-map-dot></div>
           </div>
         </div>
-        <p class="mt-3 text-xs leading-5">Instanced OSM voxel chunks are culled by camera frustum. Physics colliders stream around the active vehicle only.</p>
+        <p class="mt-3 text-xs leading-5">Nearby city blocks stream around the active vehicle so the drive stays smooth.</p>
       </section>
 
       <nav class="touch-pad absolute bottom-4 right-4 grid grid-cols-3 gap-2" aria-label="touch driving controls">
@@ -71,7 +73,9 @@ export class UIManager {
       </nav>
     `;
     parent.appendChild(this.root);
+    this.#syncOverlayVisibility();
 
+    this.root.querySelector('[data-action="toggle-ui"]').addEventListener('click', () => this.toggleHidden());
     this.root.querySelector('[data-action="reset"]').addEventListener('click', () => this.onReset());
     this.root.querySelector('[data-action="save"]').addEventListener('click', () => this.#saveGarage());
     this.root.querySelector('[data-action="login"]').addEventListener('click', () => this.#login());
@@ -100,7 +104,16 @@ export class UIManager {
 
   toggleHidden() {
     this.hidden = !this.hidden;
+    this.#syncOverlayVisibility();
+  }
+
+  #syncOverlayVisibility() {
     document.body.classList.toggle('hidden-ui', this.hidden);
+    const toggle = this.root.querySelector('[data-action="toggle-ui"]');
+    if (!toggle) return;
+    toggle.setAttribute('aria-pressed', String(!this.hidden));
+    toggle.setAttribute('aria-label', this.hidden ? 'Show overlays' : 'Hide overlays');
+    toggle.textContent = this.hidden ? 'HUD' : 'Hide';
   }
 
   #renderVehicles() {

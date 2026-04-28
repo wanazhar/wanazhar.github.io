@@ -1,4 +1,4 @@
--- Emir's Car World browser persistence schema.
+-- Emir’s Car World browser persistence schema.
 -- Run this inside the Supabase SQL editor.
 
 create table if not exists public.garage_state (

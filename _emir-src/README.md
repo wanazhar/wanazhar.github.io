@@ -1,13 +1,13 @@
-# Emir's Car World
+# Emir’s Car World
 
-Open-world voxel car simulator for `wanazhar.github.io/emir`, built with Vanilla Three.js, Rapier physics, and optional Supabase browser persistence.
+Open-world toy car simulator for `wanazhar.github.io/emir`, built with Vanilla Three.js, Rapier physics, and optional Supabase browser persistence.
 
 ## What is inside
 
 - Vanilla Vite + Three.js renderer.
 - Rapier custom raycast vehicle controller with five swappable profiles: Sedan, Hatchback, 4WD Off-roader, Heavy Truck, Excavator.
-- Build-time OpenStreetMap/Overpass fetcher for central Kuala Lumpur.
-- Voxel city rendered through `THREE.InstancedMesh` chunks.
+- Optional build-time map-data fetcher for the bundled city sample.
+- Blocky city rendered through `THREE.InstancedMesh` chunks.
 - Spatial hash + runtime collider streaming so Rapier only simulates nearby voxel colliders.
 - Decoupled GLB vehicle chassis/wheel loading with procedural fallback.
 - Minimalist high-contrast garage UI.
@@ -21,9 +21,9 @@ npm install
 npm run dev
 ```
 
-## Generate Kuala Lumpur voxel data from OSM
+## Generate City Sample Data
 
-The repo already includes a small generated sample at `public/data/kl-voxels.json` so the game loads immediately.
+The repo already includes a small generated sample at `public/data/city-blocks.json` so the game loads immediately.
 
 ```bash
 npm run generate:city
@@ -32,7 +32,7 @@ npm run generate:city
 Tune it:
 
 ```bash
-KL_RADIUS_METERS=950 KL_CELL_SIZE=4 KL_MAX_VOXELS=45000 npm run generate:city
+CITY_RADIUS_METERS=950 CITY_CELL_SIZE=4 CITY_MAX_BLOCKS=45000 npm run generate:city
 ```
 
 ## Supabase setup

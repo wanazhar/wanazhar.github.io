@@ -1,8 +1,8 @@
-# Emir's Car World Architecture
+# Emir’s Car World Architecture
 
 ## Rendering
 
-The city renderer builds chunked `THREE.InstancedMesh` groups from `public/data/kl-voxels.json`.
+The city renderer builds chunked `THREE.InstancedMesh` groups from `public/data/city-blocks.json`.
 
 - One instanced mesh per voxel type per chunk.
 - Chunks are manually frustum-culled every frame.
@@ -26,11 +26,11 @@ Profiles live in `src/physics/VehicleProfiles.js` and include mass, dimensions, 
 
 The excavator is tuned with extremely high mass, high torque, high damping and an acceleration limiter, making it heavy and slow rather than sports-car fast.
 
-## OSM generation
+## City Sample Generation
 
-`scripts/fetch-osm-kl.js` calls Overpass API for central Kuala Lumpur and converts buildings, roads and parks into a voxel grid.
+`scripts/fetch-city-sample.js` calls Overpass API for the bundled sample area and converts buildings, roads and parks into a grid of city blocks.
 
-The bundled `public/data/kl-voxels.json` is a playable sample. Run `npm run generate:city` to refresh from live OSM data.
+The bundled `public/data/city-blocks.json` is a playable sample. Run `npm run generate:city` to refresh it from live map data.
 
 ## Collision streaming
 

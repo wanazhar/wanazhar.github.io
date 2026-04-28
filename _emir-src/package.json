@@ -3,12 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Emir's Car World - open-world voxel Kuala Lumpur car simulator using Vanilla Three.js, Rapier and Supabase.",
+  "description": "Emir’s Car World - open-world toy car simulator using Vanilla Three.js, Rapier and Supabase.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "generate:city": "node scripts/fetch-osm-kl.js",
+    "generate:city": "node scripts/fetch-city-sample.js",
     "test": "node --test scripts/*.test.mjs"
   },
   "dependencies": {

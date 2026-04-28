@@ -3,13 +3,13 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const CENTER = {
-  lat: Number(process.env.KL_LAT || 3.1478),
-  lon: Number(process.env.KL_LON || 101.6953)
+  lat: Number(process.env.CITY_LAT || 3.1478),
+  lon: Number(process.env.CITY_LON || 101.6953)
 };
-const RADIUS_METERS = Number(process.env.KL_RADIUS_METERS || 700);
-const CELL_SIZE = Number(process.env.KL_CELL_SIZE || 4);
-const MAX_VOXELS = Number(process.env.KL_MAX_VOXELS || 32000);
-const OUT = path.resolve('public/data/kl-voxels.json');
+const RADIUS_METERS = Number(process.env.CITY_RADIUS_METERS || 700);
+const CELL_SIZE = Number(process.env.CITY_CELL_SIZE || 4);
+const MAX_VOXELS = Number(process.env.CITY_MAX_BLOCKS || 32000);
+const OUT = path.resolve('public/data/city-blocks.json');
 
 const query = `
 [out:json][timeout:45];
@@ -22,7 +22,7 @@ const query = `
 out body;
 `;
 
-console.log(`Fetching OSM/Overpass data around KLCC radius=${RADIUS_METERS}m...`);
+console.log(`Fetching map-data data around KLCC radius=${RADIUS_METERS}m...`);
 const response = await fetch('https://overpass-api.de/api/interpreter', {
   method: 'POST',
   headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },

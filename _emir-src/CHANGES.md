@@ -1,6 +1,6 @@
 # Changes
 
-Initial autonomous scaffold for **Emir's Car World**.
+Initial autonomous scaffold for **Emir’s Car World**.
 
 ## Added
 
@@ -11,9 +11,9 @@ Initial autonomous scaffold for **Emir's Car World**.
 - Five vehicle profiles: Sedan, Hatchback, 4WD Off-roader, Truck, Excavator.
 - GLB asset loader with decoupled chassis/wheel node support.
 - Real placeholder `.glb` assets for all five vehicles.
-- OSM/Overpass build-time script for central Kuala Lumpur voxel generation.
-- Bundled playable Kuala Lumpur-inspired voxel sample dataset.
-- Chunked `THREE.InstancedMesh` voxel renderer with custom frustum culling.
+- map-data build-time script for city sample generation.
+- Bundled playable blocky city sample dataset.
+- Chunked `THREE.InstancedMesh` city renderer with custom frustum culling.
 - Spatial hash and runtime Rapier collider streaming around active vehicle.
 - High-contrast editorial minimalist UI with Garage, Vehicle Select, Map and touch controls.
 - Browser-only Supabase integration with localStorage fallback.
