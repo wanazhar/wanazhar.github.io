@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
-import { GameState, BASE_WORLD_SPEED, MAX_DELTA } from '../core/Constants.js';
+import { GameState, BASE_WORLD_SPEED, MAX_DELTA, PowerUpType } from '../core/Constants.js';
 import { stateManager } from '../core/StateManager.js';
 import { InputManager } from '../core/InputManager.js';
 import { PostProcessing } from '../graphics/PostProcessing.js';
@@ -15,6 +15,7 @@ export class Game {
     this.clock = new THREE.Clock();
     this.paused = false;
     this.pixelRatioCap = 1.75;
+    this.collisionGrace = 0;
 
     this.tick = this.tick.bind(this);
     this.resize = this.resize.bind(this);
@@ -37,6 +38,7 @@ export class Game {
       onSwipeThresholdChange: (value) => this.input.setSwipeThreshold(value),
       getSwipeThreshold: () => this.input.getSwipeThreshold()
     });
+
     this.input.bind({
       left: () => this.whenPlaying(() => this.character.moveLeft()),
       right: () => this.whenPlaying(() => this.character.moveRight()),
@@ -66,16 +68,14 @@ export class Game {
     window.setTimeout(() => this.stateManager.startGame(), 120);
 
     const demo = params.get('demo');
-    if (demo === 'jump') {
-      window.setTimeout(() => this.character.jump(), 850);
-    }
+    if (demo === 'jump') window.setTimeout(() => this.character.jump(), 850);
     if (demo === 'lane') {
       window.setTimeout(() => this.character.moveLeft(), 580);
       window.setTimeout(() => this.character.moveRight(), 1050);
     }
-    if (demo === 'roll') {
-      window.setTimeout(() => this.character.roll(), 900);
-    }
+    if (demo === 'roll') window.setTimeout(() => this.character.roll(), 900);
+    if (demo === 'jetpack') window.setTimeout(() => this.stateManager.activatePowerUp(PowerUpType.JETPACK), 700);
+    if (demo === 'magnet') window.setTimeout(() => this.stateManager.activatePowerUp(PowerUpType.MAGNET), 700);
   }
 
   createRenderer() {
@@ -108,7 +108,7 @@ export class Game {
     const hemi = new THREE.HemisphereLight(0x87c6ff, 0x171520, 2.0);
     this.scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight(0xffffff, 2.35);
+    const sun = new THREE.DirectionalLight(0xffffff, 2.2);
     sun.position.set(-5.5, 10, 6.5);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
@@ -135,6 +135,7 @@ export class Game {
 
   resetRun() {
     gsap.globalTimeline.resume();
+    this.collisionGrace = 0;
     this.clock.getDelta();
     this.character.reset();
     this.world.reset();
@@ -144,12 +145,16 @@ export class Game {
     if (this.paused) return;
     const deltaSeconds = Math.min(this.clock.getDelta(), MAX_DELTA);
     const state = this.stateManager.getState();
+    this.collisionGrace = Math.max(0, this.collisionGrace - deltaSeconds);
 
     if (state.gameState === GameState.PLAYING) {
+      this.stateManager.tickPowerUps(deltaSeconds);
+      const liveState = this.stateManager.getState();
+      this.character.applyPowerUps(liveState.activePowerUps);
       this.character.update(deltaSeconds);
-      const speed = this.world.update(deltaSeconds);
+      this.world.update(deltaSeconds);
       this.stateManager.advanceRun(deltaSeconds, BASE_WORLD_SPEED);
-      this.checkCollisions(speed);
+      this.checkCollisions();
     } else {
       this.character.update(deltaSeconds);
     }
@@ -157,13 +162,21 @@ export class Game {
     this.post.render(deltaSeconds);
   }
 
-  checkCollisions(speed) {
+  checkCollisions() {
+    if (this.collisionGrace > 0) return;
+    if (this.stateManager.hasPowerUp(PowerUpType.JETPACK)) return;
+
     const playerOBB = this.character.getOBB();
     const obstacleOBBs = this.world.getObstacleOBBs();
 
     for (const obstacleOBB of obstacleOBBs) {
       if (playerOBB.intersectsOBB(obstacleOBB, Number.EPSILON)) {
-        this.handleGameOver(speed);
+        if (this.stateManager.consumeShield()) {
+          this.collisionGrace = 1.2;
+          this.character.flashShield();
+          return;
+        }
+        this.handleGameOver();
         return;
       }
     }

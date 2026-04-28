@@ -3,6 +3,7 @@ import { BASE_WORLD_SPEED, LANES, LANE_WIDTH, RECYCLE_Z } from '../core/Constant
 import { applyCurvedWorldMaterial, applyCurvedWorldToObject } from '../graphics/ShaderUtils.js';
 import { CoinManager } from './CoinManager.js';
 import { ObstaclePool } from './ObstaclePool.js';
+import { PowerUpManager } from './PowerUpManager.js';
 
 const TILE_LENGTH = 22;
 const TILE_COUNT = 18;
@@ -37,6 +38,12 @@ export class WorldGenerator {
     this.obstaclePool = new ObstaclePool(this.scene, {
       size: 13,
       curvedWorldOptions: this.curvedWorldOptions
+    });
+
+    this.powerUpManager = new PowerUpManager(this.scene, {
+      size: 11,
+      curvedWorldOptions: this.curvedWorldOptions,
+      onCollect: (type, duration) => this.stateManager.activatePowerUp(type, duration)
     });
   }
 
@@ -126,6 +133,7 @@ export class WorldGenerator {
 
     this.coinManager.reset();
     this.obstaclePool.reset();
+    this.powerUpManager.reset();
   }
 
   update(deltaSeconds) {
@@ -134,7 +142,9 @@ export class WorldGenerator {
 
     this.updateTiles(deltaSeconds, speed);
     this.updateScenery(deltaSeconds, speed);
-    this.coinManager.update(deltaSeconds, speed, this.playerRoot);
+    const { activePowerUps } = this.stateManager.getState();
+    this.coinManager.update(deltaSeconds, speed, this.playerRoot, activePowerUps);
+    this.powerUpManager.update(deltaSeconds, speed, this.playerRoot);
     this.obstaclePool.update(deltaSeconds, speed);
 
     return speed;
