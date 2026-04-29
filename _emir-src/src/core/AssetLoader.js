@@ -169,7 +169,6 @@ export class AssetLoader {
       const wheel = new THREE.Group();
       wheel.name = `wheel_${key}`;
       wheel.position.set(pos[0], pos[1], pos[2]);
-      wheel.rotation.z = Math.PI / 2;
 
       const tire = new THREE.Mesh(tireGeo, wheelMat);
       tire.name = `round_tire_${key}`;
