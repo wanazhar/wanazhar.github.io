@@ -75,21 +75,21 @@ export class AssetLoader {
     const bodyMat = makePaint(profile.visual.color, 0.44, 0.18);
     const trimMat = new THREE.MeshStandardMaterial({ color: 0x1b2028, roughness: 0.56, metalness: 0.22 });
     const glassMat = new THREE.MeshPhysicalMaterial({ color: profile.visual.glass || 0x6f8fa8, roughness: 0.06, metalness: 0.02, transmission: 0.18, transparent: true, opacity: 0.72, clearcoat: 0.35 });
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(d.width * 0.98, d.height * 0.42, d.length * 0.78), bodyMat);
+    const chassis = new THREE.Mesh(makeLowPolyCarBodyGeometry(d.width * 0.98, d.height * 0.46, d.length * 0.84, profile.id), bodyMat);
     chassis.name = 'chassis';
-    chassis.position.y = d.height * 0.42;
+    chassis.position.y = d.height * 0.44;
     chassis.castShadow = true;
     chassis.receiveShadow = true;
     root.add(chassis);
 
-    const lowerTrim = new THREE.Mesh(new THREE.BoxGeometry(d.width * 1.04, d.height * 0.14, d.length * 0.84), trimMat);
+    const lowerTrim = new THREE.Mesh(makeChamferedBoxGeometry(d.width * 1.04, d.height * 0.14, d.length * 0.88, 0.08), trimMat);
     lowerTrim.name = 'black_lower_sill';
     lowerTrim.position.set(0, d.height * 0.2, 0);
     root.add(lowerTrim);
 
     const cabinLength = profile.id === 'hatchback' ? 0.4 : profile.id === 'truck' ? 0.24 : profile.id === 'excavator' ? 0.24 : 0.34;
     const cabinZ = profile.id === 'truck' ? -d.length * 0.24 : profile.id === 'hatchback' ? -d.length * 0.02 : -d.length * 0.08;
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(d.width * 0.58, d.height * 0.14, d.length * cabinLength * 0.86), bodyMat);
+    const roof = new THREE.Mesh(makeChamferedBoxGeometry(d.width * 0.58, d.height * 0.14, d.length * cabinLength * 0.86, 0.06), bodyMat);
     roof.name = 'painted_roof_panel';
     roof.position.set(0, d.height * 1.18, cabinZ + d.length * 0.01);
     roof.castShadow = true;
@@ -120,7 +120,7 @@ export class AssetLoader {
     }
 
     const hoodLength = profile.id === 'truck' ? 0.24 : profile.id === 'hatchback' ? 0.26 : 0.32;
-    const hood = new THREE.Mesh(new THREE.BoxGeometry(d.width * 0.84, d.height * 0.18, d.length * hoodLength), bodyMat);
+    const hood = new THREE.Mesh(makeChamferedBoxGeometry(d.width * 0.84, d.height * 0.18, d.length * hoodLength, 0.07), bodyMat);
     hood.name = 'low_front_hood';
     hood.position.set(0, d.height * 0.66, -d.length * 0.31);
     hood.rotation.x = -0.08;
@@ -133,7 +133,7 @@ export class AssetLoader {
     root.add(grille);
 
     if (profile.id !== 'truck' && profile.id !== 'excavator') {
-      const trunk = new THREE.Mesh(new THREE.BoxGeometry(d.width * 0.76, d.height * 0.18, d.length * 0.23), bodyMat);
+      const trunk = new THREE.Mesh(makeChamferedBoxGeometry(d.width * 0.76, d.height * 0.18, d.length * 0.23, 0.06), bodyMat);
       trunk.name = profile.id === 'hatchback' ? 'hatch_tailgate' : 'sedan_trunk';
       trunk.position.set(0, d.height * 0.62, d.length * 0.31);
       trunk.castShadow = true;
@@ -190,6 +190,13 @@ export class AssetLoader {
       rim.castShadow = true;
       wheel.add(rim);
 
+      for (let spokeIndex = 0; spokeIndex < 6; spokeIndex++) {
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(profile.wheel.radius * 0.08, profile.wheel.radius * 0.6, profile.wheel.width * 1.2), rimMat);
+        spoke.name = `split_spoke_rim_${key}`;
+        spoke.rotation.z = (spokeIndex / 6) * Math.PI;
+        wheel.add(spoke);
+      }
+
       const hub = new THREE.Mesh(hubGeo, rimMat);
       hub.name = `wheel_hub_${key}`;
       hub.castShadow = true;
@@ -220,7 +227,7 @@ export class AssetLoader {
   #addCargoBed(root, profile) {
     const d = profile.dimensions;
     const bedMat = makePaint(profile.visual.accent || 0x9aa0a6, 0.54, 0.16);
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(d.width * 0.9, d.height * 0.42, d.length * 0.42), bedMat);
+    const bed = new THREE.Mesh(makeChamferedBoxGeometry(d.width * 0.9, d.height * 0.42, d.length * 0.42, 0.08), bedMat);
     bed.name = 'flatbed_cargo_body';
     bed.position.set(0, d.height * 0.72, d.length * 0.2);
     bed.castShadow = true;
@@ -235,6 +242,11 @@ export class AssetLoader {
     rack.position.set(0, d.height * 1.62, -d.length * 0.04);
     rack.castShadow = true;
     root.add(rack);
+    const snorkel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, d.height * 0.92, 8), rackMat);
+    snorkel.name = 'offroad_snorkel_intake';
+    snorkel.position.set(d.width * 0.42, d.height * 1.05, -d.length * 0.3);
+    snorkel.castShadow = true;
+    root.add(snorkel);
   }
 
   #addExcavatorKit(root, profile) {
@@ -253,6 +265,53 @@ export class AssetLoader {
     bucket.castShadow = true;
     root.add(bucket);
   }
+}
+
+function makeLowPolyCarBodyGeometry(width, height, length, id) {
+  const frontTaper = id === 'truck' || id === 'excavator' ? 0.9 : 0.72;
+  const rearTaper = id === 'hatchback' ? 0.78 : 0.86;
+  const hw = width * 0.5;
+  const hh = height * 0.5;
+  const hl = length * 0.5;
+  const vertices = new Float32Array([
+    -hw * frontTaper, -hh, -hl, hw * frontTaper, -hh, -hl, hw * rearTaper, -hh, hl, -hw * rearTaper, -hh, hl,
+    -hw * 0.9, hh * 0.45, -hl * 0.92, hw * 0.9, hh * 0.45, -hl * 0.92, hw, hh * 0.36, hl * 0.84, -hw, hh * 0.36, hl * 0.84,
+    -hw * 0.72, hh, -hl * 0.52, hw * 0.72, hh, -hl * 0.52, hw * 0.66, hh * 0.92, hl * 0.48, -hw * 0.66, hh * 0.92, hl * 0.48
+  ]);
+  const indices = [
+    0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6,
+    8, 9, 10, 8, 10, 11, 0, 4, 5, 0, 5, 1,
+    1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7, 3,
+    3, 7, 4, 3, 4, 0, 4, 8, 9, 4, 9, 5,
+    5, 9, 10, 5, 10, 6, 6, 10, 11, 6, 11, 7,
+    7, 11, 8, 7, 8, 4
+  ];
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.name = 'model_kit_low_poly_curved_vehicle_body';
+  return geometry;
+}
+
+function makeChamferedBoxGeometry(width, height, depth, radius = 0.08) {
+  const shape = new THREE.Shape();
+  const x = width * 0.5;
+  const y = height * 0.5;
+  const r = Math.min(radius, x * 0.45, y * 0.45);
+  shape.moveTo(-x + r, -y);
+  shape.lineTo(x - r, -y);
+  shape.quadraticCurveTo(x, -y, x, -y + r);
+  shape.lineTo(x, y - r);
+  shape.quadraticCurveTo(x, y, x - r, y);
+  shape.lineTo(-x + r, y);
+  shape.quadraticCurveTo(-x, y, -x, y - r);
+  shape.lineTo(-x, -y + r);
+  shape.quadraticCurveTo(-x, -y, -x + r, -y);
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelSize: r * 0.34, bevelThickness: r * 0.34, bevelSegments: 1, steps: 1 });
+  geometry.center();
+  geometry.name = 'model_kit_extruded_chamfered_panel';
+  return geometry;
 }
 
 function makePaint(color, roughness = 0.46, metalness = 0.12) {
