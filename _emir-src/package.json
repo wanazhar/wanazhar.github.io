@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Emir’s Car World - open-world toy car simulator using Vanilla Three.js, Rapier and Supabase.",
+  "description": "Emir’s Car World - open-world arcade car simulator using Vanilla Three.js, Rapier and Supabase.",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",

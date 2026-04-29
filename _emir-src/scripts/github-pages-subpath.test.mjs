@@ -76,6 +76,15 @@ test('Vehicle input logic uses deterministic arcade driving controls', () => {
   assert.match(vehicleManager, /castRay\(ray, maxRay, true, undefined, undefined, this\.active\.collider, body\)/, 'wheel visual rays should still exclude the active vehicle body/collider');
 });
 
+test('Vehicle physics sync is stable after solid-object collision correction', () => {
+  assert.match(game, /this\.physics\.step\(dt\);\s*this\.vehicleManager\.syncAfterPhysics\(dt\)/s, 'vehicle visuals and wheel rays should sync from the post-physics body position');
+  assert.match(vehicleManager, /previousPosition/, 'manager should keep pre-step position for blocked-motion detection');
+  assert.match(vehicleManager, /commandedHorizontalVelocity/, 'manager should compare intended arcade velocity with actual Rapier displacement');
+  assert.match(vehicleManager, /#settleBlockedMotion\(translation, safeDt\)/, 'blocked collision response should settle commanded speed after physics correction');
+  assert.match(vehicleManager, /blockedFrames >= 2/, 'solid-object damping should require repeated blocked frames instead of punishing rough off-road motion');
+  assert.match(vehicleManager, /lastGroundedCount/, 'wheel contact state should remain inspectable for stable arcade physics tests');
+});
+
 test('Solid objects block vehicles while off-road ground remains driveable', () => {
   assert.match(city, /solidSpatialHash/, 'city should expose a dedicated spatial hash for physical blockers');
   assert.match(city, /#addSolidVoxelCollider\(voxel, type, scaleY\)/, 'buildings and towers should register solid colliders');
@@ -95,13 +104,18 @@ test('Follow camera can orbit and reset while driving', () => {
   assert.match(game, /consumePressed\('resetCamera'\)/, 'camera reset input should restore the default follow view');
 });
 
-test('World and vehicles use a colorful toy-car art direction', () => {
+test('World remains readable and vehicles use realistic car construction', () => {
   assert.match(game, /0x87ceeb/, 'scene should use a blue sky instead of a white void');
   assert.match(city, /vertexColors:\s*true/, 'city instances should support per-building color variation');
   assert.match(city, /sunny_grass_ground/, 'world should include a colored grass ground plane');
   assert.match(city, /lane_markings/, 'roads should include visible lane markings');
   assert.match(assetLoader, /warm_headlight/, 'vehicles should include headlights');
-  assert.match(assetLoader, /cabin_glass/, 'fallback vehicles should include glass cabins');
-  assert.match(assetLoader, /roof_rack|bright_cargo_box|excavator_bucket/, 'vehicle classes should get distinctive detail parts');
-  assert.match(vehicleProfiles, /0xe63946|0x06d6a0|0x3a86ff/, 'vehicle palette should use saturated colors');
+  assert.match(assetLoader, /front_windshield_glass|side_window_glass/, 'vehicles should include separate glass windows');
+  assert.match(assetLoader, /#buildRealisticVehicle/, 'runtime vehicles should be rebuilt as normal car silhouettes');
+  assert.match(assetLoader, /TorusGeometry\(profile\.wheel\.radius \* 0\.78, profile\.wheel\.radius \* 0\.19, 20, 72\)/, 'tires should be visibly round high-segment torus geometry');
+  assert.match(assetLoader, /CylinderGeometry\(profile\.wheel\.radius \* 0\.78, profile\.wheel\.radius \* 0\.78, profile\.wheel\.width, 72\)/, 'wheels should include round cylindrical tire tread');
+  assert.match(assetLoader, /round_rim_/, 'vehicles should include visible round rims');
+  assert.match(assetLoader, /front_grille|left_side_mirror|painted_roof_panel/, 'vehicles should include normal road-car details');
+  assert.match(assetLoader, /sedan_trunk|hatch_tailgate|flatbed_cargo_body|roof_rack|excavator_bucket/, 'vehicle classes should get normal distinctive real-world details');
+  assert.doesNotMatch(assetLoader, /#buildToyVehicle|#applyToyCarPaint|bright_cargo_box|chunky_bumper/, 'toy-car boxes and goofy visual names should not remain');
 });

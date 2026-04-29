@@ -56,7 +56,10 @@ export class VehicleManager {
       yaw: 0,
       driftAmount: 0,
       lastGroundedCount: 0,
-      lastThrottle: 0
+      lastThrottle: 0,
+      previousPosition: new THREE.Vector3(),
+      commandedHorizontalVelocity: new THREE.Vector3(),
+      blockedFrames: 0
     };
     this.resetActiveVehicle();
   }
@@ -69,6 +72,9 @@ export class VehicleManager {
     this.active.steerAngle = 0;
     this.active.driftAmount = 0;
     this.active.yaw = 0;
+    this.active.blockedFrames = 0;
+    this.active.commandedHorizontalVelocity.set(0, 0, 0);
+    this.active.previousPosition.set(position.x, position.y, position.z);
     body.setTranslation(position, true);
     body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     body.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -79,8 +85,9 @@ export class VehicleManager {
     if (!this.active) return;
     const { body, profile, wheels } = this.active;
     const safeDt = Math.min(dt, 0.05);
-    const translation = body.translation();
     const linvel = body.linvel();
+    const translation = body.translation();
+    this.active.previousPosition.set(translation.x, translation.y, translation.z);
 
     const tuning = this.#driveTuning(profile);
     const forwardInput = input.throttle > 0 ? 1 : 0;
@@ -118,6 +125,7 @@ export class VehicleManager {
     this.forwardVector.copy(forward);
 
     const horizontalVelocity = forward.multiplyScalar(driveSpeed);
+    this.active.commandedHorizontalVelocity.copy(horizontalVelocity);
     body.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
     body.setLinvel({ x: horizontalVelocity.x, y: linvel.y, z: horizontalVelocity.z }, true);
     body.setAngvel({ x: 0, y: steerInput * tuning.turnRate * driftBoost * steerAuthority, z: 0 }, true);
@@ -131,7 +139,16 @@ export class VehicleManager {
     this.active.driveSpeed = driveSpeed;
     this.active.odometer += speedAbs * safeDt;
     this.active.lastThrottle = forwardInput - reverseInput;
+  }
 
+  syncAfterPhysics(dt = 1 / 60) {
+    if (!this.active) return;
+    const { body, profile, wheels } = this.active;
+    const safeDt = Math.min(Math.max(dt, 1 / 120), 0.05);
+    const translation = body.translation();
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.active.yaw);
+
+    this.#settleBlockedMotion(translation, safeDt);
     let groundedCount = 0;
     for (const wheel of wheels) {
       wheel.steer = wheel.front ? this.active.steerAngle : 0;
@@ -145,7 +162,7 @@ export class VehicleManager {
       wheel.compression = wheel.grounded
         ? THREE.MathUtils.clamp((profile.suspension.restLength + profile.wheel.radius - hit.toi) / profile.suspension.restLength, 0, 1.15)
         : 0;
-      wheel.spin += driveSpeed / Math.max(profile.wheel.radius, 0.1) * safeDt;
+      wheel.spin += this.active.driveSpeed / Math.max(profile.wheel.radius, 0.1) * safeDt;
     }
     this.active.lastGroundedCount = groundedCount;
 
@@ -175,8 +192,36 @@ export class VehicleManager {
       yaw: this.active.yaw,
       steerAngle: this.active.steerAngle,
       driftAmount: this.active.driftAmount,
+      groundedWheels: this.active.lastGroundedCount,
+      blockedFrames: this.active.blockedFrames,
       position: p
     };
+  }
+
+  #settleBlockedMotion(translation, safeDt) {
+    const commanded = this.active.commandedHorizontalVelocity;
+    const commandedSpeed = commanded.length();
+    if (commandedSpeed < 0.35) {
+      this.active.blockedFrames = 0;
+      return;
+    }
+
+    const actual = new THREE.Vector3(
+      translation.x - this.active.previousPosition.x,
+      0,
+      translation.z - this.active.previousPosition.z
+    );
+    const expectedDistance = commandedSpeed * safeDt;
+    const progress = expectedDistance > 0 ? actual.dot(commanded.clone().normalize()) / expectedDistance : 1;
+    const blocked = progress < 0.22 && actual.length() < expectedDistance * 0.45;
+    this.active.blockedFrames = blocked ? this.active.blockedFrames + 1 : 0;
+
+    if (this.active.blockedFrames >= 2) {
+      this.active.driveSpeed = moveToward(this.active.driveSpeed, 0, commandedSpeed * 0.85);
+      const linvel = this.active.body.linvel();
+      this.active.body.setLinvel({ x: 0, y: Math.min(linvel.y, 0), z: 0 }, true);
+      this.active.speedKph = Math.abs(this.active.driveSpeed) * 3.6;
+    }
   }
 
   #driveTuning(profile) {
