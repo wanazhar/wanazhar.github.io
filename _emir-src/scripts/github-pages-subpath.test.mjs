@@ -12,6 +12,7 @@ const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8
 const city = readFileSync(new URL('../src/world/VoxelCity.js', import.meta.url), 'utf8');
 const assetLoader = readFileSync(new URL('../src/core/AssetLoader.js', import.meta.url), 'utf8');
 const vehicleProfiles = readFileSync(new URL('../src/physics/VehicleProfiles.js', import.meta.url), 'utf8');
+const vehicleManager = readFileSync(new URL('../src/physics/VehicleManager.js', import.meta.url), 'utf8');
 
 test('Vite app is configured for GitHub Pages emir subpath', () => {
   assert.match(viteConfig, /base:\s*['"]\/emir\/['"]/, 'Vite base should target /emir/');
@@ -45,7 +46,7 @@ test('UI overlays start hidden with a visible toggle and correct public name', (
   assert.doesNotMatch(uiManager, new RegExp(['Voxel', 'Kuala', 'Lumpur'].join(' ')), 'old heading should not appear in UI');
   assert.doesNotMatch(uiManager, new RegExp(['Instanced', 'OSM', 'voxel', 'chunks'].join(' ')), 'old technical map copy should not appear in UI');
   assert.match(styles, /\.hidden-ui \.ui-overlay/, 'hidden state should target bulky overlays');
-  assert.doesNotMatch(styles, /\.hidden-ui[^\n]*\.(touch-pad|touch-controls)/, 'touch driving controls should not be hidden by the overlay state');
+  assert.match(styles, /body:not\(\.hidden-ui\) \.touch-controls/, 'touch driving controls should hide when the full HUD is open');
 });
 
 test('Touch driving controls are split and readable on mobile', () => {
@@ -58,6 +59,14 @@ test('Touch driving controls are split and readable on mobile', () => {
   assert.match(uiManager, /data-control="brake"/, 'brake control should be touch-bindable');
   assert.match(uiManager, /data-control="handbrake"/, 'drift handbrake should be touch-bindable');
   assert.match(styles, /@media \(max-width: 680px\), \(pointer: coarse\)/, 'touch controls should have a coarse-pointer/mobile layout');
+  assert.match(styles, /body:not\(\.hidden-ui\) \.touch-controls[^}]*pointer-events:\s*none/, 'touch controls should not overlap/capture taps when the HUD is open');
+});
+
+test('Vehicle input logic drives the car instead of raycasting against itself', () => {
+  assert.match(vehicleManager, /castRay\(ray, maxRay, true, undefined, undefined, this\.active\.collider, body\)/, 'wheel ground rays should exclude the active vehicle body/collider');
+  assert.match(vehicleManager, /groundedCount > 0 \|\| nearGround/, 'drive impulses should apply when the vehicle has wheel contact or is resting near the ground');
+  assert.match(vehicleManager, /body\.applyImpulse\(vectorToRapier\(forward\.clone\(\)\.multiplyScalar\(driveImpulse\)\)/, 'throttle should apply a central forward drive impulse');
+  assert.match(vehicleManager, /body\.applyTorqueImpulse/, 'steering buttons should rotate the car while moving');
 });
 
 test('World and vehicles use a colorful toy-car art direction', () => {
