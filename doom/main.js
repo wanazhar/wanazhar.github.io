@@ -104,6 +104,12 @@
         url: bundleUrl,
         kiosk: true,
         autoStart: true,
+        pathPrefix: "https://v8.js-dos.com/latest/emulators/",
+        onEvent: (event, arg) => {
+          if (event === "emu-error" || event === "ci-err" || event === "bnd-error") {
+            console.error("js-dos event", event, arg);
+          }
+        },
       });
 
       setStatus("running", "Running", "DOOM is live. Click inside the game if the keyboard does not respond.");
