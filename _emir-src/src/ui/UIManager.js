@@ -76,7 +76,7 @@ export class UIManager {
           <button class="touch-button" data-control="brake" aria-label="Brake">BRAKE</button>
           <button class="touch-button touch-button--drift" data-control="handbrake" aria-label="Drift handbrake">DRIFT</button>
         </div>
-        <div class="touch-cluster touch-camera" data-camera-cluster aria-label="camera controls">
+        <div class="touch-cluster touch-camera is-collapsed" data-camera-cluster aria-label="camera controls">
           <button class="touch-button touch-button--camera" data-control="cameraZoomIn" aria-label="Zoom camera in">+</button>
           <button class="touch-button touch-button--camera" data-control="cameraZoomOut" aria-label="Zoom camera out">-</button>
           <button class="touch-button touch-button--camera" data-control="resetCamera" aria-label="Focus follow camera">C</button>
