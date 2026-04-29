@@ -28,6 +28,7 @@ test('Emir Car World source remains maintainable and runnable', () => {
   assert.ok(packageJson.dependencies['@dimforge/rapier3d-compat'], 'Rapier dependency should be declared');
   assert.match(main, /new Game\(/, 'main entry should bootstrap Game');
   assert.match(game, /VehicleManager/, 'game should wire the vehicle manager');
+  assert.match(game, /__EMIR_DEBUG__/, 'debug query mode should expose navigation state for regression tests');
 });
 
 test('HTML and public game assets are present', () => {
@@ -62,11 +63,15 @@ test('Touch driving controls are split and readable on mobile', () => {
   assert.match(styles, /body:not\(\.hidden-ui\) \.touch-controls[^}]*pointer-events:\s*none/, 'touch controls should not overlap/capture taps when the HUD is open');
 });
 
-test('Vehicle input logic drives the car instead of raycasting against itself', () => {
-  assert.match(vehicleManager, /castRay\(ray, maxRay, true, undefined, undefined, this\.active\.collider, body\)/, 'wheel ground rays should exclude the active vehicle body/collider');
-  assert.match(vehicleManager, /groundedCount > 0 \|\| nearGround/, 'drive impulses should apply when the vehicle has wheel contact or is resting near the ground');
-  assert.match(vehicleManager, /body\.applyImpulse\(vectorToRapier\(forward\.clone\(\)\.multiplyScalar\(driveImpulse\)\)/, 'throttle should apply a central forward drive impulse');
-  assert.match(vehicleManager, /body\.applyTorqueImpulse/, 'steering buttons should rotate the car while moving');
+test('Vehicle input logic uses deterministic arcade driving controls', () => {
+  assert.match(vehicleManager, /driveSpeed/, 'vehicle manager should keep an explicit drive speed so GO/BRAKE are not dependent on fragile impulse stacking');
+  assert.match(vehicleManager, /moveToward\(driveSpeed, tuning\.maxForward/, 'GO should accelerate smoothly toward a forward target speed');
+  assert.match(vehicleManager, /moveToward\(driveSpeed, target, accel \* safeDt\)/, 'BRAKE should decelerate first, then reverse predictably');
+  assert.match(vehicleManager, /this\.active\.yaw -= steerInput/, 'LEFT/RIGHT should directly change heading instead of relying on unstable wheel impulses');
+  assert.match(vehicleManager, /handbrake \? 1\.85 : 1/, 'DRIFT should boost steering authority while held');
+  assert.match(vehicleManager, /setLinvel\(\{ x: horizontalVelocity\.x/, 'arcade driving should push actual body velocity every frame');
+  assert.match(vehicleManager, /getDebugState\(\)/, 'navigation state should be inspectable in browser regression tests');
+  assert.match(vehicleManager, /castRay\(ray, maxRay, true, undefined, undefined, this\.active\.collider, body\)/, 'wheel visual rays should still exclude the active vehicle body/collider');
 });
 
 test('World and vehicles use a colorful toy-car art direction', () => {

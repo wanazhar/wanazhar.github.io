@@ -21,18 +21,18 @@ export class VehicleManager {
     this.#disposeActive();
 
     const bodyDesc = this.rapier.RigidBodyDesc.dynamic()
-      .setTranslation(0, 4.2, 8)
+      .setTranslation(0, 1.35, 8)
       .setCanSleep(false)
-      .setLinearDamping(profile.drag)
-      .setAngularDamping(0.72);
+      .setLinearDamping(0.08)
+      .setAngularDamping(0.92);
 
     const body = this.world.createRigidBody(bodyDesc);
     const density = Math.max(80, profile.mass / (profile.dimensions.width * profile.dimensions.height * profile.dimensions.length));
     const colliderDesc = this.rapier.ColliderDesc
       .cuboid(profile.dimensions.width * 0.5, profile.dimensions.height * 0.5, profile.dimensions.length * 0.5)
       .setDensity(density)
-      .setFriction(0.82)
-      .setRestitution(0.03);
+      .setFriction(0.92)
+      .setRestitution(0.02);
     const collider = this.world.createCollider(colliderDesc, body);
 
     if (typeof body.setAdditionalMassProperties === 'function') {
@@ -43,13 +43,32 @@ export class VehicleManager {
     this.scene.add(model.root);
 
     const wheels = this.#makeWheels(profile, model.parts);
-    this.active = { profile, body, collider, model, wheels, speedKph: 0, steerAngle: 0, odometer: 0, lastGroundedCount: 0, lastThrottle: 0 };
+    this.active = {
+      profile,
+      body,
+      collider,
+      model,
+      wheels,
+      speedKph: 0,
+      steerAngle: 0,
+      odometer: 0,
+      driveSpeed: 0,
+      yaw: 0,
+      driftAmount: 0,
+      lastGroundedCount: 0,
+      lastThrottle: 0
+    };
     this.resetActiveVehicle();
   }
 
-  resetActiveVehicle(position = { x: 0, y: 4.2, z: 8 }) {
+  resetActiveVehicle(position = { x: 0, y: 1.35, z: 8 }) {
     if (!this.active) return;
     const { body } = this.active;
+    this.active.driveSpeed = 0;
+    this.active.speedKph = 0;
+    this.active.steerAngle = 0;
+    this.active.driftAmount = 0;
+    this.active.yaw = 0;
     body.setTranslation(position, true);
     body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     body.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -59,82 +78,78 @@ export class VehicleManager {
   update(dt, input) {
     if (!this.active) return;
     const { body, profile, wheels } = this.active;
+    const safeDt = Math.min(dt, 0.05);
     const translation = body.translation();
-    const rotation = body.rotation();
-    const q = new THREE.Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
     const linvel = body.linvel();
-    const velocity = new THREE.Vector3(linvel.x, linvel.y, linvel.z);
+
+    const tuning = this.#driveTuning(profile);
+    const forwardInput = input.throttle > 0 ? 1 : 0;
+    const reverseInput = input.brake > 0 ? 1 : 0;
+    const steerInput = input.steer || 0;
+    const handbrake = input.handbrake > 0 ? 1 : 0;
+
+    let driveSpeed = this.active.driveSpeed;
+    if (forwardInput) {
+      const accel = driveSpeed < -0.4 ? tuning.brakeDecel * 1.9 : tuning.accel;
+      driveSpeed = moveToward(driveSpeed, tuning.maxForward, accel * safeDt);
+    } else if (reverseInput) {
+      const target = driveSpeed > 0.7 ? 0 : -tuning.maxReverse;
+      const accel = driveSpeed > 0.7 ? tuning.brakeDecel : tuning.reverseAccel;
+      driveSpeed = moveToward(driveSpeed, target, accel * safeDt);
+    } else {
+      driveSpeed = moveToward(driveSpeed, 0, tuning.coastDecel * safeDt);
+    }
+
+    if (handbrake && Math.abs(driveSpeed) > 1.5) {
+      driveSpeed = moveToward(driveSpeed, 0, tuning.coastDecel * 0.48 * safeDt);
+    }
+
+    const speedAbs = Math.abs(driveSpeed);
+    const steerTarget = steerInput * profile.maxSteer;
+    this.active.steerAngle = THREE.MathUtils.lerp(this.active.steerAngle, steerTarget, 1 - Math.pow(0.00002, safeDt));
+    const steerAuthority = THREE.MathUtils.clamp(speedAbs / tuning.maxForward, 0.18, 1);
+    const driftBoost = handbrake ? 1.85 : 1;
+    const reverseSteer = driveSpeed < -0.2 ? -1 : 1;
+    this.active.yaw -= steerInput * tuning.turnRate * steerAuthority * driftBoost * reverseSteer * safeDt;
+    this.active.driftAmount = THREE.MathUtils.lerp(this.active.driftAmount, handbrake ? Math.abs(steerInput) : 0, 1 - Math.pow(0.0001, safeDt));
+
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.active.yaw);
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(q).normalize();
-    const side = new THREE.Vector3(1, 0, 0).applyQuaternion(q).normalize();
     this.forwardVector.copy(forward);
 
-    const steerTarget = input.steer * profile.maxSteer;
-    this.active.steerAngle = THREE.MathUtils.lerp(this.active.steerAngle, steerTarget, 1 - Math.pow(0.0001, dt));
-    const throttle = input.throttle - input.brake * 0.55;
-    const speedForward = velocity.dot(forward);
-    this.active.speedKph = velocity.length() * 3.6;
-    this.active.odometer += Math.abs(speedForward) * dt;
+    const horizontalVelocity = forward.multiplyScalar(driveSpeed);
+    body.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+    body.setLinvel({ x: horizontalVelocity.x, y: linvel.y, z: horizontalVelocity.z }, true);
+    body.setAngvel({ x: 0, y: steerInput * tuning.turnRate * driftBoost * steerAuthority, z: 0 }, true);
+
+    if (translation.y < 0.55) {
+      body.setTranslation({ x: translation.x, y: 0.72, z: translation.z }, true);
+      body.setLinvel({ x: horizontalVelocity.x, y: 0, z: horizontalVelocity.z }, true);
+    }
+
+    this.active.speedKph = speedAbs * 3.6;
+    this.active.driveSpeed = driveSpeed;
+    this.active.odometer += speedAbs * safeDt;
+    this.active.lastThrottle = forwardInput - reverseInput;
 
     let groundedCount = 0;
     for (const wheel of wheels) {
       wheel.steer = wheel.front ? this.active.steerAngle : 0;
       const local = wheel.local.clone();
       const worldMount = local.applyQuaternion(q).add(new THREE.Vector3(translation.x, translation.y, translation.z));
-      const maxRay = profile.suspension.restLength + profile.wheel.radius + profile.suspension.travel;
+      const maxRay = profile.suspension.restLength + profile.wheel.radius + profile.suspension.travel + 0.35;
       const ray = new this.rapier.Ray(worldMount, DOWN);
       const hit = this.world.castRay(ray, maxRay, true, undefined, undefined, this.active.collider, body);
       wheel.grounded = Boolean(hit && hit.toi < maxRay);
-      wheel.compression = 0;
-
-      if (wheel.grounded) {
-        groundedCount += 1;
-        const distance = hit.toi;
-        const compression = THREE.MathUtils.clamp((profile.suspension.restLength + profile.wheel.radius - distance) / profile.suspension.restLength, 0, 1.3);
-        wheel.compression = compression;
-        const suspensionImpulse = (profile.suspension.stiffness * compression - velocity.y * profile.suspension.damping) * dt;
-        this.#applyImpulseAtPoint(body, { x: 0, y: Math.max(0, suspensionImpulse), z: 0 }, worldMount);
-
-        const driven = profile.drivenWheels.includes(wheel.key);
-        const steeringForward = forward.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), wheel.steer).normalize();
-        if (driven && Math.abs(throttle) > 0.001) {
-          const limiter = profile.accelerationLimiter ?? 1;
-          const engineImpulse = profile.torque * throttle * limiter * dt;
-          this.#applyImpulseAtPoint(body, vectorToRapier(steeringForward.multiplyScalar(engineImpulse)), worldMount);
-        }
-
-        if (input.brake > 0 || input.handbrake > 0) {
-          const brakeFactor = input.handbrake ? 1.65 : 1;
-          const brakeImpulse = -Math.sign(speedForward || throttle || 1) * Math.min(Math.abs(speedForward) * profile.brakeForce * dt, profile.brakeForce * 0.025) * brakeFactor;
-          this.#applyImpulseAtPoint(body, vectorToRapier(forward.clone().multiplyScalar(brakeImpulse)), worldMount);
-        }
-
-        const lateralSpeed = velocity.dot(side);
-        const lateralGrip = profile.friction.lateral * (input.handbrake && !wheel.front ? 0.38 : 1);
-        const lateralImpulse = -lateralSpeed * lateralGrip * profile.mass * 0.012 * dt;
-        this.#applyImpulseAtPoint(body, vectorToRapier(side.clone().multiplyScalar(lateralImpulse)), worldMount);
-      }
-
-      wheel.spin += speedForward / Math.max(profile.wheel.radius, 0.1) * dt;
+      if (wheel.grounded) groundedCount += 1;
+      wheel.compression = wheel.grounded
+        ? THREE.MathUtils.clamp((profile.suspension.restLength + profile.wheel.radius - hit.toi) / profile.suspension.restLength, 0, 1.15)
+        : 0;
+      wheel.spin += driveSpeed / Math.max(profile.wheel.radius, 0.1) * safeDt;
     }
-
     this.active.lastGroundedCount = groundedCount;
-    this.active.lastThrottle = throttle;
-    const nearGround = translation.y < profile.dimensions.height + profile.wheel.radius + profile.suspension.restLength + 1.25;
-    if (groundedCount > 0 || nearGround) {
-      const limiter = profile.accelerationLimiter ?? 1;
-      const driveImpulse = profile.torque * throttle * limiter * Math.min(dt, 1 / 30) * 9.0;
-      if (Math.abs(driveImpulse) > 0.001) {
-        body.applyImpulse(vectorToRapier(forward.clone().multiplyScalar(driveImpulse)), true);
-      }
 
-      const steerInput = this.active.steerAngle / Math.max(profile.maxSteer, 0.001);
-      const movingScale = THREE.MathUtils.clamp(Math.abs(speedForward) / 7, 0.35, 1);
-      if (Math.abs(steerInput) > 0.01 && (Math.abs(speedForward) > 0.35 || Math.abs(throttle) > 0.1)) {
-        body.applyTorqueImpulse({ x: 0, y: -steerInput * profile.mass * 0.58 * movingScale * dt, z: 0 }, true);
-      }
-    }
-
-    this.#updateVisuals(q, translation);
+    this.#updateVisuals(q, body.translation());
   }
 
   getPosition() {
@@ -150,6 +165,33 @@ export class VehicleManager {
   getForwardVector() { return this.forwardVector.clone(); }
   getSpeedKph() { return this.active?.speedKph || 0; }
   getCurrentProfile() { return this.active?.profile || VEHICLE_PROFILES.sedan; }
+  getDebugState() {
+    if (!this.active) return null;
+    const p = this.getPosition();
+    return {
+      vehicle: this.active.profile.id,
+      speedKph: this.active.speedKph,
+      driveSpeed: this.active.driveSpeed,
+      yaw: this.active.yaw,
+      steerAngle: this.active.steerAngle,
+      driftAmount: this.active.driftAmount,
+      position: p
+    };
+  }
+
+  #driveTuning(profile) {
+    const massFactor = THREE.MathUtils.clamp(1350 / profile.mass, 0.34, 1.18);
+    const limiter = profile.accelerationLimiter ?? 1;
+    return {
+      maxForward: THREE.MathUtils.clamp(24 * massFactor + 8, 12, 34) * limiter,
+      maxReverse: THREE.MathUtils.clamp(8.5 * massFactor + 2.5, 4.5, 12),
+      accel: THREE.MathUtils.clamp(28 * massFactor + 7, 9, 38) * limiter,
+      reverseAccel: THREE.MathUtils.clamp(16 * massFactor + 5, 7, 24),
+      brakeDecel: THREE.MathUtils.clamp(42 * massFactor + 12, 20, 58),
+      coastDecel: THREE.MathUtils.clamp(8 * massFactor + 3.5, 4.5, 13),
+      turnRate: THREE.MathUtils.clamp(2.8 * massFactor + profile.maxSteer, 1.45, 3.55)
+    };
+  }
 
   #makeWheels(profile, parts) {
     const positions = {
@@ -171,23 +213,18 @@ export class VehicleManager {
   }
 
   #updateVisuals(q, translation) {
-    const { model, wheels, profile } = this.active;
+    const { model, wheels, profile, driftAmount } = this.active;
     model.root.position.set(translation.x, translation.y, translation.z);
     model.root.quaternion.copy(q);
+    if (driftAmount > 0.01) {
+      model.root.rotateY(THREE.MathUtils.lerp(0, this.active.steerAngle * 0.42, driftAmount));
+    }
     for (const wheel of wheels) {
       if (!wheel.node) continue;
       const restDrop = profile.suspension.restLength * (1 - wheel.compression) - profile.wheel.radius * 0.1;
       wheel.node.position.copy(wheel.local);
       wheel.node.position.y -= THREE.MathUtils.clamp(restDrop, 0, profile.suspension.restLength + profile.suspension.travel);
       wheel.node.rotation.set(wheel.spin, wheel.steer, Math.PI / 2);
-    }
-  }
-
-  #applyImpulseAtPoint(body, impulse, point) {
-    if (typeof body.applyImpulseAtPoint === 'function') {
-      body.applyImpulseAtPoint(impulse, point, true);
-    } else {
-      body.applyImpulse(impulse, true);
     }
   }
 
@@ -199,4 +236,8 @@ export class VehicleManager {
   }
 }
 
-function vectorToRapier(v) { return { x: v.x, y: v.y, z: v.z }; }
+function moveToward(current, target, delta) {
+  if (current < target) return Math.min(current + delta, target);
+  if (current > target) return Math.max(current - delta, target);
+  return target;
+}
