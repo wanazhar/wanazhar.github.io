@@ -52,9 +52,12 @@ def cube_binary():
 def make_glb(name, profile, outdir):
     bin_blob, views, accessors, pos_acc, nrm_acc, idx_acc = cube_binary()
     mats=[
-        {'name':'body','pbrMetallicRoughness':{'baseColorFactor':profile['color'],'roughnessFactor':.78,'metallicFactor':.04}},
+        {'name':'body','pbrMetallicRoughness':{'baseColorFactor':profile['color'],'roughnessFactor':.45,'metallicFactor':0.5}},
         {'name':'wheel','pbrMetallicRoughness':{'baseColorFactor':[.02,.02,.02,1],'roughnessFactor':.95,'metallicFactor':0}},
         {'name':'accent','pbrMetallicRoughness':{'baseColorFactor':[.96,.94,.88,1],'roughnessFactor':.65,'metallicFactor':.02}},
+        {'name':'glass','pbrMetallicRoughness':{'baseColorFactor':[0.2,0.3,0.4,0.5],'roughnessFactor':0.1,'metallicFactor':0.8}},
+        {'name':'lights_front','emissiveFactor':[1,1,1],'pbrMetallicRoughness':{'baseColorFactor':[1,1,1,1]}},
+        {'name':'lights_back','emissiveFactor':[1,0,0],'pbrMetallicRoughness':{'baseColorFactor':[1,0,0,1]}},
     ]
     meshes=[]
     for material in range(3):
@@ -66,15 +69,28 @@ def make_glb(name, profile, outdir):
         if rotation: n['rotation']=list(rotation)
         nodes.append(n); return len(nodes)-1
     scene_nodes=[]
-    scene_nodes.append(node('chassis',0,(0,.42,0),(w,h,l)))
-    scene_nodes.append(node('cabin_voxel',2,(0,h*.94,-l*.08),(w*.62,h*.55,l*.34)))
+    scene_nodes.append(node('chassis',0,(0,.42,0),(w,h*0.6,l)))
+    scene_nodes.append(node('cabin_voxel',3,(0,h*0.8,-l*0.05),(w*0.85,h*0.5,l*0.5)))
+
+    # Headlights
+    scene_nodes.append(node('headlight_l',4,(-w*0.35,h*0.4,-l*0.5),(w*0.15,h*0.1,0.05)))
+    scene_nodes.append(node('headlight_r',4,(w*0.35,h*0.4,-l*0.5),(w*0.15,h*0.1,0.05)))
+
+    # Taillights
+    scene_nodes.append(node('taillight_l',5,(-w*0.35,h*0.4,l*0.5),(w*0.2,h*0.1,0.05)))
+    scene_nodes.append(node('taillight_r',5,(w*0.35,h*0.4,l*0.5),(w*0.2,h*0.1,0.05)))
+
+    # Mirrors
+    scene_nodes.append(node('mirror_l',0,(-w*0.55,h*0.8,-l*0.1),(0.1,0.15,0.15)))
+    scene_nodes.append(node('mirror_r',0,(w*0.55,h*0.8,-l*0.1),(0.1,0.15,0.15)))
+
     # wheel cube is later animated by runtime; z-rotation initial is cosmetic only.
     rz=math.sin(math.pi/4); rw=math.cos(math.pi/4)
     wheel_scale=(wr*1.18, wr*1.18, ww)
     for key,x,z in [('fl',-ax*.5,-wb*.5),('fr',ax*.5,-wb*.5),('rl',-ax*.5,wb*.5),('rr',ax*.5,wb*.5)]:
         scene_nodes.append(node(f'wheel_{key}',1,(x,-.12,z),wheel_scale,(0,0,rz,rw)))
     if name=='truck':
-        scene_nodes.append(node('cargo_box_voxel',0,(0,1.05,1.2),(w*.96,h*1.05,l*.46)))
+        scene_nodes.append(node('cargo_box_voxel',0,(0,1.05,l*0.2),(w*.96,h*1.4,l*.6)))
     if name=='excavator':
         scene_nodes.append(node('excavator_boom_voxel',0,(0,2.2,-2.9),(.55,.55,5.6),(math.sin(-.18),0,0,math.cos(-.18))))
         scene_nodes.append(node('excavator_bucket_voxel',1,(0,1.2,-5.65),(1.2,.65,.8)))
