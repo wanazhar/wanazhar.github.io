@@ -10,6 +10,8 @@ const game = readFileSync(new URL('../src/core/Game.js', import.meta.url), 'utf8
 const uiManager = readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 const city = readFileSync(new URL('../src/world/VoxelCity.js', import.meta.url), 'utf8');
+const inputController = readFileSync(new URL('../src/core/InputController.js', import.meta.url), 'utf8');
+const worldColliderManager = readFileSync(new URL('../src/world/WorldColliderManager.js', import.meta.url), 'utf8');
 const assetLoader = readFileSync(new URL('../src/core/AssetLoader.js', import.meta.url), 'utf8');
 const vehicleProfiles = readFileSync(new URL('../src/physics/VehicleProfiles.js', import.meta.url), 'utf8');
 const vehicleManager = readFileSync(new URL('../src/physics/VehicleManager.js', import.meta.url), 'utf8');
@@ -72,6 +74,25 @@ test('Vehicle input logic uses deterministic arcade driving controls', () => {
   assert.match(vehicleManager, /setLinvel\(\{ x: horizontalVelocity\.x/, 'arcade driving should push actual body velocity every frame');
   assert.match(vehicleManager, /getDebugState\(\)/, 'navigation state should be inspectable in browser regression tests');
   assert.match(vehicleManager, /castRay\(ray, maxRay, true, undefined, undefined, this\.active\.collider, body\)/, 'wheel visual rays should still exclude the active vehicle body/collider');
+});
+
+test('Solid objects block vehicles while off-road ground remains driveable', () => {
+  assert.match(city, /solidSpatialHash/, 'city should expose a dedicated spatial hash for physical blockers');
+  assert.match(city, /#addSolidVoxelCollider\(voxel, type, scaleY\)/, 'buildings and towers should register solid colliders');
+  assert.match(city, /type:\s*'treeTrunk'/, 'visual trees should register trunk collision');
+  assert.match(city, /type:\s*'streetSign'/, 'placed signs should register collision');
+  assert.match(game, /spatialHash:\s*this\.city\.solidSpatialHash/, 'world colliders should stream only solid placed objects');
+  assert.doesNotMatch(worldColliderManager, /voxel\.type !== 'park'/, 'off-road park/grass driving should not depend on broad park blockers');
+});
+
+test('Follow camera can orbit and reset while driving', () => {
+  assert.match(inputController, /KeyQ:\s*\['cameraLeft'/, 'Q should rotate the follow camera left');
+  assert.match(inputController, /KeyE:\s*\['cameraRight'/, 'E should rotate the follow camera right');
+  assert.match(inputController, /KeyC:\s*\['resetCamera'/, 'C should reset the follow camera');
+  assert.match(inputController, /bindCameraElement\(element\)/, 'pointer drag should bind to the render canvas');
+  assert.match(game, /this\.input\.bindCameraElement\(this\.renderer\.domElement\)/, 'game should wire pointer camera drag');
+  assert.match(game, /this\.cameraYawOffset \+=/, 'camera orbit should accumulate while moving');
+  assert.match(game, /consumePressed\('resetCamera'\)/, 'camera reset input should restore the default follow view');
 });
 
 test('World and vehicles use a colorful toy-car art direction', () => {

@@ -10,6 +10,7 @@ import { UIManager } from '../ui/UIManager.js';
 import { GarageStore } from '../services/GarageStore.js';
 
 const CAMERA_TARGET_OFFSET = new THREE.Vector3(0, 2.2, 0);
+const CAMERA_ORBIT_KEY_RATE = 2.3;
 
 export class Game {
   constructor(root) {
@@ -18,6 +19,7 @@ export class Game {
     this.running = false;
     this.stats = { fps: 0, activeColliders: 0, visibleChunks: 0, vehicle: 'sedan' };
     this.fpsSamples = [];
+    this.cameraYawOffset = 0;
   }
 
   async start() {
@@ -39,6 +41,7 @@ export class Game {
 
     this.#setupLighting();
     this.input = new InputController(window);
+    this.input.bindCameraElement(this.renderer.domElement);
     this.assetLoader = new AssetLoader();
     this.physics = new PhysicsWorld(RAPIER);
     this.garageStore = new GarageStore();
@@ -46,13 +49,14 @@ export class Game {
     this.city = new VoxelCity(this.scene);
     await Promise.all([this.city.load(), this.assetLoader.preloadVehicles()]);
 
-    this.colliderManager = new WorldColliderManager({ rapier: RAPIER, world: this.physics.world, spatialHash: this.city.spatialHash, cellSize: this.city.cellSize });
+    this.colliderManager = new WorldColliderManager({ rapier: RAPIER, world: this.physics.world, spatialHash: this.city.solidSpatialHash, cellSize: this.city.cellSize });
     this.vehicleManager = new VehicleManager({ rapier: RAPIER, scene: this.scene, physics: this.physics, assetLoader: this.assetLoader });
 
     const persisted = await this.garageStore.load();
     const initialVehicle = persisted?.selected_vehicle || persisted?.selectedVehicle || 'sedan';
     await this.vehicleManager.spawn(initialVehicle);
     this.stats.vehicle = initialVehicle;
+    this.colliderManager.update(this.vehicleManager.getPosition(), true);
 
     this.ui = new UIManager({
       input: this.input,
@@ -119,7 +123,12 @@ export class Game {
     this.#updateFps(rawDt);
     this.input.update();
     if (this.input.consumePressed('reset')) this.vehicleManager.resetActiveVehicle();
+    if (this.input.consumePressed('resetCamera')) this.cameraYawOffset = 0;
     if (this.input.consumePressed('toggleUi')) this.ui.toggleHidden();
+    this.cameraYawOffset += this.input.state.cameraOrbit + this.input.state.cameraOrbitKeyboard * CAMERA_ORBIT_KEY_RATE * dt;
+    const preStepPosition = this.vehicleManager.getPosition();
+    this.colliderManager.update(preStepPosition);
+    this.stats.activeColliders = this.colliderManager.activeCount;
     this.vehicleManager.update(dt, this.input.state);
     this.physics.step(dt);
     const activePosition = this.vehicleManager.getPosition();
@@ -140,7 +149,7 @@ export class Game {
 
   #updateCamera(dt) {
     const target = this.vehicleManager.getPositionVector();
-    const forward = this.vehicleManager.getForwardVector();
+    const forward = this.vehicleManager.getForwardVector().applyAxisAngle(new THREE.Vector3(0, 1, 0), this.cameraYawOffset);
     const chaseDistance = Math.max(11, 16 - this.vehicleManager.getSpeedKph() * 0.035);
     const desired = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, -chaseDistance).add(new THREE.Vector3(0, 8.5, 0));
     this.camera.position.lerp(desired, 1 - Math.pow(0.0008, dt));
