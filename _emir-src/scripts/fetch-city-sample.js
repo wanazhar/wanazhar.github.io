@@ -6,9 +6,9 @@ const CENTER = {
   lat: Number(process.env.CITY_LAT || 3.1478),
   lon: Number(process.env.CITY_LON || 101.6953)
 };
-const RADIUS_METERS = Number(process.env.CITY_RADIUS_METERS || 700);
+const RADIUS_METERS = Number(process.env.CITY_RADIUS_METERS || 1200);
 const CELL_SIZE = Number(process.env.CITY_CELL_SIZE || 4);
-const MAX_VOXELS = Number(process.env.CITY_MAX_BLOCKS || 32000);
+const MAX_VOXELS = Number(process.env.CITY_MAX_BLOCKS || 64000);
 const OUT = path.resolve('public/data/city-blocks.json');
 
 const query = `
@@ -25,7 +25,10 @@ out body;
 console.log(`Fetching map-data data around KLCC radius=${RADIUS_METERS}m...`);
 const response = await fetch('https://overpass-api.de/api/interpreter', {
   method: 'POST',
-  headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+  headers: {
+    'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'User-Agent': 'EmirCarWorldBot/1.0 (https://wanazhar.github.io/emir)'
+  },
   body: new URLSearchParams({ data: query })
 });
 

@@ -32,7 +32,7 @@ export class Game {
     this.scene.background = new THREE.Color(0x87ceeb);
     this.scene.fog = new THREE.Fog(0x87ceeb, 190, 520);
 
-    this.camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 10000);
     this.camera.position.set(0, 9, 20);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -131,7 +131,7 @@ export class Game {
     if (this.input.consumePressed('resetCamera')) this.#focusCamera();
     if (this.input.consumePressed('toggleUi')) this.ui.toggleHidden();
     this.cameraYawOffset += this.input.state.cameraOrbit + this.input.state.cameraOrbitKeyboard * CAMERA_ORBIT_KEY_RATE * dt;
-    this.cameraZoomTarget = THREE.MathUtils.clamp(this.cameraZoomTarget + this.input.state.cameraZoom * dt * CAMERA_ZOOM_RATE, 0.58, 1.62);
+    this.cameraZoomTarget = THREE.MathUtils.clamp(this.cameraZoomTarget + this.input.state.cameraZoom * dt * CAMERA_ZOOM_RATE, 0.58, 25.0);
     const preStepPosition = this.vehicleManager.getPosition();
     this.colliderManager.update(preStepPosition);
     this.stats.activeColliders = this.colliderManager.activeCount;
@@ -142,6 +142,7 @@ export class Game {
     this.colliderManager.update(activePosition);
     this.stats.activeColliders = this.colliderManager.activeCount;
     this.stats.visibleChunks = this.city.updateVisibility(this.camera, activePosition);
+    this.#updateFog();
     this.#updateCamera(dt);
     this.ui.update(dt);
     this.renderer.render(this.scene, this.camera);
@@ -154,15 +155,37 @@ export class Game {
     this.stats.fps = Math.round(this.fpsSamples.reduce((a, b) => a + b, 0) / this.fpsSamples.length);
   }
 
+  #updateFog() {
+    if (!this.scene.fog) return;
+    const zoomFactor = Math.max(1, this.cameraZoom);
+    this.scene.fog.near = 190 * zoomFactor;
+    this.scene.fog.far = 520 * zoomFactor;
+  }
+
   #updateCamera(dt) {
     const target = this.vehicleManager.getPositionVector();
     const forward = this.vehicleManager.getForwardVector().applyAxisAngle(new THREE.Vector3(0, 1, 0), this.cameraYawOffset);
     this.cameraZoom = THREE.MathUtils.lerp(this.cameraZoom, this.cameraZoomTarget, 1 - Math.pow(0.00005, dt));
-    const chaseDistance = Math.max(11, 16 - this.vehicleManager.getSpeedKph() * 0.035) * this.cameraZoom;
-    const cameraHeight = THREE.MathUtils.lerp(5.4, 11.6, this.cameraZoom);
+
+    // Base chase distance and height
+    const baseChase = Math.max(11, 16 - this.vehicleManager.getSpeedKph() * 0.035);
+    const baseHeight = 5.4;
+
+    // Scale chase distance and height by zoom, with non-linear height increase for "satellite" effect
+    const chaseDistance = baseChase * this.cameraZoom;
+    const cameraHeight = baseHeight * this.cameraZoom + Math.pow(this.cameraZoom, 2.2) * 5;
+
     const desired = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, -chaseDistance).add(new THREE.Vector3(0, cameraHeight, 0));
+
+    // At very high zoom, transition to a more top-down view
+    if (this.cameraZoom > 4) {
+      const topDownFactor = Math.min(1, (this.cameraZoom - 4) / 4);
+      desired.x = THREE.MathUtils.lerp(desired.x, target.x, topDownFactor);
+      desired.z = THREE.MathUtils.lerp(desired.z, target.z + 0.1, topDownFactor); // Slight offset to maintain orientation
+    }
+
     this.camera.position.lerp(desired, 1 - Math.pow(0.00025, dt));
-    const lookAt = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, 4.5);
+    const lookAt = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, 4.5 * (1 - Math.min(1, this.cameraZoom / 5)));
     this.cameraLookAt.lerp(lookAt, 1 - Math.pow(0.0001, dt));
     this.camera.lookAt(this.cameraLookAt);
   }

@@ -68,11 +68,12 @@ export class VoxelCity {
     this.projectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.projectionMatrix);
     let visible = 0;
+    const isZoomedOut = camera.position.y > 60;
     for (const chunk of this.chunkMeshes) {
       const distance = chunk.center.distanceTo(new THREE.Vector3(focusPosition.x, focusPosition.y, focusPosition.z));
-      const inRange = distance < 360;
+      const inRange = isZoomedOut ? distance < 1500 : distance < 450;
       const inFrustum = this.frustum.intersectsSphere(chunk.sphere);
-      chunk.group.visible = inRange && inFrustum;
+      chunk.group.visible = inRange && (isZoomedOut || inFrustum);
       if (chunk.group.visible) visible++;
     }
     return visible;
@@ -80,7 +81,7 @@ export class VoxelCity {
 
   #addGroundPlane() {
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(960, 960, 1, 1),
+      new THREE.PlaneGeometry(2400, 2400, 1, 1),
       new THREE.MeshStandardMaterial({ color: 0x9be27f, roughness: 0.94, metalness: 0 })
     );
     ground.name = 'sunny_grass_ground';
@@ -286,17 +287,46 @@ export class VoxelCity {
   #addKualaLumpurLandmarks() {
     const group = new THREE.Group();
     group.name = 'kl_inspired_model_kit_landmarks';
-    this.#addPetronasTwinTowers(group, -20, -72);
-    this.#addKLTowerNeedle(group, 32, -72);
-    this.#addMerdeka118Spire(group, 8, -126);
-    this.#addTrxGlassTowers(group, 58, -34);
-    this.#addShophouseRows(group, -74, 42);
-    this.#addKLCCGatewaySign(group, -6, -46);
+    this.#addPetronasTwinTowers(group, -20, -120);
+    this.#addKLTowerNeedle(group, 80, -90);
+    this.#addMerdeka118Spire(group, 40, -220);
+    this.#addTrxGlassTowers(group, 150, -50);
+    this.#addShophouseRows(group, -120, 80);
+    this.#addKLCCGatewaySign(group, -10, -80);
     this.#addRiverAndConfluence(group);
-    this.#addSultanAbdulSamadBlock(group, -48, -18);
+    this.#addSultanAbdulSamadBlock(group, -80, -30);
     this.#addMonorailGuideway(group);
     this.#addTropicalTerrainDetails(group);
+
+    // Add more scattered shophouses and monorails to fill terrain
+    for (let i = 0; i < 5; i++) {
+        this.#addShophouseRows(group, -200 + i * 80, 150 + (i % 2) * 40);
+        this.#addMonorailGuideway(group, -150 + i * 100, 50 + i * 50);
+    }
+
     this.scene.add(group);
+  }
+
+  #addMonorailGuideway(group, offsetX = 0, offsetZ = 28) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(220, 1.3, 2.2), MATERIALS.landmarkSteel);
+    rail.name = 'elevated_monorail_guideway_over_road';
+    rail.position.set(offsetX, 9.8, offsetZ);
+    rail.castShadow = true;
+    group.add(rail);
+    for (let x = -104; x <= 104; x += 16) {
+      const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.9, 9.5, 8), MATERIALS.landmarkSteel);
+      pier.name = 'monorail_concrete_pier';
+      pier.position.set(offsetX + x, 4.8, offsetZ);
+      pier.castShadow = true;
+      group.add(pier);
+      this.#insertSolidCollider({ x: offsetX + x, y: 4.8, z: offsetZ, type: 'monorailPier', halfExtents: { x: 0.9, y: 4.8, z: 0.9 } });
+    }
+    const trainMat = new THREE.MeshStandardMaterial({ color: 0xfff4e0, roughness: 0.48, metalness: 0.04 });
+    const train = new THREE.Mesh(new THREE.BoxGeometry(18, 2.2, 2.6), trainMat);
+    train.name = 'kl_monorail_train_on_elevated_guideway';
+    train.position.set(offsetX + 38, 11.25, offsetZ);
+    train.castShadow = true;
+    group.add(train);
   }
 
   #addPetronasTwinTowers(group, x, z) {
@@ -413,27 +443,6 @@ export class VoxelCity {
     }
   }
 
-  #addMonorailGuideway(group) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(220, 1.3, 2.2), MATERIALS.landmarkSteel);
-    rail.name = 'elevated_monorail_guideway_over_road';
-    rail.position.set(0, 9.8, 28);
-    rail.castShadow = true;
-    group.add(rail);
-    for (let x = -104; x <= 104; x += 16) {
-      const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.9, 9.5, 8), MATERIALS.landmarkSteel);
-      pier.name = 'monorail_concrete_pier';
-      pier.position.set(x, 4.8, 28);
-      pier.castShadow = true;
-      group.add(pier);
-      this.#insertSolidCollider({ x, y: 4.8, z: 28, type: 'monorailPier', halfExtents: { x: 0.9, y: 4.8, z: 0.9 } });
-    }
-    const trainMat = new THREE.MeshStandardMaterial({ color: 0xfff4e0, roughness: 0.48, metalness: 0.04 });
-    const train = new THREE.Mesh(new THREE.BoxGeometry(18, 2.2, 2.6), trainMat);
-    train.name = 'kl_monorail_train_on_elevated_guideway';
-    train.position.set(38, 11.25, 28);
-    train.castShadow = true;
-    group.add(train);
-  }
 
   #addRiverAndConfluence(group) {
     const river = new THREE.Mesh(new THREE.BoxGeometry(118, 0.08, 7.5), MATERIALS.river);
@@ -482,9 +491,9 @@ export class VoxelCity {
   }
 
   #addTropicalTerrainDetails(group) {
-    for (let i = 0; i < 42; i++) {
-      const x = -130 + hashUnit(i, 17, 5) * 260;
-      const z = -118 + hashUnit(i, 31, 9) * 236;
+    for (let i = 0; i < 150; i++) {
+      const x = -600 + hashUnit(i, 17, 5) * 1200;
+      const z = -600 + hashUnit(i, 31, 9) * 1200;
       if (Math.abs(x) < 20 || Math.abs(z) < 20) continue;
       const palm = new THREE.Group();
       palm.name = 'tropical_palm_cluster';
@@ -570,7 +579,8 @@ function hashUnit(x, z, salt = 0) {
 
 function makeFallbackVoxels() {
   const voxels = [];
-  for (let x = -180; x <= 180; x += 4) {
+  const spread = 400;
+  for (let x = -spread; x <= spread; x += 4) {
     voxels.push({ x, y: 0.05, z: 0, type: 'road' });
     voxels.push({ x: 0, y: 0.05, z: x, type: 'road' });
     if (x % 24 === 0) {
@@ -578,10 +588,10 @@ function makeFallbackVoxels() {
       voxels.push({ x: -24, y: 0.05, z: x, type: 'park' });
     }
   }
-  for (let bx = -144; bx <= 144; bx += 24) {
-    for (let bz = -144; bz <= 144; bz += 24) {
+  for (let bx = -spread; bx <= spread; bx += 24) {
+    for (let bz = -spread; bz <= spread; bz += 24) {
       if (Math.abs(bx) < 18 || Math.abs(bz) < 18) continue;
-      const levels = 2 + Math.abs((bx * 13 + bz * 7) % 9);
+      const levels = 2 + Math.abs((bx * 13 + bz * 7) % 12);
       for (let level = 0; level < levels; level++) voxels.push({ x: bx, y: 2 + level * 4, z: bz, type: level > 7 ? 'tower' : 'building' });
     }
   }
