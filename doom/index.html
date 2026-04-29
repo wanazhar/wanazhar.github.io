@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#09090d" />
+    <meta
+      name="description"
+      content="Run DOOM on GitHub Pages using js-dos, with non-obstructive touchscreen controls."
+    />
+    <title>DOOM on GitHub Pages</title>
+
+    <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+
+    <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
+    <script src="./main.js" defer></script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#gameShell">Skip to game</a>
+
+    <main class="app-shell">
+      <section class="hero-panel" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow">WANAZHAR.GITHUB.IO / DOOM</p>
+          <h1 id="pageTitle">Can we run DOOM on GitHub Pages?</h1>
+          <p class="lede">
+            Yes. Static HTML, CSS, JavaScript, WebAssembly, and js-dos. No backend needed.
+          </p>
+        </div>
+
+        <div class="status-card" aria-live="polite">
+          <span class="status-dot" id="statusDot"></span>
+          <div>
+            <strong id="statusTitle">Ready</strong>
+            <span id="statusText">Drop in <code>assets/doom.jsdos</code>, or load a local bundle.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="toolbar" aria-label="Game controls">
+        <button class="button button-primary" id="startButton" type="button">Start DOOM</button>
+        <label class="button button-secondary file-button" for="bundlePicker">
+          Load local .jsdos
+          <input id="bundlePicker" type="file" accept=".jsdos,.zip,application/zip" />
+        </label>
+        <button class="button button-secondary" id="fullscreenButton" type="button">Fullscreen</button>
+        <button class="button button-secondary" id="touchToggleButton" type="button">Touch controls</button>
+        <button class="button button-ghost" id="helpButton" type="button" aria-expanded="false" aria-controls="helpPanel">
+          Help
+        </button>
+      </section>
+
+      <section class="notice" id="legalNotice">
+        <strong>Important:</strong> This codebase does not include DOOM game files. Add your own legal js-dos
+        bundle named <code>doom.jsdos</code> in <code>doom/assets/</code>. You can also use the file picker for local testing.
+      </section>
+
+      <section class="game-layout">
+        <div class="game-shell" id="gameShell">
+          <div id="dos" class="dos-stage" aria-label="DOOM emulator viewport"></div>
+
+          <div class="drop-layer" id="dropLayer" aria-hidden="true">
+            <div>
+              <strong>Drop your .jsdos bundle here</strong>
+              <span>It will run locally in this browser session.</span>
+            </div>
+          </div>
+
+          <div class="empty-state" id="emptyState">
+            <h2>Almost there.</h2>
+            <p>
+              Add <code>doom/assets/doom.jsdos</code> to auto-start from GitHub Pages, or load a local
+              <code>.jsdos</code> bundle using the button above.
+            </p>
+            <div class="empty-actions">
+              <button class="button button-primary" id="emptyStartButton" type="button">Check bundle & start</button>
+              <a class="button button-secondary" href="./instruction.md">Open instruction.md</a>
+            </div>
+          </div>
+        </div>
+
+        <aside class="help-panel" id="helpPanel" hidden>
+          <h2>Controls</h2>
+          <dl class="control-list">
+            <div><dt>Move</dt><dd>Arrow keys</dd></div>
+            <div><dt>Fire</dt><dd>Ctrl</dd></div>
+            <div><dt>Use / open</dt><dd>Space</dd></div>
+            <div><dt>Run</dt><dd>Shift</dd></div>
+            <div><dt>Strafe</dt><dd>Alt + left/right</dd></div>
+            <div><dt>Map</dt><dd>Tab</dd></div>
+            <div><dt>Menu</dt><dd>Esc</dd></div>
+          </dl>
+
+          <h2>Touch overlay</h2>
+          <p>
+            On phones and tablets, use the bottom-left movement pad and bottom-right action buttons.
+            The overlay is translucent, small, and can be toggled anytime.
+          </p>
+        </aside>
+      </section>
+    </main>
+
+    <div class="touch-overlay" id="touchOverlay" aria-label="Touchscreen DOOM controls">
+      <div class="touch-group touch-dpad" aria-label="Movement pad">
+        <button class="touch-button touch-up" data-key="ArrowUp" aria-label="Move forward">▲</button>
+        <button class="touch-button touch-left" data-key="ArrowLeft" aria-label="Turn left">◀</button>
+        <button class="touch-button touch-right" data-key="ArrowRight" aria-label="Turn right">▶</button>
+        <button class="touch-button touch-down" data-key="ArrowDown" aria-label="Move backward">▼</button>
+      </div>
+
+      <div class="touch-group touch-actions" aria-label="Action buttons">
+        <button class="touch-button action-fire" data-key="ControlLeft" aria-label="Fire">Fire</button>
+        <button class="touch-button action-use" data-key="Space" aria-label="Use">Use</button>
+        <button class="touch-button action-run" data-key="ShiftLeft" aria-label="Run">Run</button>
+        <button class="touch-button action-strafe" data-key="AltLeft" aria-label="Strafe modifier">Strafe</button>
+      </div>
+
+      <div class="touch-group touch-mini" aria-label="Menu buttons">
+        <button class="touch-button mini" data-key="Escape" aria-label="Menu">Esc</button>
+        <button class="touch-button mini" data-key="Enter" aria-label="Enter">Enter</button>
+        <button class="touch-button mini" data-key="Tab" aria-label="Map">Map</button>
+      </div>
+    </div>
+  </body>
+</html>
