@@ -131,6 +131,7 @@ export class Game {
     this.stats.activeColliders = this.colliderManager.activeCount;
     this.vehicleManager.update(dt, this.input.state);
     this.physics.step(dt);
+    this.vehicleManager.syncAfterPhysics(dt);
     const activePosition = this.vehicleManager.getPosition();
     this.colliderManager.update(activePosition);
     this.stats.activeColliders = this.colliderManager.activeCount;
