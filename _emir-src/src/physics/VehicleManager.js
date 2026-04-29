@@ -43,7 +43,7 @@ export class VehicleManager {
     this.scene.add(model.root);
 
     const wheels = this.#makeWheels(profile, model.parts);
-    this.active = { profile, body, collider, model, wheels, speedKph: 0, steerAngle: 0, odometer: 0 };
+    this.active = { profile, body, collider, model, wheels, speedKph: 0, steerAngle: 0, odometer: 0, lastGroundedCount: 0, lastThrottle: 0 };
     this.resetActiveVehicle();
   }
 
@@ -75,17 +75,19 @@ export class VehicleManager {
     this.active.speedKph = velocity.length() * 3.6;
     this.active.odometer += Math.abs(speedForward) * dt;
 
+    let groundedCount = 0;
     for (const wheel of wheels) {
       wheel.steer = wheel.front ? this.active.steerAngle : 0;
       const local = wheel.local.clone();
       const worldMount = local.applyQuaternion(q).add(new THREE.Vector3(translation.x, translation.y, translation.z));
       const maxRay = profile.suspension.restLength + profile.wheel.radius + profile.suspension.travel;
       const ray = new this.rapier.Ray(worldMount, DOWN);
-      const hit = this.world.castRay(ray, maxRay, true);
+      const hit = this.world.castRay(ray, maxRay, true, undefined, undefined, this.active.collider, body);
       wheel.grounded = Boolean(hit && hit.toi < maxRay);
       wheel.compression = 0;
 
       if (wheel.grounded) {
+        groundedCount += 1;
         const distance = hit.toi;
         const compression = THREE.MathUtils.clamp((profile.suspension.restLength + profile.wheel.radius - distance) / profile.suspension.restLength, 0, 1.3);
         wheel.compression = compression;
@@ -113,6 +115,23 @@ export class VehicleManager {
       }
 
       wheel.spin += speedForward / Math.max(profile.wheel.radius, 0.1) * dt;
+    }
+
+    this.active.lastGroundedCount = groundedCount;
+    this.active.lastThrottle = throttle;
+    const nearGround = translation.y < profile.dimensions.height + profile.wheel.radius + profile.suspension.restLength + 1.25;
+    if (groundedCount > 0 || nearGround) {
+      const limiter = profile.accelerationLimiter ?? 1;
+      const driveImpulse = profile.torque * throttle * limiter * Math.min(dt, 1 / 30) * 9.0;
+      if (Math.abs(driveImpulse) > 0.001) {
+        body.applyImpulse(vectorToRapier(forward.clone().multiplyScalar(driveImpulse)), true);
+      }
+
+      const steerInput = this.active.steerAngle / Math.max(profile.maxSteer, 0.001);
+      const movingScale = THREE.MathUtils.clamp(Math.abs(speedForward) / 7, 0.35, 1);
+      if (Math.abs(steerInput) > 0.01 && (Math.abs(speedForward) > 0.35 || Math.abs(throttle) > 0.1)) {
+        body.applyTorqueImpulse({ x: 0, y: -steerInput * profile.mass * 0.58 * movingScale * dt, z: 0 }, true);
+      }
     }
 
     this.#updateVisuals(q, translation);

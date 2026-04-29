@@ -32,7 +32,8 @@ canvas { display: block; touch-action: none; }
 .touch-button--drift { background: rgba(255, 183, 3, .9); color: #3f2b00; }
 .touch-button:active, .touch-button[data-pressed="true"] { background: #14213d; color: #fff8df; transform: translateY(2px) scale(.96); box-shadow: 0 6px 14px rgba(20,33,61,.22); }
 .hidden-ui .ui-overlay { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-6px); }
-.ui-overlay { transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease; }
+body:not(.hidden-ui) .touch-controls { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(8px); }
+.ui-overlay, .touch-controls { transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease; }
 .perf-pill { border: 1px solid rgba(20,33,61,.24); border-radius: 999px; padding: 4px 8px; background: rgba(255,255,255,.38); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; letter-spacing: .05em; }
 
 @media (pointer: fine) and (min-width: 900px) {
