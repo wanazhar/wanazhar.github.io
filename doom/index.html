@@ -3,156 +3,71 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#1c1232" />
-    <meta
-      name="description"
-      content="Run DOOM on GitHub Pages using js-dos, with a cute anime-inspired UI and non-obstructive touchscreen controls."
-    />
-    <title>DOOM Kawaii Portal</title>
-
+    <meta name="theme-color" content="#ffcce0" />
+    <title>DOOM Kawaii ♡</title>
     <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css" />
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-
     <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
     <script src="./main.js" defer></script>
   </head>
-
   <body>
-    <a class="skip-link" href="#gameShell">Skip to game</a>
-
     <main class="app-shell">
-      <section class="hero-panel" aria-labelledby="pageTitle">
-        <div class="hero-copy">
-          <p class="eyebrow">WANAZHAR.GITHUB.IO / DOOM ♡ KAWAII MODE</p>
-          <h1 id="pageTitle">DOOM, but make it cute.</h1>
-          <p class="lede">
-            A pastel anime-inspired portal for classic DOOM, built for GitHub Pages with js-dos,
-            iPad-friendly safe mode, and a cleaner touch controller overlay.
-          </p>
+      <header>
+        <h1>DOOM Kawaii ♡</h1>
+        <div class="status-indicator">
+          <div id="statusDot" class="dot"></div>
+          <span id="statusTitle">Loading...</span>
+        </div>
+      </header>
 
-          <div class="hero-badges" aria-label="Feature highlights">
-            <span class="badge">♡ Static on GitHub Pages</span>
-            <span class="badge">✦ Touch-friendly</span>
-            <span class="badge">☁ iPad safe mode</span>
-          </div>
+      <section class="game-container" id="gameShell">
+        <div id="dos"></div>
+
+        <div class="empty-state" id="emptyState">
+          <h2>Welcome to the cute portal! ૮ ˶ᵔ ᵕ ᵔ˶ ა</h2>
+          <p>Ready to blast some demons in style?</p>
+          <button class="kawaii-btn primary" id="emptyStartButton">Start Game! ♡</button>
         </div>
 
-        <div class="hero-side">
-          <div class="status-card" aria-live="polite">
-            <span class="status-dot" id="statusDot"></span>
-            <div>
-              <strong id="statusTitle">Ready</strong>
-              <span id="statusText">Drop in <code>assets/doom.jsdos</code>, or load a local bundle.</span>
-            </div>
-          </div>
-
-          <div class="mascot-card" aria-hidden="true">
-            <div class="mascot-halo"></div>
-            <div class="mascot-face">૮ ˶ᵔ ᵕ ᵔ˶ ა</div>
-            <div class="mascot-label">PIXEL SLAYER ANGEL</div>
-            <p>Soft UI on the outside. Demons on the inside.</p>
-          </div>
+        <div class="mini-controls">
+          <button class="kawaii-btn mini-btn" id="touchToggleButton">Touch Pad</button>
+          <button class="kawaii-btn mini-btn" id="fullscreenButton">Full Screen</button>
+          <button class="kawaii-btn mini-btn" id="saveButton">Save</button>
+          <button class="kawaii-btn mini-btn" id="loadButton">Load</button>
         </div>
       </section>
 
-      <section class="toolbar" aria-label="Game controls">
-        <button class="button button-primary" id="startButton" type="button">♡ Start DOOM</button>
-        <label class="button button-secondary file-button" for="bundlePicker">
-          Load local .jsdos
-          <input id="bundlePicker" type="file" accept=".jsdos,.zip,application/zip" />
+      <div class="controls-bar">
+        <button class="kawaii-btn primary" id="startButton">Play DOOM ♡</button>
+        <label class="kawaii-btn" for="bundlePicker">
+          Load .jsdos
+          <input id="bundlePicker" type="file" accept=".jsdos,.zip" class="hidden" />
         </label>
-        <button class="button button-secondary" id="fullscreenButton" type="button">Fullscreen</button>
-        <button class="button button-secondary" id="touchToggleButton" type="button">Show touch pad</button>
-        <button class="button button-ghost" id="helpButton" type="button" aria-expanded="false" aria-controls="helpPanel">
-          Control guide
-        </button>
-      </section>
+      </div>
 
-      <section class="notice" id="legalNotice">
-        <strong>Shareware build:</strong> This page includes the public DOOM v1.9 shareware bundle
-        with <code>DOOM1.WAD</code>. You can still use the file picker to test another legal bundle locally.
-      </section>
-
-      <section class="game-layout">
-        <div class="game-shell" id="gameShell">
-          <div class="screen-chrome">
-            <span class="screen-pill">Cute Anime UI</span>
-            <span class="screen-pill">DOOM Portal</span>
-            <span class="screen-pill">Touch Overlay v3</span>
-          </div>
-
-          <div id="dos" class="dos-stage" aria-label="DOOM emulator viewport"></div>
-
-          <div class="drop-layer" id="dropLayer" aria-hidden="true">
-            <div>
-              <strong>Drop your .jsdos bundle here</strong>
-              <span>It will run locally in this browser session.</span>
-            </div>
-          </div>
-
-          <div class="empty-state" id="emptyState">
-            <div class="empty-card">
-              <span class="empty-kicker">Ready when you are ✦</span>
-              <h2>Summon the DOOM portal.</h2>
-              <p>
-                The bundled public DOOM v1.9 shareware <code>doom/assets/doom.jsdos</code> is ready to auto-start
-                from GitHub Pages. You can also load a local <code>.jsdos</code> bundle using the button above.
-              </p>
-              <div class="empty-actions">
-                <button class="button button-primary" id="emptyStartButton" type="button">Check bundle &amp; start</button>
-                <a class="button button-secondary" href="./instruction.md">Open instruction.md</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <aside class="help-panel" id="helpPanel" hidden>
-          <h2>Keyboard controls</h2>
-          <dl class="control-list">
-            <div><dt>Move</dt><dd>Arrow keys</dd></div>
-            <div><dt>Fire</dt><dd>Ctrl</dd></div>
-            <div><dt>Use / open</dt><dd>Space</dd></div>
-            <div><dt>Run</dt><dd>Shift</dd></div>
-            <div><dt>Strafe</dt><dd>Alt + left/right</dd></div>
-            <div><dt>Map</dt><dd>Tab</dd></div>
-            <div><dt>Menu</dt><dd>Esc</dd></div>
-          </dl>
-
-          <h2>Touch overlay tips</h2>
-          <p>
-            The movement pad sits low on the left, actions stay low on the right, and mini menu controls float
-            at the top right so they do not block the game view.
-          </p>
-
-          <h2>Best experience</h2>
-          <p>
-            Desktop keyboard still feels best. On iPad or iPhone, the page automatically uses safe mode to reduce
-            rendering crashes.
-          </p>
-        </aside>
-      </section>
+      <p id="legal">
+        DOOM Shareware v1.9. ૮ • ﻌ • ა <br>
+        Built with js-dos. Stay cute, slayer.
+      </p>
     </main>
 
-    <div class="touch-overlay" id="touchOverlay" aria-label="Touchscreen DOOM controls">
-      <div class="touch-group touch-dpad" aria-label="Movement pad">
-        <button class="touch-button touch-up" data-key="ArrowUp" aria-label="Move forward">▲</button>
-        <button class="touch-button touch-left" data-key="ArrowLeft" aria-label="Turn left">◀</button>
-        <button class="touch-button touch-right" data-key="ArrowRight" aria-label="Turn right">▶</button>
-        <button class="touch-button touch-down" data-key="ArrowDown" aria-label="Move backward">▼</button>
+    <div class="touch-overlay hidden" id="touchOverlay">
+      <div class="touch-group d-pad">
+        <div class="touch-btn up" data-key="ArrowUp">▲</div>
+        <div class="touch-btn left" data-key="ArrowLeft">◀</div>
+        <div class="touch-btn right" data-key="ArrowRight">▶</div>
+        <div class="touch-btn down" data-key="ArrowDown">▼</div>
       </div>
-
-      <div class="touch-group touch-actions" aria-label="Action buttons">
-        <button class="touch-button action-strafe" data-key="AltLeft" aria-label="Strafe modifier">Strafe</button>
-        <button class="touch-button action-fire" data-key="ControlLeft" aria-label="Fire">Blast</button>
-        <button class="touch-button action-use" data-key="Space" aria-label="Use">Use</button>
-        <button class="touch-button action-run" data-key="ShiftLeft" aria-label="Run">Dash</button>
+      <div class="touch-group center-mini">
+        <div class="touch-btn mini-action" data-key="Escape">ESC</div>
+        <div class="touch-btn mini-action" data-key="Enter">ENT</div>
+        <div class="touch-btn mini-action" data-key="Tab">MAP</div>
       </div>
-
-      <div class="touch-group touch-mini" aria-label="Menu buttons">
-        <button class="touch-button mini" data-key="Escape" aria-label="Menu">Menu</button>
-        <button class="touch-button mini" data-key="Enter" aria-label="Enter">OK</button>
-        <button class="touch-button mini" data-key="Tab" aria-label="Map">Map</button>
+      <div class="touch-group action-pad">
+        <div class="touch-btn strafe" data-key="AltLeft">STR</div>
+        <div class="touch-btn fire" data-key="ControlLeft">HIT</div>
+        <div class="touch-btn use" data-key="Space">USE</div>
+        <div class="touch-btn dash" data-key="ShiftLeft">RUN</div>
       </div>
     </div>
   </body>
