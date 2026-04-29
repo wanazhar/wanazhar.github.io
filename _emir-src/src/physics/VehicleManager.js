@@ -4,6 +4,7 @@ import { VEHICLE_PROFILES } from './VehicleProfiles.js';
 const TMP_VECTOR = new THREE.Vector3();
 const DOWN = { x: 0, y: -1, z: 0 };
 const WHEEL_KEYS = ['fl', 'fr', 'rl', 'rr'];
+const GROUND_TOP_Y = -0.02;
 
 export class VehicleManager {
   constructor({ rapier, scene, physics, assetLoader }) {
@@ -20,11 +21,13 @@ export class VehicleManager {
     const profile = VEHICLE_PROFILES[profileId] || VEHICLE_PROFILES.sedan;
     this.#disposeActive();
 
+    const rideHeight = rideHeightFor(profile);
     const bodyDesc = this.rapier.RigidBodyDesc.dynamic()
-      .setTranslation(0, 1.35, 8)
+      .setTranslation(0, rideHeight, 8)
       .setCanSleep(false)
       .setLinearDamping(0.08)
       .setAngularDamping(0.92);
+    if (typeof bodyDesc.setGravityScale === 'function') bodyDesc.setGravityScale(0);
 
     const body = this.world.createRigidBody(bodyDesc);
     const density = Math.max(80, profile.mass / (profile.dimensions.width * profile.dimensions.height * profile.dimensions.length));
@@ -54,19 +57,22 @@ export class VehicleManager {
       odometer: 0,
       driveSpeed: 0,
       yaw: 0,
+      rideHeight,
       driftAmount: 0,
       lastGroundedCount: 0,
+      lastVerticalCorrection: 0,
       lastThrottle: 0,
       previousPosition: new THREE.Vector3(),
       commandedHorizontalVelocity: new THREE.Vector3(),
       blockedFrames: 0
     };
-    this.resetActiveVehicle();
+    this.resetActiveVehicle({ x: 0, y: rideHeight, z: 8 });
   }
 
-  resetActiveVehicle(position = { x: 0, y: 1.35, z: 8 }) {
+  resetActiveVehicle(position = null) {
     if (!this.active) return;
     const { body } = this.active;
+    const spawnPosition = position || { x: 0, y: this.active.rideHeight, z: 8 };
     this.active.driveSpeed = 0;
     this.active.speedKph = 0;
     this.active.steerAngle = 0;
@@ -74,8 +80,9 @@ export class VehicleManager {
     this.active.yaw = 0;
     this.active.blockedFrames = 0;
     this.active.commandedHorizontalVelocity.set(0, 0, 0);
-    this.active.previousPosition.set(position.x, position.y, position.z);
-    body.setTranslation(position, true);
+    this.active.lastVerticalCorrection = 0;
+    this.active.previousPosition.set(spawnPosition.x, spawnPosition.y, spawnPosition.z);
+    body.setTranslation(spawnPosition, true);
     body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     body.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -85,9 +92,9 @@ export class VehicleManager {
     if (!this.active) return;
     const { body, profile, wheels } = this.active;
     const safeDt = Math.min(dt, 0.05);
-    const linvel = body.linvel();
     const translation = body.translation();
     this.active.previousPosition.set(translation.x, translation.y, translation.z);
+    this.#stabilizeRideHeight(translation);
 
     const tuning = this.#driveTuning(profile);
     const forwardInput = input.throttle > 0 ? 1 : 0;
@@ -127,13 +134,8 @@ export class VehicleManager {
     const horizontalVelocity = forward.multiplyScalar(driveSpeed);
     this.active.commandedHorizontalVelocity.copy(horizontalVelocity);
     body.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
-    body.setLinvel({ x: horizontalVelocity.x, y: linvel.y, z: horizontalVelocity.z }, true);
+    body.setLinvel({ x: horizontalVelocity.x, y: 0, z: horizontalVelocity.z }, true);
     body.setAngvel({ x: 0, y: steerInput * tuning.turnRate * driftBoost * steerAuthority, z: 0 }, true);
-
-    if (translation.y < 0.55) {
-      body.setTranslation({ x: translation.x, y: 0.72, z: translation.z }, true);
-      body.setLinvel({ x: horizontalVelocity.x, y: 0, z: horizontalVelocity.z }, true);
-    }
 
     this.active.speedKph = speedAbs * 3.6;
     this.active.driveSpeed = driveSpeed;
@@ -145,10 +147,12 @@ export class VehicleManager {
     if (!this.active) return;
     const { body, profile, wheels } = this.active;
     const safeDt = Math.min(Math.max(dt, 1 / 120), 0.05);
-    const translation = body.translation();
+    let translation = body.translation();
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.active.yaw);
 
     this.#settleBlockedMotion(translation, safeDt);
+    this.#stabilizeRideHeight(body.translation());
+    translation = body.translation();
     let groundedCount = 0;
     for (const wheel of wheels) {
       wheel.steer = wheel.front ? this.active.steerAngle : 0;
@@ -156,11 +160,14 @@ export class VehicleManager {
       const worldMount = local.applyQuaternion(q).add(new THREE.Vector3(translation.x, translation.y, translation.z));
       const maxRay = profile.suspension.restLength + profile.wheel.radius + profile.suspension.travel + 0.35;
       const ray = new this.rapier.Ray(worldMount, DOWN);
-      const hit = this.world.castRay(ray, maxRay, true, undefined, undefined, this.active.collider, body);
-      wheel.grounded = Boolean(hit && hit.toi < maxRay);
+      const hit = this.world.castRay(ray, maxRay, true, undefined, undefined, this.active.collider, body)
+        || this.world.castRay(ray, maxRay, false, undefined, undefined, this.active.collider, body);
+      const groundToi = worldMount.y - GROUND_TOP_Y;
+      const visualToi = hit?.toi ?? groundToi;
+      wheel.grounded = visualToi >= 0 && visualToi < maxRay;
       if (wheel.grounded) groundedCount += 1;
       wheel.compression = wheel.grounded
-        ? THREE.MathUtils.clamp((profile.suspension.restLength + profile.wheel.radius - hit.toi) / profile.suspension.restLength, 0, 1.15)
+        ? THREE.MathUtils.clamp((profile.suspension.restLength + profile.wheel.radius - visualToi) / profile.suspension.restLength, 0, 1.15)
         : 0;
       wheel.spin += this.active.driveSpeed / Math.max(profile.wheel.radius, 0.1) * safeDt;
     }
@@ -193,6 +200,9 @@ export class VehicleManager {
       steerAngle: this.active.steerAngle,
       driftAmount: this.active.driftAmount,
       groundedWheels: this.active.lastGroundedCount,
+      rideHeight: this.active.rideHeight,
+      verticalCorrection: this.active.lastVerticalCorrection,
+      cameraHint: 'Use wheel/buttons to zoom, drag/Q/E to orbit, C to focus follow view.',
       blockedFrames: this.active.blockedFrames,
       position: p
     };
@@ -222,6 +232,16 @@ export class VehicleManager {
       this.active.body.setLinvel({ x: 0, y: Math.min(linvel.y, 0), z: 0 }, true);
       this.active.speedKph = Math.abs(this.active.driveSpeed) * 3.6;
     }
+  }
+
+  #stabilizeRideHeight(translation) {
+    const targetY = this.active.rideHeight;
+    const correction = targetY - translation.y;
+    this.active.lastVerticalCorrection = correction;
+    if (Math.abs(correction) < 0.0005) return;
+    this.active.body.setTranslation({ x: translation.x, y: targetY, z: translation.z }, true);
+    const linvel = this.active.body.linvel();
+    this.active.body.setLinvel({ x: linvel.x, y: 0, z: linvel.z }, true);
   }
 
   #driveTuning(profile) {
@@ -279,6 +299,13 @@ export class VehicleManager {
     this.world.removeRigidBody(this.active.body);
     this.active = null;
   }
+}
+
+function rideHeightFor(profile) {
+  return GROUND_TOP_Y
+    + profile.suspension.restLength
+    + profile.wheel.radius
+    + profile.dimensions.height * 0.45;
 }
 
 function moveToward(current, target, delta) {

@@ -7,7 +7,11 @@ const MATERIALS = {
   road: new THREE.MeshStandardMaterial({ roughness: 0.88, metalness: 0.0, vertexColors: true }),
   park: new THREE.MeshStandardMaterial({ roughness: 0.92, metalness: 0.0, vertexColors: true }),
   sidewalk: new THREE.MeshStandardMaterial({ color: 0xd8c8a8, roughness: 0.9, metalness: 0.0 }),
-  marking: new THREE.MeshStandardMaterial({ color: 0xffe066, roughness: 0.72, metalness: 0.0 }),
+  marking: new THREE.MeshStandardMaterial({ color: 0xf8f7ef, roughness: 0.72, metalness: 0.0 }),
+  yellowMarking: new THREE.MeshStandardMaterial({ color: 0xffd43b, roughness: 0.72, metalness: 0.0 }),
+  river: new THREE.MeshStandardMaterial({ color: 0x4ea3c8, roughness: 0.48, metalness: 0.0 }),
+  glassDark: new THREE.MeshStandardMaterial({ color: 0x244457, roughness: 0.34, metalness: 0.08 }),
+  concrete: new THREE.MeshStandardMaterial({ color: 0xc9c2b5, roughness: 0.86, metalness: 0.0 }),
   treeTrunk: new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.88, metalness: 0.0 }),
   treeCanopy: new THREE.MeshStandardMaterial({ color: 0x2ecc71, roughness: 0.82, metalness: 0.0 }),
   palmFrond: new THREE.MeshStandardMaterial({ color: 0x168f52, roughness: 0.78, metalness: 0.0 }),
@@ -135,6 +139,7 @@ export class VoxelCity {
 
       this.#addRoadDetails(group, byType.get('road') || []);
       this.#addParkDetails(group, byType.get('park') || []);
+      this.#addFacadeDetails(group, byType.get('building') || [], byType.get('tower') || []);
       this.#addCitySigns(group, voxels);
 
       bounds.expandByScalar(this.cellSize * 3);
@@ -149,7 +154,7 @@ export class VoxelCity {
     if (!roads.length) return;
     const markings = roads.filter((voxel, index) => index % 7 === 0 && (Math.abs(voxel.x) < 16 || Math.abs(voxel.z) < 16));
     if (markings.length) {
-      const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(this.cellSize * 0.18, 0.04, this.cellSize * 0.78), MATERIALS.marking, markings.length);
+      const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(this.cellSize * 0.18, 0.04, this.cellSize * 0.78), MATERIALS.yellowMarking, markings.length);
       mesh.name = `lane_markings_${group.name}`;
       mesh.receiveShadow = false;
       const dummy = new THREE.Object3D();
@@ -161,6 +166,24 @@ export class VoxelCity {
       });
       mesh.instanceMatrix.needsUpdate = true;
       group.add(mesh);
+    }
+
+    const crosswalks = roads.filter((voxel) => Math.abs(voxel.x) <= this.cellSize && Math.abs(voxel.z) <= 40 && Math.round(voxel.z) % 24 === 0);
+    if (crosswalks.length) {
+      const stripe = new THREE.InstancedMesh(new THREE.BoxGeometry(this.cellSize * 0.72, 0.045, 0.28), MATERIALS.marking, crosswalks.length * 4);
+      stripe.name = `zebra_crosswalk_stripes_${group.name}`;
+      const dummy = new THREE.Object3D();
+      let i = 0;
+      for (const voxel of crosswalks) {
+        for (let offset = -1.5; offset <= 1.5; offset += 1) {
+          dummy.position.set(voxel.x + offset * 0.58, 0.24, voxel.z);
+          dummy.rotation.y = Math.PI / 2;
+          dummy.updateMatrix();
+          stripe.setMatrixAt(i++, dummy.matrix);
+        }
+      }
+      stripe.instanceMatrix.needsUpdate = true;
+      group.add(stripe);
     }
 
     const sidewalks = roads.filter((voxel, index) => index % 5 === 0);
@@ -181,6 +204,52 @@ export class VoxelCity {
       mesh.instanceMatrix.needsUpdate = true;
       group.add(mesh);
     }
+
+    const lamps = roads.filter((voxel, index) => index % 17 === 0).slice(0, 10);
+    if (lamps.length) {
+      const pole = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.08, 0.12, 4.2, 6), MATERIALS.landmarkSteel, lamps.length);
+      const head = new THREE.InstancedMesh(new THREE.BoxGeometry(0.9, 0.18, 0.34), MATERIALS.marking, lamps.length);
+      pole.name = `slim_kl_street_lamp_poles_${group.name}`;
+      head.name = `warm_kl_street_lamp_heads_${group.name}`;
+      const dummy = new THREE.Object3D();
+      lamps.forEach((voxel, index) => {
+        dummy.position.set(voxel.x + 2.7, 2.1, voxel.z + 2.7);
+        dummy.updateMatrix();
+        pole.setMatrixAt(index, dummy.matrix);
+        dummy.position.y = 4.25;
+        dummy.updateMatrix();
+        head.setMatrixAt(index, dummy.matrix);
+      });
+      pole.instanceMatrix.needsUpdate = true;
+      head.instanceMatrix.needsUpdate = true;
+      group.add(pole, head);
+    }
+  }
+
+  #addFacadeDetails(group, buildings, towers) {
+    const samples = [...buildings.filter((_, i) => i % 3 === 0), ...towers].slice(0, 42);
+    if (!samples.length) return;
+    const windows = new THREE.InstancedMesh(new THREE.BoxGeometry(this.cellSize * 0.72, 0.36, 0.05), MATERIALS.glassDark, samples.length * 2);
+    const awnings = new THREE.InstancedMesh(new THREE.BoxGeometry(this.cellSize * 0.74, 0.12, 0.32), MATERIALS.warmShop, samples.length);
+    windows.name = `realistic_facade_window_bands_${group.name}`;
+    awnings.name = `five_foot_way_shop_awning_${group.name}`;
+    const dummy = new THREE.Object3D();
+    let wi = 0;
+    samples.forEach((voxel, index) => {
+      const y = Math.max(1.35, voxel.y + this.cellSize * 0.26);
+      for (const side of [-1, 1]) {
+        dummy.position.set(voxel.x, y, voxel.z + side * (this.cellSize * 0.505));
+        dummy.rotation.y = 0;
+        dummy.updateMatrix();
+        windows.setMatrixAt(wi++, dummy.matrix);
+      }
+      dummy.position.set(voxel.x, Math.max(1.2, voxel.y - this.cellSize * 0.35), voxel.z - this.cellSize * 0.58);
+      dummy.updateMatrix();
+      awnings.setMatrixAt(index, dummy.matrix);
+    });
+    windows.instanceMatrix.needsUpdate = true;
+    awnings.instanceMatrix.needsUpdate = true;
+    group.add(windows, awnings);
   }
 
   #addParkDetails(group, parks) {
@@ -223,6 +292,8 @@ export class VoxelCity {
     this.#addTrxGlassTowers(group, 58, -34);
     this.#addShophouseRows(group, -74, 42);
     this.#addKLCCGatewaySign(group, -6, -46);
+    this.#addRiverAndConfluence(group);
+    this.#addSultanAbdulSamadBlock(group, -48, -18);
     this.#addMonorailGuideway(group);
     this.#addTropicalTerrainDetails(group);
     this.scene.add(group);
@@ -356,6 +427,58 @@ export class VoxelCity {
       group.add(pier);
       this.#insertSolidCollider({ x, y: 4.8, z: 28, type: 'monorailPier', halfExtents: { x: 0.9, y: 4.8, z: 0.9 } });
     }
+    const trainMat = new THREE.MeshStandardMaterial({ color: 0xfff4e0, roughness: 0.48, metalness: 0.04 });
+    const train = new THREE.Mesh(new THREE.BoxGeometry(18, 2.2, 2.6), trainMat);
+    train.name = 'kl_monorail_train_on_elevated_guideway';
+    train.position.set(38, 11.25, 28);
+    train.castShadow = true;
+    group.add(train);
+  }
+
+  #addRiverAndConfluence(group) {
+    const river = new THREE.Mesh(new THREE.BoxGeometry(118, 0.08, 7.5), MATERIALS.river);
+    river.name = 'klang_gombak_river_confluence_blue_green_strip';
+    river.position.set(-82, 0.055, -34);
+    river.rotation.y = -0.26;
+    group.add(river);
+    const branch = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.08, 82), MATERIALS.river);
+    branch.name = 'gombak_river_branch_near_masjid_jamek';
+    branch.position.set(-104, 0.06, -50);
+    branch.rotation.y = 0.18;
+    group.add(branch);
+    const embankment = new THREE.Mesh(new THREE.BoxGeometry(124, 0.12, 1.1), MATERIALS.concrete);
+    embankment.name = 'concrete_river_embankment_walkway_offset_from_drive_line';
+    embankment.position.set(-82, 0.16, -28.8);
+    embankment.rotation.y = river.rotation.y;
+    group.add(embankment);
+  }
+
+  #addSultanAbdulSamadBlock(group, x, z) {
+    const brick = new THREE.MeshStandardMaterial({ color: 0xb44d32, roughness: 0.82, metalness: 0.0 });
+    const copper = new THREE.MeshStandardMaterial({ color: 0x2f7d64, roughness: 0.68, metalness: 0.18 });
+    const hall = new THREE.Mesh(new THREE.BoxGeometry(38, 8, 7), brick);
+    hall.name = 'sultan_abdul_samad_heritage_red_brick_facade';
+    hall.position.set(x, 4, z);
+    hall.castShadow = true;
+    group.add(hall);
+    const clock = new THREE.Mesh(new THREE.BoxGeometry(5, 24, 5), brick);
+    clock.name = 'heritage_clock_tower_masjid_jamek_axis';
+    clock.position.set(x, 12, z);
+    clock.castShadow = true;
+    group.add(clock);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(4.2, 16, 8), copper);
+    dome.name = 'copper_dome_heritage_roof';
+    dome.scale.y = 0.44;
+    dome.position.set(x, 24.3, z);
+    group.add(dome);
+    for (let i = -16; i <= 16; i += 8) {
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.08, 6, 14, Math.PI), MATERIALS.concrete);
+      arch.name = 'moorish_heritage_arch_window';
+      arch.position.set(x + i, 5.5, z - 3.58);
+      arch.rotation.z = Math.PI;
+      group.add(arch);
+    }
+    this.#insertSolidCollider({ x, y: 5, z, type: 'sultanAbdulSamadHeritageBlock', halfExtents: { x: 19, y: 5, z: 3.5 } });
   }
 
   #addTropicalTerrainDetails(group) {

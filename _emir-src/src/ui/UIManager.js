@@ -63,7 +63,7 @@ export class UIManager {
             <div class="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 border border-black bg-black" data-map-dot></div>
           </div>
         </div>
-        <p class="mt-3 text-xs leading-5">Drive off-road freely through a KL-inspired city, but buildings, trees, and signs are solid. Drag the world or use Q/E to orbit the camera, C to reset follow view.</p>
+        <p class="mt-3 text-xs leading-5">Drive off-road freely through a KL-inspired city, but buildings, trees, and signs are solid. Drag the world or use Q/E to orbit, mouse wheel or +/- to zoom, C to focus follow view.</p>
       </section>
 
       <nav class="touch-controls" aria-label="touch driving controls">
@@ -75,6 +75,11 @@ export class UIManager {
           <button class="touch-button touch-button--go" data-control="throttle" aria-label="Accelerate">GO</button>
           <button class="touch-button" data-control="brake" aria-label="Brake">BRAKE</button>
           <button class="touch-button touch-button--drift" data-control="handbrake" aria-label="Drift handbrake">DRIFT</button>
+        </div>
+        <div class="touch-cluster touch-camera" aria-label="camera controls">
+          <button class="touch-button touch-button--camera" data-control="cameraZoomIn" aria-label="Zoom camera in">+</button>
+          <button class="touch-button touch-button--camera" data-control="cameraZoomOut" aria-label="Zoom camera out">-</button>
+          <button class="touch-button touch-button--camera" data-control="resetCamera" aria-label="Focus follow camera">C</button>
         </div>
       </nav>
     `;
