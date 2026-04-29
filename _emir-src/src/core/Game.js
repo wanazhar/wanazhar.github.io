@@ -11,6 +11,7 @@ import { GarageStore } from '../services/GarageStore.js';
 
 const CAMERA_TARGET_OFFSET = new THREE.Vector3(0, 2.2, 0);
 const CAMERA_ORBIT_KEY_RATE = 2.3;
+const CAMERA_ZOOM_RATE = 9;
 
 export class Game {
   constructor(root) {
@@ -20,6 +21,9 @@ export class Game {
     this.stats = { fps: 0, activeColliders: 0, visibleChunks: 0, vehicle: 'sedan' };
     this.fpsSamples = [];
     this.cameraYawOffset = 0;
+    this.cameraZoomTarget = 1;
+    this.cameraZoom = 1;
+    this.cameraLookAt = new THREE.Vector3();
   }
 
   async start() {
@@ -76,6 +80,7 @@ export class Game {
     if (debugParams.has('debug')) {
       window.__EMIR_DEBUG__ = {
         vehicle: () => this.vehicleManager.getDebugState(),
+        camera: () => this.getCameraDebugState(),
         input: () => ({ ...this.input.state }),
         stats: () => ({ ...this.stats })
       };
@@ -123,9 +128,10 @@ export class Game {
     this.#updateFps(rawDt);
     this.input.update();
     if (this.input.consumePressed('reset')) this.vehicleManager.resetActiveVehicle();
-    if (this.input.consumePressed('resetCamera')) this.cameraYawOffset = 0;
+    if (this.input.consumePressed('resetCamera')) this.#focusCamera();
     if (this.input.consumePressed('toggleUi')) this.ui.toggleHidden();
     this.cameraYawOffset += this.input.state.cameraOrbit + this.input.state.cameraOrbitKeyboard * CAMERA_ORBIT_KEY_RATE * dt;
+    this.cameraZoomTarget = THREE.MathUtils.clamp(this.cameraZoomTarget + this.input.state.cameraZoom * dt * CAMERA_ZOOM_RATE, 0.58, 1.62);
     const preStepPosition = this.vehicleManager.getPosition();
     this.colliderManager.update(preStepPosition);
     this.stats.activeColliders = this.colliderManager.activeCount;
@@ -151,11 +157,29 @@ export class Game {
   #updateCamera(dt) {
     const target = this.vehicleManager.getPositionVector();
     const forward = this.vehicleManager.getForwardVector().applyAxisAngle(new THREE.Vector3(0, 1, 0), this.cameraYawOffset);
-    const chaseDistance = Math.max(11, 16 - this.vehicleManager.getSpeedKph() * 0.035);
-    const desired = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, -chaseDistance).add(new THREE.Vector3(0, 8.5, 0));
-    this.camera.position.lerp(desired, 1 - Math.pow(0.0008, dt));
+    this.cameraZoom = THREE.MathUtils.lerp(this.cameraZoom, this.cameraZoomTarget, 1 - Math.pow(0.00005, dt));
+    const chaseDistance = Math.max(11, 16 - this.vehicleManager.getSpeedKph() * 0.035) * this.cameraZoom;
+    const cameraHeight = THREE.MathUtils.lerp(5.4, 11.6, this.cameraZoom);
+    const desired = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, -chaseDistance).add(new THREE.Vector3(0, cameraHeight, 0));
+    this.camera.position.lerp(desired, 1 - Math.pow(0.00025, dt));
     const lookAt = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, 4.5);
-    this.camera.lookAt(lookAt);
+    this.cameraLookAt.lerp(lookAt, 1 - Math.pow(0.0001, dt));
+    this.camera.lookAt(this.cameraLookAt);
+  }
+
+  #focusCamera() {
+    this.cameraYawOffset = 0;
+    this.cameraZoomTarget = 1;
+  }
+
+  getCameraDebugState() {
+    return {
+      yawOffset: this.cameraYawOffset,
+      zoom: this.cameraZoom,
+      zoomTarget: this.cameraZoomTarget,
+      position: this.camera ? this.camera.position.toArray() : [0, 0, 0],
+      lookAt: this.cameraLookAt.toArray()
+    };
   }
 
   #onResize() {

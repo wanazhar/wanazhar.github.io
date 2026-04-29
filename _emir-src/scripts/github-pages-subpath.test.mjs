@@ -73,6 +73,7 @@ test('Vehicle input logic uses deterministic arcade driving controls', () => {
   assert.match(vehicleManager, /handbrake \? 1\.85 : 1/, 'DRIFT should boost steering authority while held');
   assert.match(vehicleManager, /setLinvel\(\{ x: horizontalVelocity\.x/, 'arcade driving should push actual body velocity every frame');
   assert.match(vehicleManager, /getDebugState\(\)/, 'navigation state should be inspectable in browser regression tests');
+  assert.match(vehicleManager, /const groundToi = worldMount\.y - GROUND_TOP_Y/, 'wheel visual/contact debug should fall back to deterministic flat-ground contact when Rapier ray filtering misses the floor');
   assert.match(vehicleManager, /castRay\(ray, maxRay, true, undefined, undefined, this\.active\.collider, body\)/, 'wheel visual rays should still exclude the active vehicle body/collider');
 });
 
@@ -80,6 +81,10 @@ test('Vehicle physics sync is stable after solid-object collision correction', (
   assert.match(game, /this\.physics\.step\(dt\);\s*this\.vehicleManager\.syncAfterPhysics\(dt\)/s, 'vehicle visuals and wheel rays should sync from the post-physics body position');
   assert.match(vehicleManager, /previousPosition/, 'manager should keep pre-step position for blocked-motion detection');
   assert.match(vehicleManager, /commandedHorizontalVelocity/, 'manager should compare intended arcade velocity with actual Rapier displacement');
+  assert.match(vehicleManager, /setGravityScale\(0\)/, 'arcade chassis should not fight gravity without real suspension forces');
+  assert.match(vehicleManager, /#stabilizeRideHeight\(translation\)/, 'vehicle ride height should be explicitly stabilized for every profile');
+  assert.match(vehicleManager, /rideHeightFor\(profile\)/, 'ride height should be derived from wheel radius, suspension rest length, and body profile');
+  assert.match(vehicleManager, /verticalCorrection/, 'debug state should expose vertical correction for jitter regression checks');
   assert.match(vehicleManager, /#settleBlockedMotion\(translation, safeDt\)/, 'blocked collision response should settle commanded speed after physics correction');
   assert.match(vehicleManager, /blockedFrames >= 2/, 'solid-object damping should require repeated blocked frames instead of punishing rough off-road motion');
   assert.match(vehicleManager, /lastGroundedCount/, 'wheel contact state should remain inspectable for stable arcade physics tests');
@@ -94,13 +99,21 @@ test('Solid objects block vehicles while off-road ground remains driveable', () 
   assert.doesNotMatch(worldColliderManager, /voxel\.type !== 'park'/, 'off-road park/grass driving should not depend on broad park blockers');
 });
 
-test('Follow camera can orbit and reset while driving', () => {
+test('Follow camera can orbit, zoom, and reset while driving', () => {
   assert.match(inputController, /KeyQ:\s*\['cameraLeft'/, 'Q should rotate the follow camera left');
   assert.match(inputController, /KeyE:\s*\['cameraRight'/, 'E should rotate the follow camera right');
+  assert.match(inputController, /Equal:\s*\['cameraZoomIn'/, 'keyboard should support camera zoom in');
+  assert.match(inputController, /Minus:\s*\['cameraZoomOut'/, 'keyboard should support camera zoom out');
   assert.match(inputController, /KeyC:\s*\['resetCamera'/, 'C should reset the follow camera');
+  assert.match(inputController, /element\.addEventListener\('wheel'/, 'mouse wheel should zoom the camera');
+  assert.match(uiManager, /data-control="cameraZoomIn"/, 'touch UI should expose camera zoom in');
+  assert.match(uiManager, /data-control="cameraZoomOut"/, 'touch UI should expose camera zoom out');
+  assert.match(uiManager, /data-control="resetCamera"/, 'touch UI should expose camera focus/reset');
   assert.match(inputController, /bindCameraElement\(element\)/, 'pointer drag should bind to the render canvas');
   assert.match(game, /this\.input\.bindCameraElement\(this\.renderer\.domElement\)/, 'game should wire pointer camera drag');
   assert.match(game, /this\.cameraYawOffset \+=/, 'camera orbit should accumulate while moving');
+  assert.match(game, /cameraZoomTarget/, 'camera should smooth toward a zoom target');
+  assert.match(game, /__EMIR_DEBUG__[\s\S]*camera:\s*\(\) => this\.getCameraDebugState\(\)/, 'debug mode should expose camera state');
   assert.match(game, /consumePressed\('resetCamera'\)/, 'camera reset input should restore the default follow view');
 });
 
@@ -134,6 +147,12 @@ test('Visual upgrade keeps assets local while adding model-kit KL landmarks', ()
   assert.match(city, /trx_style_glass_tower_cluster/, 'TRX-style glass tower cluster should be present');
   assert.match(city, /heritage_shophouse_row_arch_window/, 'KL shophouse rows should be present');
   assert.match(city, /elevated_monorail_guideway_over_road/, 'elevated monorail/guideway detail should be present');
+  assert.match(city, /kl_monorail_train_on_elevated_guideway/, 'monorail guideway should include a train marker');
+  assert.match(city, /klang_gombak_river_confluence_blue_green_strip/, 'KL river confluence should be represented');
+  assert.match(city, /sultan_abdul_samad_heritage_red_brick_facade/, 'heritage civic architecture should be represented');
+  assert.match(city, /zebra_crosswalk_stripes/, 'street markings should include pedestrian crosswalks');
+  assert.match(city, /realistic_facade_window_bands/, 'dense buildings should have facade window bands');
+  assert.match(city, /slim_kl_street_lamp_poles/, 'streets should include furniture such as lamp posts');
   assert.match(city, /klcc_drive_landmark_sign/, 'KLCC gateway sign should make the KL setting visible near the starting drive route');
   assert.match(city, /tropical_palm_cluster/, 'tropical terrain palm details should be present');
   assert.match(uiManager, /KL-inspired city/, 'help copy should mention the KL-inspired setting');
