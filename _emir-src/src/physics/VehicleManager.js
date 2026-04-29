@@ -289,7 +289,7 @@ export class VehicleManager {
       const restDrop = profile.suspension.restLength * (1 - wheel.compression) - profile.wheel.radius * 0.1;
       wheel.node.position.copy(wheel.local);
       wheel.node.position.y -= THREE.MathUtils.clamp(restDrop, 0, profile.suspension.restLength + profile.suspension.travel);
-      wheel.node.rotation.set(wheel.spin, wheel.steer, Math.PI / 2);
+      wheel.node.rotation.set(wheel.spin, wheel.steer, 0);
     }
   }
 
