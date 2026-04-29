@@ -14,7 +14,7 @@ body {
     radial-gradient(var(--pink-medium) 15%, transparent 16%);
   background-size: 40px 40px;
   background-position: 0 0, 20px 20px;
-  font-family: "Rounded Mplus 1c", "Comic Sans MS", cursive, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-dark);
   margin: 0;
   display: flex;
