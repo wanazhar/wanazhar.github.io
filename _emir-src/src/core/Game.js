@@ -172,20 +172,14 @@ export class Game {
     const baseHeight = 5.4;
 
     // Scale chase distance and height by zoom, with non-linear height increase for "satellite" effect
+    // We increase height faster than distance at high zoom to get a better overview without losing perspective
     const chaseDistance = baseChase * this.cameraZoom;
-    const cameraHeight = baseHeight * this.cameraZoom + Math.pow(this.cameraZoom, 2.2) * 5;
+    const cameraHeight = baseHeight * this.cameraZoom + Math.pow(this.cameraZoom, 1.8) * 15;
 
     const desired = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, -chaseDistance).add(new THREE.Vector3(0, cameraHeight, 0));
 
-    // At very high zoom, transition to a more top-down view
-    if (this.cameraZoom > 4) {
-      const topDownFactor = Math.min(1, (this.cameraZoom - 4) / 4);
-      desired.x = THREE.MathUtils.lerp(desired.x, target.x, topDownFactor);
-      desired.z = THREE.MathUtils.lerp(desired.z, target.z + 0.1, topDownFactor); // Slight offset to maintain orientation
-    }
-
     this.camera.position.lerp(desired, 1 - Math.pow(0.00025, dt));
-    const lookAt = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, 4.5 * (1 - Math.min(1, this.cameraZoom / 5)));
+    const lookAt = target.clone().add(CAMERA_TARGET_OFFSET).addScaledVector(forward, 4.5);
     this.cameraLookAt.lerp(lookAt, 1 - Math.pow(0.0001, dt));
     this.camera.lookAt(this.cameraLookAt);
   }
