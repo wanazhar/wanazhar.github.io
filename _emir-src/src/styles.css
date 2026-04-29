@@ -51,7 +51,7 @@ body:not(.hidden-ui) .touch-controls { opacity: 0; visibility: hidden; pointer-e
   .touch-button--steer { width: 72px; height: 68px; border-radius: 24px; font-size: 38px; }
   .touch-button--go { width: 70px; height: 70px; }
   .touch-actions, .touch-camera { flex-direction: column; }
-  .touch-camera { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: 178px; align-items: flex-end; }
+  .touch-camera { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: 200px; align-items: flex-end; }
 }
 
 @media (max-width: 420px) {
