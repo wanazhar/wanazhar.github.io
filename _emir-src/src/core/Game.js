@@ -68,6 +68,15 @@ export class Game {
     });
     this.ui.mount(document.body);
 
+    const debugParams = new URLSearchParams(window.location.search);
+    if (debugParams.has('debug')) {
+      window.__EMIR_DEBUG__ = {
+        vehicle: () => this.vehicleManager.getDebugState(),
+        input: () => ({ ...this.input.state }),
+        stats: () => ({ ...this.stats })
+      };
+    }
+
     window.addEventListener('resize', () => this.#onResize());
     this.running = true;
     this.renderer.setAnimationLoop(() => this.#tick());
