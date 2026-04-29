@@ -1,6 +1,4 @@
-# DOOM bundle location
+# DOOM shareware bundle
 
-Place a legally redistributable `doom.jsdos` bundle here for automatic startup.
-
-This public GitHub Pages repo intentionally does not include commercial DOOM game files.
-The page still supports loading a local `.jsdos`/`.zip` bundle through the browser file picker.
+`doom.jsdos` is built from the public DOOM v1.9 shareware archive and contains `DOOM1.WAD`.
+See `SOURCE.txt` for the exact source URL and checksum.
