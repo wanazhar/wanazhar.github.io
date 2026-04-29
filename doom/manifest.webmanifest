@@ -1,0 +1,10 @@
+{
+  "name": "DOOM on GitHub Pages",
+  "short_name": "DOOM Pages",
+  "description": "Run DOOM on GitHub Pages using js-dos with touchscreen controls.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "background_color": "#09090d",
+  "theme_color": "#09090d",
+  "orientation": "landscape"
+}
