@@ -76,10 +76,11 @@ export class UIManager {
           <button class="touch-button" data-control="brake" aria-label="Brake">BRAKE</button>
           <button class="touch-button touch-button--drift" data-control="handbrake" aria-label="Drift handbrake">DRIFT</button>
         </div>
-        <div class="touch-cluster touch-camera" aria-label="camera controls">
+        <div class="touch-cluster touch-camera" data-camera-cluster aria-label="camera controls">
           <button class="touch-button touch-button--camera" data-control="cameraZoomIn" aria-label="Zoom camera in">+</button>
           <button class="touch-button touch-button--camera" data-control="cameraZoomOut" aria-label="Zoom camera out">-</button>
           <button class="touch-button touch-button--camera" data-control="resetCamera" aria-label="Focus follow camera">C</button>
+          <button class="touch-button touch-button--cam-toggle" data-action="toggle-camera" aria-label="Toggle camera controls">CAM</button>
         </div>
       </nav>
     `;
@@ -87,6 +88,7 @@ export class UIManager {
     this.#syncOverlayVisibility();
 
     this.root.querySelector('[data-action="toggle-ui"]').addEventListener('click', () => this.toggleHidden());
+    this.root.querySelector('[data-action="toggle-camera"]').addEventListener('click', () => this.toggleCameraControls());
     this.root.querySelector('[data-action="reset"]').addEventListener('click', () => this.onReset());
     this.root.querySelector('[data-action="save"]').addEventListener('click', () => this.#saveGarage());
     this.root.querySelector('[data-action="login"]').addEventListener('click', () => this.#login());
@@ -116,6 +118,11 @@ export class UIManager {
   toggleHidden() {
     this.hidden = !this.hidden;
     this.#syncOverlayVisibility();
+  }
+
+  toggleCameraControls() {
+    const cluster = this.root.querySelector('[data-camera-cluster]');
+    cluster.classList.toggle('is-collapsed');
   }
 
   #syncOverlayVisibility() {
