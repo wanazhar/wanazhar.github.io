@@ -29,6 +29,7 @@ export class VoxelCity {
     this.cellSize = 4;
     this.voxels = [];
     this.spatialHash = new SpatialHash(20);
+    this.solidSpatialHash = new SpatialHash(20);
     this.chunkMeshes = [];
     this.frustum = new THREE.Frustum();
     this.projectionMatrix = new THREE.Matrix4();
@@ -49,6 +50,7 @@ export class VoxelCity {
     }
     this.spatialHash = new SpatialHash(this.cellSize * 5);
     for (const voxel of this.voxels) this.spatialHash.insert(voxel);
+    this.solidSpatialHash = new SpatialHash(this.cellSize * 5);
     this.#addGroundPlane();
     this.#buildInstancedChunks();
   }
@@ -119,6 +121,7 @@ export class VoxelCity {
           mesh.setMatrixAt(index, dummy.matrix);
           mesh.setColorAt(index, colorForVoxel(type, voxel));
           bounds.expandByPoint(dummy.position);
+          this.#addSolidVoxelCollider(voxel, type, scaleY);
         });
         mesh.instanceMatrix.needsUpdate = true;
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -186,6 +189,13 @@ export class VoxelCity {
       dummy.rotation.y = hashUnit(voxel.x, voxel.z, 31) * Math.PI;
       dummy.updateMatrix();
       trunk.setMatrixAt(index, dummy.matrix);
+      this.#insertSolidCollider({
+        x: voxel.x,
+        y: 1.1,
+        z: voxel.z,
+        type: 'treeTrunk',
+        halfExtents: { x: 0.42, y: 1.1, z: 0.42 }
+      });
       dummy.position.y = 2.85;
       dummy.scale.setScalar(0.78 + hashUnit(voxel.x, voxel.z, 41) * 0.42);
       dummy.updateMatrix();
@@ -208,9 +218,39 @@ export class VoxelCity {
     sign.name = `colorful_street_sign_${group.name}`;
     pole.position.set(anchor.x + 3.2, 1.6, anchor.z + 3.2);
     sign.position.set(anchor.x + 3.2, 3.1, anchor.z + 3.2);
+    this.#insertSolidCollider({
+      x: pole.position.x,
+      y: pole.position.y,
+      z: pole.position.z,
+      type: 'streetSignPole',
+      halfExtents: { x: 0.18, y: 1.6, z: 0.18 }
+    });
+    this.#insertSolidCollider({
+      x: sign.position.x,
+      y: sign.position.y,
+      z: sign.position.z,
+      type: 'streetSign',
+      halfExtents: { x: 1.55, y: 0.6, z: 0.14 }
+    });
     pole.castShadow = true;
     sign.castShadow = true;
     group.add(pole, sign);
+  }
+
+  #addSolidVoxelCollider(voxel, type, scaleY = 1) {
+    if (type !== 'building' && type !== 'tower') return;
+    const half = this.cellSize * 0.5;
+    this.#insertSolidCollider({
+      x: voxel.x,
+      y: voxel.y,
+      z: voxel.z,
+      type,
+      halfExtents: { x: half, y: half * scaleY, z: half }
+    });
+  }
+
+  #insertSolidCollider(record) {
+    this.solidSpatialHash.insert(record);
   }
 }
 

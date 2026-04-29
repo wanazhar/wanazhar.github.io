@@ -18,8 +18,7 @@ export class WorldColliderManager {
     if (dx * dx + dz * dz < this.refreshDistance * this.refreshDistance) return;
     this.lastCenter = { ...position };
 
-    const nearby = this.spatialHash.querySphere(position, this.radius)
-      .filter((voxel) => voxel.type !== 'park');
+    const nearby = this.spatialHash.querySphere(position, this.radius);
     const wanted = new Set(nearby.map((voxel) => voxelKey(voxel)));
 
     for (const [key, record] of this.active.entries()) {
@@ -33,10 +32,10 @@ export class WorldColliderManager {
       const key = voxelKey(voxel);
       if (this.active.has(key)) continue;
       const body = this.world.createRigidBody(this.rapier.RigidBodyDesc.fixed().setTranslation(voxel.x, voxel.y, voxel.z));
-      const half = this.cellSize * 0.5;
-      const desc = voxel.type === 'road'
-        ? this.rapier.ColliderDesc.cuboid(half, 0.08, half).setFriction(1.15)
-        : this.rapier.ColliderDesc.cuboid(half, half, half).setFriction(0.96).setRestitution(0.01);
+      const half = voxel.halfExtents || { x: this.cellSize * 0.5, y: this.cellSize * 0.5, z: this.cellSize * 0.5 };
+      const desc = this.rapier.ColliderDesc.cuboid(half.x, half.y, half.z)
+        .setFriction(0.96)
+        .setRestitution(0.01);
       const collider = this.world.createCollider(desc, body);
       this.active.set(key, { body, collider });
     }
