@@ -69,6 +69,51 @@
     elements.dos.innerHTML = "";
   }
 
+  function isAppleTouchDevice() {
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
+  }
+
+  function shouldUseSafeMode() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("safe") === "0") return false;
+    if (params.get("safe") === "1") return true;
+    return isAppleTouchDevice();
+  }
+
+  function getDosOptions(bundleUrl) {
+    const safeMode = shouldUseSafeMode();
+
+    return {
+      url: bundleUrl,
+      kiosk: true,
+      autoStart: true,
+      backend: "dosbox",
+      backendLocked: true,
+      noCloud: true,
+      noNetworking: true,
+      pathPrefix: "https://v8.js-dos.com/latest/emulators/",
+      onEvent: (event, arg) => {
+        if (event === "emu-error" || event === "ci-err" || event === "bnd-error") {
+          console.error("js-dos event", event, arg);
+          setStatus("error", "Emulator error", String(arg?.message || arg || event));
+        }
+        if (event === "ci-ready") {
+          setStatus(
+            "running",
+            safeMode ? "Running - safe mode" : "Running",
+            safeMode
+              ? "DOOM is live using iOS/Safari safe mode. Cute UI, safer boot."
+              : "DOOM is live. Click inside the game if the keyboard does not respond. Touch overlay is ready too."
+          );
+          focusGameCanvas();
+        }
+      },
+    };
+  }
+
   async function startDoom(bundleUrl = DEFAULT_BUNDLE_URL, { skipExistenceCheck = false } = {}) {
     if (typeof window.Dos !== "function") {
       setStatus(
@@ -100,19 +145,12 @@
       resetDosStage();
       setStatus("", "Booting", "Starting js-dos...");
 
-      commandInterface = await window.Dos(elements.dos, {
-        url: bundleUrl,
-        kiosk: true,
-        autoStart: true,
-        pathPrefix: "https://v8.js-dos.com/latest/emulators/",
-        onEvent: (event, arg) => {
-          if (event === "emu-error" || event === "ci-err" || event === "bnd-error") {
-            console.error("js-dos event", event, arg);
-          }
-        },
-      });
+      commandInterface = await window.Dos(elements.dos, getDosOptions(bundleUrl));
 
-      setStatus("running", "Running", "DOOM is live. Click inside the game if the keyboard does not respond.");
+      const safeText = shouldUseSafeMode()
+        ? "Starting with iOS/Safari safe mode enabled..."
+        : "Starting with default js-dos render mode...";
+      setStatus("", "Starting", safeText);
       focusGameCanvas();
     } catch (error) {
       console.error(error);
@@ -142,7 +180,7 @@
   function setTouchOverlay(enabled) {
     elements.touchOverlay.classList.toggle("enabled", enabled);
     elements.touchToggleButton.setAttribute("aria-pressed", String(enabled));
-    elements.touchToggleButton.textContent = enabled ? "Hide touch" : "Touch controls";
+    elements.touchToggleButton.textContent = enabled ? "Hide touch pad" : "Show touch pad";
   }
 
   async function enterFullscreen() {
@@ -325,6 +363,7 @@
     // Keep a reference for debugging in the browser console.
     window.doomPage = {
       start: startDoom,
+      safeMode: shouldUseSafeMode,
       get commandInterface() {
         return commandInterface;
       },

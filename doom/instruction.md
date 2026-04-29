@@ -1,210 +1,63 @@
-# DOOM on GitHub Pages - instruction.md
+# DOOM on GitHub Pages - Cute Anime UI Edition
 
-This package gives you a static `/doom` page for GitHub Pages using js-dos.
+This folder is a static `/doom` page for GitHub Pages.
 
-The app includes:
+## What's new in this version
 
-- Static `doom/index.html`, `doom/styles.css`, and `doom/main.js`
-- Non-obstructive mobile/touchscreen overlay
-- Drag-and-drop `.jsdos` bundle support
-- Fullscreen button
-- Accessibility-friendly labels and keyboard focus
-- A starter bundle template in `bundle-workdir/`
-- A helper script at `tools/build-jsdos-bundle.sh`
+- Cute anime-inspired pastel UI
+- Cleaner glassmorphism panels
+- Improved touch overlay layout for phones and tablets
+- iPad / iPhone safe mode support remains included
+- Touch controls are less obstructive and easier to understand
 
-## Important legal note
+## Important
 
-This zip intentionally does **not** include DOOM game data, `DOOM.EXE`, `DOOM1.WAD`, `DOOM.WAD`, or any commercial game files.
-
-To actually play DOOM, you need to add your own legally obtained js-dos bundle:
+This deployed version includes a public DOOM v1.9 shareware `doom.jsdos` bundle at:
 
 ```text
-doom/assets/doom.jsdos
+./assets/doom.jsdos
 ```
 
-You can use a legally obtained shareware DOOM package or your own purchased copy. Do not publish commercial game data publicly unless you have the right to do so.
+It contains `DOOM1.WAD`, not the commercial `DOOM.WAD`. You can still use **Load local .jsdos** to test another legal bundle from your device.
 
----
+## Quick deploy
 
-## Fast deployment to `wanazhar.github.io/doom/`
-
-1. Unzip this package.
-2. Copy the `doom/` folder into the root of your `wanazhar.github.io` repository.
-3. Also copy the root `.nojekyll` file into the root of your repository if you do not already have one.
-4. Add your legal bundle here:
-
-```text
-doom/assets/doom.jsdos
-```
-
-5. Commit and push:
-
-```bash
-git add doom .nojekyll
-git commit -m "Add DOOM GitHub Pages experiment"
-git push
-```
-
-6. Open:
+1. Copy the `doom/` folder into your GitHub Pages repository.
+2. Make sure your legal bundle exists at `doom/assets/doom.jsdos`.
+3. Commit and push.
+4. Open:
 
 ```text
 https://wanazhar.github.io/doom/
 ```
 
----
+## If you are on iPad / iPhone
 
-## How to create `doom.jsdos`
-
-A `.jsdos` file is just a zip archive containing the DOS game files and a required config file:
-
-```text
-.jsdos/dosbox.conf
-DOOM.EXE
-DOOM1.WAD
-other support files...
-```
-
-I included a starter folder:
+The page automatically uses safe mode for Apple touch devices.
+You can also force it manually with:
 
 ```text
-bundle-workdir/
-  .jsdos/dosbox.conf
-  PUT_LEGAL_DOOM_FILES_HERE.txt
+https://wanazhar.github.io/doom/?safe=1
 ```
 
-### Option A: Use the helper script
+## Main controls
 
-1. Put your legal DOOM files into `bundle-workdir/`.
-2. Make sure the executable is named `DOOM.EXE`.
-3. From the unzipped package root, run:
+### Keyboard
 
-```bash
-bash tools/build-jsdos-bundle.sh
-```
+- Move: Arrow keys
+- Fire: Ctrl
+- Use/open: Space
+- Run: Shift
+- Strafe modifier: Alt
+- Map: Tab
+- Menu: Esc
 
-This creates:
+### Touch overlay
 
-```text
-doom/assets/doom.jsdos
-```
-
-Then copy or commit the `doom/` folder to your GitHub Pages repo.
-
-### Option B: Manual zip method
-
-From inside `bundle-workdir/`, zip the contents, including the hidden `.jsdos` folder:
-
-```bash
-cd bundle-workdir
-zip -r ../doom/assets/doom.jsdos .
-```
-
-The archive must contain `.jsdos/dosbox.conf` at the archive root.
-
----
+- Left cluster: movement pad
+- Right cluster: action buttons
+- Top-right mini buttons: menu, enter, map
 
 ## Local testing
 
-Because js-dos/WebAssembly should be served over HTTP, do not test by double-clicking `index.html`.
-
-Use a simple local server from the unzipped package root:
-
-```bash
-python3 -m http.server 8080
-```
-
-Then open:
-
-```text
-http://localhost:8080/doom/
-```
-
----
-
-## Touchscreen controls
-
-The mobile overlay appears automatically on coarse-pointer devices such as phones and tablets.
-
-Touch controls:
-
-| Touch button | Keyboard equivalent |
-|---|---|
-| ▲ | Arrow Up |
-| ▼ | Arrow Down |
-| ◀ | Arrow Left |
-| ▶ | Arrow Right |
-| Fire | Ctrl |
-| Use | Space |
-| Run | Shift |
-| Strafe | Alt |
-| Esc | Escape |
-| Enter | Enter |
-| Map | Tab |
-
-The overlay is translucent and positioned at the screen edges to avoid blocking gameplay.
-
----
-
-## Troubleshooting
-
-### “Bundle missing”
-
-Make sure this file exists exactly:
-
-```text
-doom/assets/doom.jsdos
-```
-
-File name is case-sensitive on GitHub Pages.
-
-### “Boot failed”
-
-Your `.jsdos` bundle may be missing the required config file:
-
-```text
-.jsdos/dosbox.conf
-```
-
-Or your config may point to the wrong executable name. The starter config runs:
-
-```text
-DOOM.EXE
-```
-
-### Keyboard does not respond
-
-Click inside the game area once, then try again. Browser focus sometimes stays on the page controls instead of the emulator canvas.
-
-### Mobile controls do not respond
-
-Tap inside the game area once, then use the overlay. Also try fullscreen mode.
-
-### GitHub Pages shows old version
-
-Hard refresh your browser, or wait a minute for GitHub Pages cache to update.
-
----
-
-## Project structure
-
-```text
-.
-├── .nojekyll
-├── instruction.md
-├── README.md
-├── bundle-workdir/
-│   ├── .jsdos/
-│   │   └── dosbox.conf
-│   └── PUT_LEGAL_DOOM_FILES_HERE.txt
-├── tools/
-│   └── build-jsdos-bundle.sh
-└── doom/
-    ├── index.html
-    ├── styles.css
-    ├── main.js
-    ├── manifest.webmanifest
-    ├── instruction.md
-    └── assets/
-        └── PUT_DOOM_BUNDLE_HERE.txt
-```
-
+If you do not want to upload a bundle yet, use **Load local .jsdos** and pick a local bundle from your device.
