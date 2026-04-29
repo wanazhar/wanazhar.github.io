@@ -23,7 +23,7 @@ export class UIManager {
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="label-kicker">Emir’s Car World</p>
-            <h1 class="mt-1 text-2xl font-semibold">Drive, explore, collect</h1>
+            <h1 class="mt-1 text-2xl font-semibold">Drive KL-inspired streets</h1>
           </div>
           <button class="ui-button" data-action="reset">Reset</button>
         </div>
@@ -63,7 +63,7 @@ export class UIManager {
             <div class="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 border border-black bg-black" data-map-dot></div>
           </div>
         </div>
-        <p class="mt-3 text-xs leading-5">Drive off-road freely, but buildings, trees, and signs are solid. Drag the world or use Q/E to orbit the camera, C to reset follow view.</p>
+        <p class="mt-3 text-xs leading-5">Drive off-road freely through a KL-inspired city, but buildings, trees, and signs are solid. Drag the world or use Q/E to orbit the camera, C to reset follow view.</p>
       </section>
 
       <nav class="touch-controls" aria-label="touch driving controls">

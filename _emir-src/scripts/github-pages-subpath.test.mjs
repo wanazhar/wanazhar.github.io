@@ -46,7 +46,7 @@ test('UI overlays start hidden with a visible toggle and correct public name', (
   assert.match(uiManager, /this\.hidden\s*=\s*true/, 'overlays should be hidden by default');
   assert.match(uiManager, /data-action="toggle-ui"/, 'a visible overlay toggle should be rendered');
   assert.match(uiManager, /Emir’s Car World/, 'UI should show the exact public game name');
-  assert.doesNotMatch(uiManager, new RegExp(['Voxel', 'Kuala', 'Lumpur'].join(' ')), 'old heading should not appear in UI');
+  assert.doesNotMatch(uiManager, /Voxel Kuala Lumpur/, 'old technical heading should not appear in UI');
   assert.doesNotMatch(uiManager, new RegExp(['Instanced', 'OSM', 'voxel', 'chunks'].join(' ')), 'old technical map copy should not appear in UI');
   assert.match(styles, /\.hidden-ui \.ui-overlay/, 'hidden state should target bulky overlays');
   assert.match(styles, /body:not\(\.hidden-ui\) \.touch-controls/, 'touch driving controls should hide when the full HUD is open');
@@ -118,4 +118,23 @@ test('World remains readable and vehicles use realistic car construction', () =>
   assert.match(assetLoader, /front_grille|left_side_mirror|painted_roof_panel/, 'vehicles should include normal road-car details');
   assert.match(assetLoader, /sedan_trunk|hatch_tailgate|flatbed_cargo_body|roof_rack|excavator_bucket/, 'vehicle classes should get normal distinctive real-world details');
   assert.doesNotMatch(assetLoader, /#buildToyVehicle|#applyToyCarPaint|bright_cargo_box|chunky_bumper/, 'toy-car boxes and goofy visual names should not remain');
+});
+
+test('Visual upgrade keeps assets local while adding model-kit KL landmarks', () => {
+  assert.match(assetLoader, /makeLowPolyCarBodyGeometry/, 'vehicles should use generated model-kit body geometry');
+  assert.match(assetLoader, /ExtrudeGeometry/, 'vehicles should include extruded/chamfered model panels');
+  assert.match(assetLoader, /split_spoke_rim_/, 'vehicle rims should be separated into visible detail pieces');
+  assert.match(assetLoader, /offroad_snorkel_intake/, 'vehicle classes should support model-kit accessory pieces');
+  assert.match(assetLoader, /GLTFLoader/, 'public GLB placeholders should remain compatible with GLTFLoader');
+
+  assert.match(city, /#addKualaLumpurLandmarks\(\)/, 'city should add a generated KL-inspired model layer');
+  assert.match(city, /petronas_twin_towers_skybridge/, 'Petronas twin towers should include a skybridge');
+  assert.match(city, /kl_tower_needle_spire/, 'KL Tower should include a needle/spire motif');
+  assert.match(city, /merdeka_118_long_spire/, 'Merdeka 118 should include a tall spire');
+  assert.match(city, /trx_style_glass_tower_cluster/, 'TRX-style glass tower cluster should be present');
+  assert.match(city, /heritage_shophouse_row_arch_window/, 'KL shophouse rows should be present');
+  assert.match(city, /elevated_monorail_guideway_over_road/, 'elevated monorail/guideway detail should be present');
+  assert.match(city, /klcc_drive_landmark_sign/, 'KLCC gateway sign should make the KL setting visible near the starting drive route');
+  assert.match(city, /tropical_palm_cluster/, 'tropical terrain palm details should be present');
+  assert.match(uiManager, /KL-inspired city/, 'help copy should mention the KL-inspired setting');
 });

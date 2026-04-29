@@ -10,7 +10,11 @@ const MATERIALS = {
   marking: new THREE.MeshStandardMaterial({ color: 0xffe066, roughness: 0.72, metalness: 0.0 }),
   treeTrunk: new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.88, metalness: 0.0 }),
   treeCanopy: new THREE.MeshStandardMaterial({ color: 0x2ecc71, roughness: 0.82, metalness: 0.0 }),
-  sign: new THREE.MeshStandardMaterial({ color: 0xff5a5f, roughness: 0.55, metalness: 0.05 })
+  palmFrond: new THREE.MeshStandardMaterial({ color: 0x168f52, roughness: 0.78, metalness: 0.0 }),
+  sign: new THREE.MeshStandardMaterial({ color: 0xff5a5f, roughness: 0.55, metalness: 0.05 }),
+  landmarkGlass: new THREE.MeshPhysicalMaterial({ color: 0x9bd8ff, roughness: 0.18, metalness: 0.32, transmission: 0.08, transparent: true, opacity: 0.86, clearcoat: 0.45 }),
+  landmarkSteel: new THREE.MeshStandardMaterial({ color: 0xd7dde4, roughness: 0.31, metalness: 0.74 }),
+  warmShop: new THREE.MeshStandardMaterial({ color: 0xf4c36b, roughness: 0.72, metalness: 0.02 })
 };
 
 const PALETTES = {
@@ -53,6 +57,7 @@ export class VoxelCity {
     this.solidSpatialHash = new SpatialHash(this.cellSize * 5);
     this.#addGroundPlane();
     this.#buildInstancedChunks();
+    this.#addKualaLumpurLandmarks();
   }
 
   updateVisibility(camera, focusPosition) {
@@ -207,6 +212,177 @@ export class VoxelCity {
     trunk.castShadow = true;
     canopy.castShadow = true;
     group.add(trunk, canopy);
+  }
+
+  #addKualaLumpurLandmarks() {
+    const group = new THREE.Group();
+    group.name = 'kl_inspired_model_kit_landmarks';
+    this.#addPetronasTwinTowers(group, -20, -72);
+    this.#addKLTowerNeedle(group, 32, -72);
+    this.#addMerdeka118Spire(group, 8, -126);
+    this.#addTrxGlassTowers(group, 58, -34);
+    this.#addShophouseRows(group, -74, 42);
+    this.#addKLCCGatewaySign(group, -6, -46);
+    this.#addMonorailGuideway(group);
+    this.#addTropicalTerrainDetails(group);
+    this.scene.add(group);
+  }
+
+  #addPetronasTwinTowers(group, x, z) {
+    for (const side of [-1, 1]) {
+      const tower = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 6.4, 74, 8), MATERIALS.landmarkGlass);
+      tower.name = side < 0 ? 'petronas_twin_tower_left_faceted_silver' : 'petronas_twin_tower_right_faceted_silver';
+      tower.position.set(x + side * 8, 37, z);
+      tower.castShadow = true;
+      tower.receiveShadow = true;
+      group.add(tower);
+      for (let y = 8; y < 72; y += 8) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(5.55, 0.08, 6, 8), MATERIALS.landmarkSteel);
+        ring.name = 'petronas_tower_skyline_ring';
+        ring.position.set(tower.position.x, y, z);
+        ring.rotation.x = Math.PI / 2;
+        group.add(ring);
+      }
+      const crown = new THREE.Mesh(new THREE.ConeGeometry(3.4, 14, 8), MATERIALS.landmarkSteel);
+      crown.name = 'petronas_pointed_crown';
+      crown.position.set(tower.position.x, 81, z);
+      crown.castShadow = true;
+      group.add(crown);
+    }
+    const skybridge = new THREE.Mesh(new THREE.BoxGeometry(17, 2.2, 2.8), MATERIALS.landmarkSteel);
+    skybridge.name = 'petronas_twin_towers_skybridge';
+    skybridge.position.set(x, 43, z);
+    skybridge.castShadow = true;
+    group.add(skybridge);
+    this.#insertSolidCollider({ x, y: 34, z, type: 'petronasTwinTowers', halfExtents: { x: 19, y: 36, z: 8 } });
+  }
+
+  #addKLTowerNeedle(group, x, z) {
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.8, 70, 12), MATERIALS.landmarkSteel);
+    shaft.name = 'kl_tower_needle_shaft';
+    shaft.position.set(x, 35, z);
+    shaft.castShadow = true;
+    group.add(shaft);
+    const deck = new THREE.Mesh(new THREE.SphereGeometry(6.2, 16, 8), MATERIALS.landmarkGlass);
+    deck.name = 'kl_tower_observation_pod';
+    deck.scale.y = 0.42;
+    deck.position.set(x, 64, z);
+    group.add(deck);
+    const needle = new THREE.Mesh(new THREE.ConeGeometry(0.9, 24, 12), MATERIALS.landmarkSteel);
+    needle.name = 'kl_tower_needle_spire';
+    needle.position.set(x, 83, z);
+    group.add(needle);
+    this.#insertSolidCollider({ x, y: 32, z, type: 'klTowerNeedle', halfExtents: { x: 4, y: 32, z: 4 } });
+  }
+
+  #addMerdeka118Spire(group, x, z) {
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(7.2, 9.4, 88, 5), MATERIALS.landmarkGlass);
+    tower.name = 'merdeka_118_faceted_tower';
+    tower.position.set(x, 44, z);
+    tower.rotation.y = Math.PI / 5;
+    tower.castShadow = true;
+    group.add(tower);
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(1.4, 32, 5), MATERIALS.landmarkSteel);
+    spire.name = 'merdeka_118_long_spire';
+    spire.position.set(x, 104, z);
+    group.add(spire);
+    this.#insertSolidCollider({ x, y: 44, z, type: 'merdeka118Spire', halfExtents: { x: 9, y: 44, z: 9 } });
+  }
+
+  #addTrxGlassTowers(group, x, z) {
+    for (let i = 0; i < 5; i++) {
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(9 - i * 0.7, 34 + i * 7, 9 - i * 0.4), MATERIALS.landmarkGlass);
+      tower.name = 'trx_style_glass_tower_cluster';
+      tower.position.set(x + i * 10, (34 + i * 7) * 0.5, z + (i % 2) * 10);
+      tower.rotation.y = (i - 2) * 0.13;
+      tower.castShadow = true;
+      group.add(tower);
+      this.#insertSolidCollider({ x: tower.position.x, y: tower.position.y, z: tower.position.z, type: 'trxGlassTower', halfExtents: { x: 5, y: tower.position.y, z: 5 } });
+    }
+  }
+
+  #addShophouseRows(group, x, z) {
+    for (let row = 0; row < 2; row++) {
+      for (let i = 0; i < 7; i++) {
+        const shop = new THREE.Mesh(new THREE.BoxGeometry(6, 5.2, 7), MATERIALS.warmShop);
+        shop.name = 'heritage_shophouse_row_arch_window';
+        shop.position.set(x + i * 6.4, 2.6, z + row * 10);
+        shop.castShadow = true;
+        group.add(shop);
+        const arch = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.08, 6, 12, Math.PI), MATERIALS.landmarkSteel);
+        arch.name = 'shophouse_arcade_arch';
+        arch.position.set(shop.position.x, 3.4, shop.position.z - 3.56);
+        arch.rotation.z = Math.PI;
+        group.add(arch);
+        this.#insertSolidCollider({ x: shop.position.x, y: 2.6, z: shop.position.z, type: 'shophouseRow', halfExtents: { x: 3, y: 2.6, z: 3.5 } });
+      }
+    }
+  }
+
+  #addKLCCGatewaySign(group, x, z) {
+    const signMat = new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.48, metalness: 0.08, emissive: 0x4a2f00, emissiveIntensity: 0.16 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.38, metalness: 0.36 });
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(12, 4.8, 0.42), frameMat);
+    frame.name = 'klcc_gateway_arch_frame';
+    frame.position.set(x, 4.2, z);
+    frame.castShadow = true;
+    group.add(frame);
+    const face = new THREE.Mesh(new THREE.BoxGeometry(10.8, 3.5, 0.48), signMat);
+    face.name = 'klcc_drive_landmark_sign';
+    face.position.set(x, 4.25, z - 0.08);
+    face.castShadow = true;
+    group.add(face);
+    for (const side of [-1, 1]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 7.6, 8), frameMat);
+      post.name = 'klcc_gateway_sign_post';
+      post.position.set(x + side * 6.2, 3.8, z);
+      post.castShadow = true;
+      group.add(post);
+      this.#insertSolidCollider({ x: post.position.x, y: 3.8, z, type: 'klccGatewayPost', halfExtents: { x: 0.42, y: 3.8, z: 0.42 } });
+    }
+  }
+
+  #addMonorailGuideway(group) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(220, 1.3, 2.2), MATERIALS.landmarkSteel);
+    rail.name = 'elevated_monorail_guideway_over_road';
+    rail.position.set(0, 9.8, 28);
+    rail.castShadow = true;
+    group.add(rail);
+    for (let x = -104; x <= 104; x += 16) {
+      const pier = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.9, 9.5, 8), MATERIALS.landmarkSteel);
+      pier.name = 'monorail_concrete_pier';
+      pier.position.set(x, 4.8, 28);
+      pier.castShadow = true;
+      group.add(pier);
+      this.#insertSolidCollider({ x, y: 4.8, z: 28, type: 'monorailPier', halfExtents: { x: 0.9, y: 4.8, z: 0.9 } });
+    }
+  }
+
+  #addTropicalTerrainDetails(group) {
+    for (let i = 0; i < 42; i++) {
+      const x = -130 + hashUnit(i, 17, 5) * 260;
+      const z = -118 + hashUnit(i, 31, 9) * 236;
+      if (Math.abs(x) < 20 || Math.abs(z) < 20) continue;
+      const palm = new THREE.Group();
+      palm.name = 'tropical_palm_cluster';
+      palm.position.set(x, 0, z);
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.34, 5.8, 7), MATERIALS.treeTrunk);
+      trunk.position.y = 2.9;
+      trunk.rotation.z = (hashUnit(i, 0, 19) - 0.5) * 0.18;
+      const fronds = new THREE.Group();
+      fronds.name = 'palm_frond_star';
+      fronds.position.y = 5.9;
+      for (let arm = 0; arm < 7; arm++) {
+        const frond = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 3.6), MATERIALS.palmFrond);
+        frond.position.z = 1.35;
+        frond.rotation.x = -0.34;
+        frond.rotation.y = arm / 7 * Math.PI * 2;
+        fronds.add(frond);
+      }
+      palm.add(trunk, fronds);
+      group.add(palm);
+      this.#insertSolidCollider({ x, y: 2.8, z, type: 'tropicalPalm', halfExtents: { x: 0.45, y: 2.8, z: 0.45 } });
+    }
   }
 
   #addCitySigns(group, voxels) {
