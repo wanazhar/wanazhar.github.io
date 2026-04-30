@@ -1,18 +1,28 @@
 DOOM shareware bundle source
 ============================
 
-This directory includes doom.jsdos built from the publicly redistributable DOOM v1.9 shareware archive:
+This directory includes browser DOOM bundles built from the publicly redistributable DOOM v1.9 shareware archive:
 
   Source mirror: https://www.gamers.org/pub/idgames/idstuff/doom/doom19s.zip
   Original archive: doom19s.zip
   SHA-256: cacf0142b31ca1af00796b4a0339e07992ac5f21bc3f81e7532fe1b5e1b486e6
 
-The archive contains DOOM1.WAD, not the commercial DOOM.WAD.
+The bundles contain DOOM1.WAD, not the commercial DOOM.WAD.
 
-Bundle config:
-  - Based on the uploaded v3 iPad/Safari-safe dosbox.safe.conf
+Bundles:
+  - doom.jsdos: js-dos v8 bundle for desktop/non-Safari fallback
+  - doom_old.jsdos: same shareware v8 safe bundle, kept for the Alt Version button
+  - doom-legacy.zip: js-dos v3/asm.js-compatible zip used by iPad/Safari default startup
+
+v8 DOSBox config:
   - DOOM.EXE -nomusic
-  - core=normal
-  - cycles=fixed 20000
   - machine=vgaonly
+  - core=normal
+  - cputype=386
+  - cycles=fixed 16000
   - ems=false
+  - ipx=false
+  - MIDI/OPL disabled
+
+Legacy engine note:
+  The reference implementation at https://github.com/thedoggybrad/doom_on_js-dos works by using the older js-dos v3 asm.js loader with a normal zip archive instead of js-dos v8 WebAssembly/.jsdos. The deployed iPad path follows that engine pattern but uses public shareware game data only.

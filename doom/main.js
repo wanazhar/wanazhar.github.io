@@ -1,6 +1,8 @@
 (() => {
   const DEFAULT_BUNDLE_URL = "./assets/doom.jsdos";
   const ALT_BUNDLE_URL = "./assets/doom_old.jsdos";
+  const LEGACY_BUNDLE_URL = "./assets/doom-legacy.zip";
+  const LEGACY_API_URL = "./vendor/js-dos-api.js";
 
   const elements = {
     dos: document.querySelector("#dos"),
@@ -20,7 +22,10 @@
   };
 
   let commandInterface = null;
+  let legacyDosbox = null;
   let currentBundleObjectUrl = null;
+  let activeRunId = 0;
+  let legacyApiPromise = null;
   const activeVirtualKeys = new Set();
 
   const keyMeta = {
@@ -53,11 +58,60 @@
     );
   }
 
-  function getDosOptions(bundleUrl) {
+  function isCoarsePointer() {
+    return window.matchMedia("(pointer: coarse)").matches;
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) {
+        existing.addEventListener("load", resolve, { once: true });
+        existing.addEventListener("error", reject, { once: true });
+        if (existing.dataset.loaded === "true") resolve();
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.onload = () => {
+        script.dataset.loaded = "true";
+        resolve();
+      };
+      script.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  function loadLegacyApi() {
+    if (typeof window.Dosbox === "function") return Promise.resolve();
+    if (!legacyApiPromise) legacyApiPromise = loadScript(LEGACY_API_URL);
+    return legacyApiPromise;
+  }
+
+  async function stopCurrentEmulator() {
+    if (commandInterface) {
+      try {
+        if (typeof commandInterface.stop === "function") {
+          await commandInterface.stop();
+        }
+      } catch (error) {
+        console.warn("Failed to stop previous js-dos instance", error);
+      } finally {
+        commandInterface = null;
+      }
+    }
+
+    legacyDosbox = null;
+  }
+
+  function getDosOptions(bundleUrl, runId) {
     return {
       url: bundleUrl,
       kiosk: true,
       autoStart: true,
+      countDownStart: 0,
       backend: "dosbox",
       backendLocked: true,
       noCloud: true,
@@ -66,9 +120,9 @@
       onEvent: (event, arg) => {
         if (event === "emu-error" || event === "ci-err" || event === "bnd-error") {
           console.error("js-dos event", event, arg);
-          setStatus("error", "Error! (｡•́︿•̀｡)");
+          if (runId === activeRunId) setStatus("error", "Error! (｡•́︿•̀｡)");
         }
-        if (event === "ci-ready") {
+        if (event === "ci-ready" && runId === activeRunId) {
           setStatus("running", "Playing! ♡");
           focusGameCanvas();
         }
@@ -76,24 +130,85 @@
     };
   }
 
-  async function startDoom(bundleUrl = DEFAULT_BUNDLE_URL) {
+  async function startDoomV8(bundleUrl = DEFAULT_BUNDLE_URL, label = "Booting... ૮₍ ˃ ⤙ ˂ ₎ა") {
     if (typeof window.Dos !== "function") {
-      setStatus("error", "Failed to load js-dos");
+      setStatus("error", "Failed to load js-dos v8");
       return;
     }
 
+    const runId = activeRunId + 1;
+    activeRunId = runId;
+
     try {
       showEmptyState(false);
+      await stopCurrentEmulator();
       elements.dos.innerHTML = "";
-      setStatus("running", "Booting... ૮₍ ˃ ⤙ ˂ ₎ა");
+      setStatus("running", label);
 
-      commandInterface = await window.Dos(elements.dos, getDosOptions(bundleUrl));
+      commandInterface = await window.Dos(elements.dos, getDosOptions(bundleUrl, runId));
       focusGameCanvas();
     } catch (error) {
       console.error(error);
-      setStatus("error", "Boot failed (´•̥ ᵔ •̥`) ");
-      showEmptyState(true);
+      if (runId === activeRunId) {
+        setStatus("error", "Boot failed (´•̥ ᵔ •̥`) ");
+        showEmptyState(true);
+      }
     }
+  }
+
+  async function startDoomLegacy() {
+    const runId = activeRunId + 1;
+    activeRunId = runId;
+
+    try {
+      showEmptyState(false);
+      await stopCurrentEmulator();
+      elements.dos.innerHTML = "";
+      setStatus("running", "Booting iPad-safe legacy engine...");
+
+      await loadLegacyApi();
+      if (runId !== activeRunId) return;
+
+      legacyDosbox = new window.Dosbox({
+        id: "dos",
+        onload: (dosbox) => {
+          setStatus("running", "Loading DOOM shareware...");
+          dosbox.run(LEGACY_BUNDLE_URL, "./DOOM/DOOM.EXE");
+          window.setTimeout(() => {
+            if (runId === activeRunId) {
+              setStatus("running", "Playing! ♡");
+              focusGameCanvas();
+            }
+          }, 4000);
+        },
+        onrun: () => {
+          if (runId === activeRunId) {
+            setStatus("running", "Playing! ♡");
+            focusGameCanvas();
+          }
+        },
+      });
+
+      const startControl = legacyDosbox?.ui?.start;
+      if (startControl && typeof startControl.trigger === "function") {
+        startControl.trigger("click");
+      } else if (legacyDosbox?.downloadScript) {
+        legacyDosbox.downloadScript();
+      }
+    } catch (error) {
+      console.error(error);
+      if (runId === activeRunId) {
+        setStatus("error", "Legacy boot failed (｡•́︿•̀｡)");
+        showEmptyState(true);
+      }
+    }
+  }
+
+  function startDoom(bundleUrl = DEFAULT_BUNDLE_URL) {
+    if (isAppleTouchDevice() && bundleUrl === DEFAULT_BUNDLE_URL) {
+      return startDoomLegacy();
+    }
+    return startDoomV8(bundleUrl);
   }
 
   function focusGameCanvas() {
@@ -178,7 +293,7 @@
 
   function init() {
     elements.startButton.addEventListener("click", () => startDoom(DEFAULT_BUNDLE_URL));
-    elements.altStartButton.addEventListener("click", () => startDoom(ALT_BUNDLE_URL));
+    elements.altStartButton.addEventListener("click", () => startDoomV8(ALT_BUNDLE_URL, "Booting js-dos v8 alt bundle..."));
     elements.emptyStartButton.addEventListener("click", () => startDoom(DEFAULT_BUNDLE_URL));
     elements.fullscreenButton.addEventListener("click", enterFullscreen);
     elements.touchToggleButton.addEventListener("click", () => {
@@ -187,14 +302,21 @@
 
     elements.saveButton.addEventListener("click", async () => {
       if (commandInterface) {
-        const { data } = await commandInterface.persist();
-        const blob = new Blob([data], { type: "application/octet-stream" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "doom-save.jsdos";
-        a.click();
-        URL.revokeObjectURL(url);
+        if (typeof commandInterface.persist === "function") {
+          const { data } = await commandInterface.persist();
+          const blob = new Blob([data], { type: "application/octet-stream" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "doom-save.jsdos";
+          a.click();
+          URL.revokeObjectURL(url);
+        } else if (typeof commandInterface.save === "function") {
+          await commandInterface.save();
+          setStatus("ready", "Saved locally ♡");
+        }
+      } else if (legacyDosbox) {
+        setStatus("ready", "Legacy engine: use browser storage ♡");
       }
     });
 
@@ -204,15 +326,12 @@
       input.accept = ".jsdos";
       input.onchange = async (e) => {
         const file = e.target.files[0];
-        if (file && commandInterface) {
-          const reader = new FileReader();
-          reader.onload = async (re) => {
-            const data = new Uint8Array(re.target.result);
-            // This is a simplified load, for full support we'd need to restart with this data
-            // but js-dos v8 handles persistence mostly through the initial bundle or indexeddb
+        if (file) {
+          if (commandInterface) {
             alert("To load a save, please use the 'Load .jsdos' button below with your save file!");
-          };
-          reader.readAsArrayBuffer(file);
+          } else {
+            alert("Save loading is only available in the js-dos v8 mode. Use Alt Version first, then load.");
+          }
         }
       };
       input.click();
@@ -223,13 +342,13 @@
       if (file) {
         if (currentBundleObjectUrl) URL.revokeObjectURL(currentBundleObjectUrl);
         currentBundleObjectUrl = URL.createObjectURL(file);
-        startDoom(currentBundleObjectUrl);
+        startDoomV8(currentBundleObjectUrl, "Booting uploaded .jsdos...");
       }
     });
 
     wireTouchControls();
 
-    if (isAppleTouchDevice() || window.matchMedia("(pointer: coarse)").matches) {
+    if (isAppleTouchDevice() || isCoarsePointer()) {
       setTouchOverlay(true);
     }
 
