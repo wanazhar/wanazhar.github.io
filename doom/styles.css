@@ -21,6 +21,8 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-text-size-adjust: 100%;
 }
 
 .app-shell {
@@ -64,13 +66,60 @@ header h1 {
   overflow: hidden;
   box-shadow: var(--shadow);
   aspect-ratio: 4 / 3;
-  width: 100%;
+  height: min(71.25vw, calc(100vh - 220px), 750px);
+  height: min(71.25vw, calc(100svh - 220px), 750px);
+  height: min(71.25vw, calc(100dvh - 220px), 750px);
+  width: auto;
+  max-width: 100%;
+  min-height: 240px;
+  margin: 0 auto;
+  align-self: center;
+  touch-action: none;
 }
 
 #dos {
   width: 100%;
   height: 100%;
   background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#dos iframe,
+#dos video,
+#dos .dosbox-container,
+#dos .emulator,
+#dos .emulator-root,
+#dos [class*="player"] {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain;
+}
+
+#dos canvas,
+#dos [class*="canvas"] {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  background: #000;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+#dos .dosbox-container {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  background: #000;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .controls-bar {
@@ -125,6 +174,8 @@ header h1 {
   padding: 0 20px;
   pointer-events: none;
   z-index: 100;
+  box-sizing: border-box;
+  touch-action: none;
 }
 
 .touch-group {
@@ -155,6 +206,7 @@ header h1 {
   color: var(--pink-hot);
   user-select: none;
   backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .touch-btn.active {
@@ -178,6 +230,7 @@ header h1 {
   right: 10px;
   display: flex;
   gap: 5px;
+  z-index: 30;
 }
 
 .mini-btn {
@@ -241,7 +294,138 @@ header h1 {
   max-width: 600px;
 }
 
+body.app-fullscreen {
+  overflow: hidden;
+  background: #000;
+}
+
+body.app-fullscreen .app-shell {
+  width: 100%;
+  max-width: none;
+  min-height: 100svh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 0;
+}
+
+body.app-fullscreen header,
+body.app-fullscreen .controls-bar,
+body.app-fullscreen #legal {
+  display: none;
+}
+
+.game-container:fullscreen,
+.game-container.app-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #000;
+  aspect-ratio: auto;
+}
+
+.game-container:fullscreen #dos,
+.game-container.app-fullscreen #dos {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
+}
+
+body.app-fullscreen .touch-overlay {
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 120;
+}
+
+body.app-fullscreen .touch-overlay,
+.game-container:fullscreen .touch-overlay {
+  z-index: 120;
+}
+
+body.app-fullscreen .mini-controls,
+.game-container:fullscreen .mini-controls {
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+}
+
+body.app-fullscreen .touch-btn {
+  background: rgba(255, 255, 255, 0.66);
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .app-shell {
+    gap: 10px;
+    margin: 8px auto;
+    padding-bottom: 92px;
+  }
+
+  header {
+    padding: 8px 14px;
+  }
+
+  .game-container {
+    height: min(71.25vw, calc(100vh - 118px), 750px);
+    height: min(71.25vw, calc(100svh - 118px), 750px);
+    height: min(71.25vw, calc(100dvh - 118px), 750px);
+    min-height: 180px;
+  }
+
+  .touch-overlay {
+    top: max(48px, env(safe-area-inset-top));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    align-items: center;
+  }
+
+  .center-mini {
+    bottom: max(4px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (orientation: landscape) {
+  body.app-fullscreen .touch-overlay {
+    top: max(42px, env(safe-area-inset-top));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    align-items: center;
+  }
+
+  body.app-fullscreen .center-mini {
+    bottom: max(6px, env(safe-area-inset-bottom));
+  }
+}
+
 @media (max-width: 600px) {
+  .app-shell {
+    width: calc(100% - 16px);
+    margin: 8px auto;
+    gap: 12px;
+    padding-bottom: 150px;
+  }
+
+  header {
+    padding: 10px 12px;
+    border-width: 3px;
+    border-radius: 14px;
+  }
+
+  .game-container {
+    height: min(73.5vw, calc(100vh - 184px));
+    height: min(73.5vw, calc(100svh - 184px));
+    height: min(73.5vw, calc(100dvh - 184px));
+    min-height: 190px;
+    border-width: 4px;
+    border-radius: 14px;
+  }
+
   .touch-overlay {
     bottom: 10px;
     padding: 0 10px;

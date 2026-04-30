@@ -35,6 +35,26 @@
           <button class="kawaii-btn mini-btn" id="saveButton">Save</button>
           <button class="kawaii-btn mini-btn" id="loadButton">Load</button>
         </div>
+
+        <div class="touch-overlay hidden" id="touchOverlay">
+          <div class="touch-group d-pad">
+            <div class="touch-btn up" data-key="ArrowUp">▲</div>
+            <div class="touch-btn left" data-key="ArrowLeft">◀</div>
+            <div class="touch-btn right" data-key="ArrowRight">▶</div>
+            <div class="touch-btn down" data-key="ArrowDown">▼</div>
+          </div>
+          <div class="touch-group center-mini">
+            <div class="touch-btn mini-action" data-key="Escape">ESC</div>
+            <div class="touch-btn mini-action" data-key="Enter">ENT</div>
+            <div class="touch-btn mini-action" data-key="Tab">MAP</div>
+          </div>
+          <div class="touch-group action-pad">
+            <div class="touch-btn strafe" data-key="AltLeft">STR</div>
+            <div class="touch-btn fire" data-key="ControlLeft">HIT</div>
+            <div class="touch-btn use" data-key="Space">USE</div>
+            <div class="touch-btn dash" data-key="ShiftLeft">RUN</div>
+          </div>
+        </div>
       </section>
 
       <div class="controls-bar">
@@ -52,24 +72,5 @@
       </p>
     </main>
 
-    <div class="touch-overlay hidden" id="touchOverlay">
-      <div class="touch-group d-pad">
-        <div class="touch-btn up" data-key="ArrowUp">▲</div>
-        <div class="touch-btn left" data-key="ArrowLeft">◀</div>
-        <div class="touch-btn right" data-key="ArrowRight">▶</div>
-        <div class="touch-btn down" data-key="ArrowDown">▼</div>
-      </div>
-      <div class="touch-group center-mini">
-        <div class="touch-btn mini-action" data-key="Escape">ESC</div>
-        <div class="touch-btn mini-action" data-key="Enter">ENT</div>
-        <div class="touch-btn mini-action" data-key="Tab">MAP</div>
-      </div>
-      <div class="touch-group action-pad">
-        <div class="touch-btn strafe" data-key="AltLeft">STR</div>
-        <div class="touch-btn fire" data-key="ControlLeft">HIT</div>
-        <div class="touch-btn use" data-key="Space">USE</div>
-        <div class="touch-btn dash" data-key="ShiftLeft">RUN</div>
-      </div>
-    </div>
   </body>
 </html>

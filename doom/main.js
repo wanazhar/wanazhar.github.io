@@ -26,6 +26,7 @@
   let currentBundleObjectUrl = null;
   let activeRunId = 0;
   let legacyApiPromise = null;
+  let appFullscreen = false;
   const activeVirtualKeys = new Set();
 
   const keyMeta = {
@@ -211,7 +212,39 @@
     return startDoomV8(bundleUrl);
   }
 
+  function fitGameCanvases() {
+    const host = elements.dos.getBoundingClientRect();
+    if (!host.width || !host.height) return;
+
+    elements.dos.querySelectorAll("canvas").forEach((canvas) => {
+      const intrinsicWidth = canvas.width || 640;
+      const intrinsicHeight = canvas.height || 400;
+      const aspect = intrinsicWidth / intrinsicHeight;
+      const hostAspect = host.width / host.height;
+
+      let width = host.width;
+      let height = width / aspect;
+      if (height > host.height || hostAspect > aspect) {
+        height = host.height;
+        width = height * aspect;
+      }
+
+      canvas.style.setProperty("width", `${Math.floor(width)}px`, "important");
+      canvas.style.setProperty("height", `${Math.floor(height)}px`, "important");
+      canvas.style.setProperty("max-width", "100%", "important");
+      canvas.style.setProperty("max-height", "100%", "important");
+    });
+  }
+
+  function scheduleCanvasFit() {
+    fitGameCanvases();
+    window.requestAnimationFrame(fitGameCanvases);
+    window.setTimeout(fitGameCanvases, 250);
+    window.setTimeout(fitGameCanvases, 1200);
+  }
+
   function focusGameCanvas() {
+    scheduleCanvasFit();
     const canvas = elements.gameShell.querySelector("canvas");
     if (canvas) {
       canvas.setAttribute("tabindex", "0");
@@ -223,16 +256,94 @@
     elements.touchOverlay.classList.toggle("hidden", !enabled);
   }
 
-  async function enterFullscreen() {
-    try {
-      if (!document.fullscreenElement) {
-        await elements.gameShell.requestFullscreen();
-      } else {
+  function isNativeFullscreenActive() {
+    return document.fullscreenElement === elements.gameShell;
+  }
+
+  function isFullscreenActive() {
+    return isNativeFullscreenActive() || appFullscreen;
+  }
+
+  function setAppFullscreen(enabled) {
+    appFullscreen = enabled;
+    document.body.classList.toggle("app-fullscreen", enabled);
+    elements.gameShell.classList.toggle("app-fullscreen", enabled);
+    elements.fullscreenButton.textContent = enabled ? "Exit" : "Full Screen";
+    focusGameCanvas();
+  }
+
+  function syncFullscreenState() {
+    if (isNativeFullscreenActive()) {
+      setAppFullscreen(false);
+      elements.fullscreenButton.textContent = "Exit";
+      focusGameCanvas();
+      return;
+    }
+
+    if (!appFullscreen) {
+      elements.fullscreenButton.textContent = "Full Screen";
+    }
+    focusGameCanvas();
+  }
+
+  async function toggleFullscreen() {
+    if (appFullscreen) {
+      setAppFullscreen(false);
+      return;
+    }
+
+    if (document.fullscreenElement) {
+      try {
         await document.exitFullscreen();
+      } catch (error) {
+        console.warn("Fullscreen exit failed", error);
+      } finally {
+        syncFullscreenState();
+      }
+      return;
+    }
+
+    const requestFullscreen = elements.gameShell.requestFullscreen?.bind(elements.gameShell);
+    if (requestFullscreen) {
+      try {
+        await requestFullscreen();
+        syncFullscreenState();
+        return;
+      } catch (error) {
+        console.warn("Native fullscreen failed, using app fullscreen", error);
+      }
+    }
+
+    setAppFullscreen(true);
+  }
+
+  async function exitFullscreenIfNeeded() {
+    if (appFullscreen) {
+      setAppFullscreen(false);
+      return;
+    }
+
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen();
+      } catch (error) {
+        console.warn("Fullscreen exit failed", error);
+      }
+    }
+  }
+
+  async function enterFullscreen() {
+    const wasActive = isFullscreenActive();
+    try {
+      if (!wasActive) {
+        await toggleFullscreen();
+      } else {
+        await exitFullscreenIfNeeded();
       }
       focusGameCanvas();
     } catch (error) {
       console.warn("Fullscreen request failed", error);
+      if (!wasActive) setAppFullscreen(true);
     }
   }
 
@@ -296,6 +407,9 @@
     elements.altStartButton.addEventListener("click", () => startDoomV8(ALT_BUNDLE_URL, "Booting js-dos v8 alt bundle..."));
     elements.emptyStartButton.addEventListener("click", () => startDoom(DEFAULT_BUNDLE_URL));
     elements.fullscreenButton.addEventListener("click", enterFullscreen);
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    window.addEventListener("resize", scheduleCanvasFit);
+    window.addEventListener("orientationchange", scheduleCanvasFit);
     elements.touchToggleButton.addEventListener("click", () => {
       setTouchOverlay(elements.touchOverlay.classList.contains("hidden"));
     });
