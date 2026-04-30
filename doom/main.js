@@ -1,7 +1,7 @@
 (() => {
   const DEFAULT_BUNDLE_URL = "./assets/doom.jsdos";
   const ALT_BUNDLE_URL = "./assets/doom_old.jsdos";
-  const LEGACY_BUNDLE_URL = "./assets/doom-legacy.zip";
+  const LEGACY_BUNDLE_URL = "https://thedoggybrad.github.io/doom_on_js-dos/DOOM-@evilution.zip";
   const LEGACY_API_URL = "./vendor/js-dos-api.js";
 
   const elements = {
@@ -172,7 +172,7 @@
       legacyDosbox = new window.Dosbox({
         id: "dos",
         onload: (dosbox) => {
-          setStatus("running", "Loading DOOM shareware...");
+          setStatus("running", "Loading external reference DOOM zip...");
           dosbox.run(LEGACY_BUNDLE_URL, "./DOOM/DOOM.EXE");
           window.setTimeout(() => {
             if (runId === activeRunId) {
