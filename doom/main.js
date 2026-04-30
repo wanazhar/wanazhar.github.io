@@ -1,11 +1,13 @@
 (() => {
   const DEFAULT_BUNDLE_URL = "./assets/doom.jsdos";
+  const ALT_BUNDLE_URL = "./assets/doom_old.jsdos";
 
   const elements = {
     dos: document.querySelector("#dos"),
     gameShell: document.querySelector("#gameShell"),
     emptyState: document.querySelector("#emptyState"),
     startButton: document.querySelector("#startButton"),
+    altStartButton: document.querySelector("#altStartButton"),
     emptyStartButton: document.querySelector("#emptyStartButton"),
     fullscreenButton: document.querySelector("#fullscreenButton"),
     touchToggleButton: document.querySelector("#touchToggleButton"),
@@ -175,8 +177,9 @@
   }
 
   function init() {
-    elements.startButton.addEventListener("click", () => startDoom());
-    elements.emptyStartButton.addEventListener("click", () => startDoom());
+    elements.startButton.addEventListener("click", () => startDoom(DEFAULT_BUNDLE_URL));
+    elements.altStartButton.addEventListener("click", () => startDoom(ALT_BUNDLE_URL));
+    elements.emptyStartButton.addEventListener("click", () => startDoom(DEFAULT_BUNDLE_URL));
     elements.fullscreenButton.addEventListener("click", enterFullscreen);
     elements.touchToggleButton.addEventListener("click", () => {
       setTouchOverlay(elements.touchOverlay.classList.contains("hidden"));
