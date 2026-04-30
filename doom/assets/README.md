@@ -7,3 +7,7 @@
 The v8 bundles use an iPad/Safari-safe DOSBox config: conservative video mode, normal CPU core, fixed cycles, disabled EMS/IPX/MIDI/OPL, and `DOOM.EXE -nomusic`.
 
 See `SOURCE.txt` for the exact source URL and checksum.
+
+## External reference mode
+
+The live iPad/Safari legacy path currently loads thedoggybrad's external `DOOM-@evilution.zip` URL directly instead of copying that archive into this repository. The local `doom-legacy.zip` remains the shareware fallback/test bundle.

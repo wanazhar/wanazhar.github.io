@@ -51,12 +51,12 @@
     </style>
   </head>
   <body>
-    <h1>DOOM js-dos v3 reference-style shareware test</h1>
+    <h1>DOOM js-dos v3 external reference test</h1>
     <p>
-      This plain page tests the old js-dos v3 asm.js path against the public
-      shareware-only bundle at <code>../doom/assets/doom-legacy.zip</code>. It
-      mounts and runs <code>./DOOM/DOOM.EXE</code>; it does not include or use
-      commercial <code>DOOM.WAD</code> or the reference repo game zip.
+      This plain page tests the old js-dos v3 asm.js path against the external
+      reference zip from thedoggybrad's GitHub Pages. It mounts and runs
+      <code>./DOOM/DOOM.EXE</code>. The zip is loaded from the external site,
+      not copied into this repo.
     </p>
     <p>
       The Alt/modern UI stays at <a href="../doom/">/doom</a>. This page is only
@@ -65,8 +65,7 @@
 
     <p>
       Optional private test: add <code>?zip=https://example.com/game.zip</code>
-      to try a different js-dos v3 zip from your own browser. The default remains
-      the public shareware bundle.
+      to try a different js-dos v3 zip from your own browser.
     </p>
 
     <div id="dosbox"></div>
@@ -75,7 +74,7 @@
     <script>
       (function () {
         var params = new URLSearchParams(window.location.search);
-        var archiveUrl = params.get("zip") || "../doom/assets/doom-legacy.zip";
+        var archiveUrl = params.get("zip") || "https://thedoggybrad.github.io/doom_on_js-dos/DOOM-@evilution.zip";
         var executable = params.get("exe") || "./DOOM/DOOM.EXE";
         var scriptUrl = "../doom/vendor/js-dos-v3.js";
         var status = document.getElementById("status");
