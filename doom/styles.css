@@ -186,17 +186,18 @@ header h1 {
 }
 
 .center-mini {
-  grid-template-columns: repeat(3, 45px);
+  grid-template-columns: repeat(3, 40px);
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   bottom: 0;
+  gap: 5px;
 }
 
 .mini-action {
-  font-size: 0.7rem;
-  height: 35px;
-  border-radius: 10px;
+  font-size: 0.6rem;
+  height: 30px;
+  border-radius: 8px;
 }
 
 .status-indicator {
@@ -252,6 +253,14 @@ header h1 {
   .action-pad {
     grid-template-columns: repeat(2, 60px);
     grid-template-rows: repeat(2, 60px);
+  }
+  .center-mini {
+    grid-template-columns: repeat(3, 35px);
+    gap: 3px;
+  }
+  .mini-action {
+    font-size: 0.5rem;
+    height: 25px;
   }
   header h1 { font-size: 1.2rem; }
 }
