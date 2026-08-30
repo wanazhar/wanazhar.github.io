@@ -46,7 +46,7 @@ export class AssetLoader {
     });
     const parts = this.#collectParts(scene);
     if (!parts.chassis || Object.keys(parts.wheels).length < 4) return this.#createFallbackVehicle(id);
-    return this.#createFallbackVehicle(id);
+    return { root: scene, parts };
   }
 
   #collectParts(root) {
