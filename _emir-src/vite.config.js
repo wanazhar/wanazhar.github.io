@@ -6,7 +6,7 @@ export default defineConfig({
   preview: { host: '0.0.0.0', port: 4173 },
   build: {
     target: 'es2022',
-    sourcemap: true,
+    sourcemap: false,
     assetsInlineLimit: 4096,
     outDir: '../emir',
     emptyOutDir: true

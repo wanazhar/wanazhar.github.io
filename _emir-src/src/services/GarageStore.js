@@ -11,7 +11,9 @@ const DEFAULT_STATE = {
 
 export class GarageStore {
   constructor() {
-    this.state = loadLocal() || { ...DEFAULT_STATE };
+    let initial = null;
+    try { initial = loadLocal(); } catch { initial = null; }
+    this.state = initial || { ...DEFAULT_STATE };
     this.user = null;
   }
 
@@ -73,4 +75,8 @@ export class GarageStore {
 function loadLocal() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
 }
-function saveLocal(state) { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveLocal(state) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (error) {
+    console.warn('localStorage unavailable (private mode / quota)', error);
+  }
+}

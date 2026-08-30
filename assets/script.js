@@ -143,46 +143,74 @@ function sortArchiveRepos(repos) {
 
 renderFeaturedProjects();
 
-fetch('https://api.github.com/users/wanazhar/repos?per_page=100&sort=updated')
-  .then((response) => {
-    if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
-    return response.json();
-  })
-  .then((repos) => {
-    const publicRepos = repos.filter((repo) => !repo.private);
-    const archiveRepos = sortArchiveRepos(publicRepos);
+const REPOS_CACHE_KEY = 'wanazhar-repos-cache-v1';
+const REPOS_CACHE_TTL = 10 * 60 * 1000;
 
-    renderRepoList(archiveContainer, archiveRepos, true);
+function loadCachedRepos() {
+  try {
+    const raw = sessionStorage.getItem(REPOS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.timestamp || Date.now() - parsed.timestamp > REPOS_CACHE_TTL) return null;
+    return parsed.repos;
+  } catch { return null; }
+}
 
-    if (searchInput) {
-      searchInput.addEventListener('input', (event) => {
-        const query = event.target.value.trim().toLowerCase();
-        const filtered = archiveRepos.filter((repo) => {
-          const haystack = [repo.name, repo.description, repo.language]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase();
-          return haystack.includes(query);
-        });
-        renderRepoList(archiveContainer, filtered, true);
+function saveCachedRepos(repos) {
+  try { sessionStorage.setItem(REPOS_CACHE_KEY, JSON.stringify({ timestamp: Date.now(), repos })); } catch {}
+}
+
+function initArchive(repos) {
+  const publicRepos = repos.filter((repo) => !repo.private);
+  const archiveRepos = sortArchiveRepos(publicRepos);
+  renderRepoList(archiveContainer, archiveRepos, true);
+  if (searchInput) {
+    searchInput.addEventListener('input', (event) => {
+      const query = event.target.value.trim().toLowerCase();
+      const filtered = archiveRepos.filter((repo) => {
+        const haystack = [repo.name, repo.description, repo.language]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(query);
       });
-    }
+      renderRepoList(archiveContainer, filtered, true);
+    });
+  }
+  if (toggleArchiveButton && archiveContainer) {
+    toggleArchiveButton.addEventListener('click', () => {
+      const isHidden = archiveContainer.hasAttribute('hidden');
+      if (isHidden) {
+        archiveContainer.removeAttribute('hidden');
+        toggleArchiveButton.textContent = 'HIDE ARCHIVE';
+      } else {
+        archiveContainer.setAttribute('hidden', 'hidden');
+        toggleArchiveButton.textContent = 'SHOW ARCHIVE';
+      }
+    });
+  }
+}
 
-    if (toggleArchiveButton && archiveContainer) {
-      toggleArchiveButton.addEventListener('click', () => {
-        const isHidden = archiveContainer.hasAttribute('hidden');
-        if (isHidden) {
-          archiveContainer.removeAttribute('hidden');
-          toggleArchiveButton.textContent = 'HIDE REPOS';
-        } else {
-          archiveContainer.setAttribute('hidden', 'hidden');
-          toggleArchiveButton.textContent = 'SHOW REPOS';
-        }
-      });
-    }
+const cached = loadCachedRepos();
+if (cached) {
+  initArchive(cached);
+} else {
+  fetch('https://api.github.com/users/wanazhar/repos?per_page=100&sort=updated', {
+    headers: { Accept: 'application/vnd.github.v3+json' }
   })
-  .catch((error) => {
-    if (archiveContainer) {
-      archiveContainer.innerHTML = `<div class="error-card">Unable to load repositories right now: ${escapeHtml(error.message)}.</div>`;
-    }
-  });
+    .then((response) => {
+      if (response.status === 403) throw new Error('GitHub API rate limited — try again shortly');
+      if (response.status === 404) throw new Error('GitHub user not found');
+      if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
+      return response.json();
+    })
+    .then((repos) => {
+      saveCachedRepos(repos);
+      initArchive(repos);
+    })
+    .catch((error) => {
+      if (archiveContainer) {
+        archiveContainer.innerHTML = `<div class="error-card">Unable to load repositories right now: ${escapeHtml(error.message)}.</div>`;
+      }
+    });
+}
