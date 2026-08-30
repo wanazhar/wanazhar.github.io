@@ -1,1 +1,3 @@
 theme: jekyll-theme-minimal
+# Custom static site (index.html + /emir,/endlessrunner,/kualalumpur,/doom). Jekyll only used for theme wrapper;
+# `.nojekyll` disables processing for raw JS/CDN assets. CNAME is preserved via `pages.yml` artifact path `"."`.

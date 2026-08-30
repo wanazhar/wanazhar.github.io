@@ -65,6 +65,8 @@ export class VoxelCity {
   }
 
   updateVisibility(camera, focusPosition) {
+    camera.updateMatrixWorld();
+    camera.updateProjectionMatrix();
     this.projectionMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.projectionMatrix);
     let visible = 0;

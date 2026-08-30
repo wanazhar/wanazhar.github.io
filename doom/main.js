@@ -174,7 +174,12 @@
         id: "dos",
         onload: (dosbox) => {
           setStatus("running", "Loading external reference DOOM zip...");
-          dosbox.run(LEGACY_BUNDLE_URL, "./DOOM/DOOM.EXE");
+          try {
+            dosbox.run(LEGACY_BUNDLE_URL, "./DOOM/DOOM.EXE");
+          } catch (err) {
+            console.warn('Legacy external bundle failed, falling back to local', err);
+            dosbox.run(DEFAULT_BUNDLE_URL, "./DOOM.EXE");
+          }
           window.setTimeout(() => {
             if (runId === activeRunId) {
               setStatus("running", "Playing! ♡");
@@ -187,6 +192,10 @@
             setStatus("running", "Playing! ♡");
             focusGameCanvas();
           }
+        },
+        onerror: (err) => {
+          console.warn('Legacy Dosbox error, trying local bundle', err);
+          if (runId === activeRunId) startDoomV8(DEFAULT_BUNDLE_URL, "Retrying with local bundle...");
         },
       });
 
