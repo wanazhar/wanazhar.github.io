@@ -13,9 +13,11 @@ export default defineConfig({
     port: 4173
   },
   build: {
-    target: 'es2020',
+    target: 'es2022',
     sourcemap: false,
     assetsDir: 'assets',
+    outDir: '../kualalumpur',
+    emptyOutDir: true,
     chunkSizeWarningLimit: 1400
   }
 });
