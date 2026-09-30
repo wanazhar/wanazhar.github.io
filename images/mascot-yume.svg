@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" role="img" aria-label="接客担当ユメ / Shop mascot Yume">
+  <defs>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cdeeff"/>
+      <stop offset="1" stop-color="#8cc9f7"/>
+    </linearGradient>
+    <linearGradient id="hairDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8dcff"/>
+      <stop offset="1" stop-color="#5fa3e0"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff2e9"/>
+      <stop offset="1" stop-color="#ffdcc6"/>
+    </linearGradient>
+  </defs>
+
+  <g fill="#a8dcff" opacity="0.9">
+    <path d="M30 96 Q32 104 40 106 Q32 108 30 116 Q28 108 20 106 Q28 104 30 96 Z"/>
+    <path d="M286 82 Q288 91 296 93 Q288 95 286 104 Q284 95 276 93 Q284 91 286 82 Z"/>
+    <path d="M40 320 Q42 328 50 330 Q42 332 40 340 Q38 332 30 330 Q38 328 40 320 Z"/>
+  </g>
+  <g fill="#ff6fb5" opacity="0.7">
+    <path d="M264 258 c0 -6 8 -9 11 -4 c3 -5 11 -2 11 4 c0 7 -11 14 -11 14 c0 0 -11 -7 -11 -14 Z"/>
+    <path d="M30 236 c0 -5 7 -8 9 -3 c2 -5 9 -2 9 3 c0 6 -9 12 -9 12 c0 0 -9 -6 -9 -12 Z"/>
+  </g>
+
+  <ellipse cx="160" cy="176" rx="112" ry="104" fill="url(#hairDark)"/>
+  <g fill="url(#hair)" stroke="#4c8ec9" stroke-width="3">
+    <ellipse cx="282" cy="234" rx="28" ry="64" transform="rotate(-16 282 234)"/>
+  </g>
+  <ellipse cx="276" cy="206" rx="8" ry="26" transform="rotate(-16 276 206)" fill="#e8f7ff" opacity="0.7"/>
+  <circle cx="266" cy="164" r="14" fill="#ff5f9e" stroke="#b0386f" stroke-width="3"/>
+  <path d="M258 156 L282 150 L278 172 Z" fill="#ff8fbd" stroke="#b0386f" stroke-width="3"/>
+
+  <rect x="144" y="238" width="32" height="30" rx="12" fill="#f6c6ac"/>
+
+  <path d="M108 262 Q160 248 212 262 L224 344 Q160 358 96 344 Z" fill="#ff9ec4" stroke="#c2508f" stroke-width="5"/>
+  <path d="M124 262 L160 302 L112 318 L100 286 Z" fill="#ffd7e9" stroke="#c2508f" stroke-width="4"/>
+  <path d="M196 262 L160 302 L208 318 L220 286 Z" fill="#ffb7d6" stroke="#c2508f" stroke-width="4"/>
+  <g fill="#fff0f6">
+    <circle cx="130" cy="330" r="5"/>
+    <circle cx="160" cy="338" r="5"/>
+    <circle cx="190" cy="330" r="5"/>
+    <circle cx="146" cy="286" r="4"/>
+    <circle cx="180" cy="292" r="4"/>
+  </g>
+  <path d="M92 340 L228 340 L238 374 Q160 392 82 374 Z" fill="#ff9ec4" stroke="#c2508f" stroke-width="5"/>
+  <path d="M96 322 L224 322 L220 348 L100 348 Z" fill="#ffd166" stroke="#c9a000" stroke-width="5"/>
+  <circle cx="160" cy="335" r="12" fill="#ffd166" stroke="#c9a000" stroke-width="4"/>
+  <circle cx="160" cy="335" r="5" fill="#fff3c4"/>
+
+  <path d="M118 278 Q96 244 88 212" fill="none" stroke="#ff9ec4" stroke-width="28" stroke-linecap="round"/>
+  <path d="M202 278 Q224 244 232 212" fill="none" stroke="#ff9ec4" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="84" cy="200" r="18" fill="url(#skin)" stroke="#7a4a63" stroke-width="4"/>
+  <circle cx="236" cy="200" r="18" fill="url(#skin)" stroke="#7a4a63" stroke-width="4"/>
+  <g stroke="#c98966" stroke-width="3" stroke-linecap="round">
+    <path d="M75 190 L68 178"/>
+    <path d="M84 187 L82 174"/>
+    <path d="M93 190 L96 177"/>
+    <path d="M227 190 L224 177"/>
+    <path d="M236 187 L238 174"/>
+    <path d="M245 190 L252 178"/>
+  </g>
+
+  <ellipse cx="160" cy="176" rx="94" ry="90" fill="url(#skin)" stroke="#7a4a63" stroke-width="5"/>
+
+  <path d="M66 172 Q58 76 160 64 Q262 76 254 172 Q244 126 206 116 Q194 98 160 98 Q126 98 114 116 Q76 126 66 172 Z" fill="url(#hair)" stroke="#4c8ec9" stroke-width="4"/>
+  <path d="M84 120 Q120 88 168 90 Q206 92 232 116" fill="none" stroke="#f0faff" stroke-width="9" stroke-linecap="round" opacity="0.8"/>
+  <path d="M158 60 Q146 36 170 28" fill="none" stroke="#a8dcff" stroke-width="8" stroke-linecap="round"/>
+  <path d="M74 186 Q64 214 76 240 Q94 236 96 206 Z" fill="url(#hair)" stroke="#4c8ec9" stroke-width="3"/>
+  <path d="M246 186 Q256 214 244 240 Q226 236 224 206 Z" fill="url(#hair)" stroke="#4c8ec9" stroke-width="3"/>
+
+  <path d="M100 184 Q126 162 152 184" fill="none" stroke="#7a4a63" stroke-width="9" stroke-linecap="round"/>
+  <path d="M168 184 Q194 162 220 184" fill="none" stroke="#7a4a63" stroke-width="9" stroke-linecap="round"/>
+  <g stroke="#7a4a63" stroke-width="4" stroke-linecap="round" opacity="0.75">
+    <path d="M104 196 Q110 202 120 200"/>
+    <path d="M216 196 Q210 202 200 200"/>
+  </g>
+  <path d="M104 146 Q126 138 148 148" fill="none" stroke="#4c8ec9" stroke-width="5" stroke-linecap="round"/>
+  <path d="M172 146 Q194 138 216 148" fill="none" stroke="#4c8ec9" stroke-width="5" stroke-linecap="round"/>
+
+  <ellipse cx="92" cy="212" rx="19" ry="9.5" fill="#ff8fc0" opacity="0.55"/>
+  <ellipse cx="228" cy="212" rx="19" ry="9.5" fill="#ff8fc0" opacity="0.55"/>
+
+  <path d="M144 222 Q160 246 176 222 Q160 236 144 222 Z" fill="#d4597a"/>
+  <path d="M150 226 Q160 236 170 226 Q160 231 150 226 Z" fill="#ff9db5"/>
+
+  <g stroke="#ffd166" stroke-width="4" fill="#fff3c4">
+    <path d="M234 104 Q236 114 246 116 Q236 118 234 128 Q232 118 222 116 Q232 114 234 104 Z"/>
+    <path d="M242 134 Q243 140 249 141 Q243 142 242 148 Q241 142 235 141 Q241 140 242 134 Z"/>
+  </g>
+</svg>
