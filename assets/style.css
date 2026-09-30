@@ -1968,6 +1968,35 @@ img {
   clip-path: path('M6.5 12 C6.5 12 0 8 0 3.6 C0 1.2 1.6 0 3.2 0 C4.5 0 5.8 0.8 6.5 1.9 C7.2 0.8 8.5 0 9.8 0 C11.4 0 13 1.2 13 3.6 C13 8 6.5 12 6.5 12 Z');
 }
 
+/* ---------- small-screen safety ---------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+.col-main > *,
+.panel,
+.side-box,
+.section-block,
+.tag-cloud,
+.timesale,
+.hero-banner {
+  min-width: 0;
+}
+
+.table-scroll {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.repo-card,
+.product-card,
+.voice-card,
+.staff-card {
+  min-width: 0;
+}
+
 /* ---------- responsive ---------- */
 
 @media (max-width: 1060px) {
@@ -1988,12 +2017,12 @@ img {
   }
 
   .shop-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .col-left,
   .col-right {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .shop-logo .logo-main {
@@ -2042,6 +2071,28 @@ img {
   .mascot-message {
     max-width: 150px;
     font-size: 11px;
+  }
+
+  .container {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .mascot-float {
+    right: calc(10px + env(safe-area-inset-right));
+    bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .cart-toast {
+    left: calc(10px + env(safe-area-inset-left));
+    bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .timesale-body {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 6px;
   }
 
   .petal {
