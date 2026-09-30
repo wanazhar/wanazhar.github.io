@@ -1,14 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>wanazhar's cyber shrine</title>
-    <meta name="description" content="Retro cyber shrine / personal GitHub Pages site for wanazhar.">
+    <title>PLAY☆WANAZHAR｜ゲームとアプリの総合商店</title>
+    <meta id="meta-description" name="description" content="wanazhar の個人商店。ブラウザゲーム・Webアプリ・実験ツールを全品0円で公開中。送料無料・24時間営業。">
     <link rel="stylesheet" href="assets/style.css">
 </head>
-<body class="crt">
-    <div class="scanlines" aria-hidden="true"></div>
+<body class="shop">
     <div class="petals-layer" aria-hidden="true">
         <span class="petal p1"></span>
         <span class="petal p2"></span>
@@ -22,69 +21,610 @@
         <span class="petal p10"></span>
         <span class="petal p11"></span>
         <span class="petal p12"></span>
+        <span class="petal heart h1"></span>
+        <span class="petal heart h2"></span>
+        <span class="petal heart h3"></span>
+        <span class="petal heart h4"></span>
+        <span class="petal heart h5"></span>
+        <span class="petal star s1"></span>
+        <span class="petal star s2"></span>
+        <span class="petal star s3"></span>
+        <span class="petal star s4"></span>
+        <span class="petal star s5"></span>
+    </div>
+
+    <div class="top-bar">
+        <div class="top-bar-inner">
+            <ul class="top-links">
+                <li><a href="#news" data-ja="お知らせ" data-en="News">お知らせ</a></li>
+                <li><a href="#guide" data-ja="ご利用ガイド" data-en="Store guide">ご利用ガイド</a></li>
+                <li><a href="#specs" data-ja="商品スペック" data-en="Spec sheet">商品スペック</a></li>
+                <li><a href="https://github.com/wanazhar" target="_blank" rel="noreferrer" data-ja="お問い合わせ" data-en="Contact">お問い合わせ</a></li>
+                <li><a href="#links" data-ja="リンク集" data-en="Links">リンク集</a></li>
+            </ul>
+            <div class="top-bar-right">
+                <nav class="lang-switch" aria-label="Language / 言語">
+                    <button type="button" class="lang-btn" data-lang="ja">日本語</button>
+                    <span class="lang-sep">|</span>
+                    <button type="button" class="lang-btn" data-lang="en">English</button>
+                </nav>
+                <div class="visitor-counter">
+                    <span data-ja="あなたは" data-en="You are visitor number">あなたは</span>
+                    <span id="visitor-count" class="counter-digits">0001337</span>
+                    <span data-ja="人目のお客様です" data-en="">人目のお客様です</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header class="shop-header">
+        <div class="shop-header-inner">
+            <a class="shop-logo" href="./">
+                <span class="logo-main">PLAY</span><span class="logo-star">☆</span><span class="logo-sub">WANAZHAR</span>
+                <span class="logo-tagline" data-ja="ゲームとアプリの総合商店｜全品0円" data-en="Games &amp; Apps General Store | Everything ¥0">ゲームとアプリの総合商店｜全品0円</span>
+            </a>
+            <div class="header-search">
+                <label class="sr-only" for="shop-search" data-ja="商品を検索" data-en="Search products">商品を検索</label>
+                <input id="shop-search" type="search" placeholder="商品名・キーワードで検索（例：クアラルンプール）" data-ja-placeholder="商品名・キーワードで検索（例：クアラルンプール）" data-en-placeholder="Search products (e.g. Kuala Lumpur)">
+                <button id="shop-search-button" class="search-button" type="button" data-ja="検索" data-en="Search">検索</button>
+                <p class="search-hint" data-ja="※ 全商品がカートに入ります。お支払いは永遠に ¥0 です。" data-en="※ Everything fits in one cart. Payment is forever ¥0.">※ 全商品がカートに入ります。お支払いは永遠に ¥0 です。</p>
+            </div>
+            <a class="cart-box" href="#featured">
+                <span class="cart-icon">🛒</span>
+                <span class="cart-label" data-ja="カート" data-en="Cart">カート</span>
+                <span id="cart-count" class="cart-count">0</span>
+                <span class="cart-unit" data-ja="点" data-en="items">点</span>
+            </a>
+        </div>
+    </header>
+
+    <nav class="global-nav" aria-label="グローバルナビゲーション">
+        <ul>
+            <li><a href="./" data-ja="ホーム" data-en="Home">ホーム</a></li>
+            <li><a href="#featured-games" data-ja="ブラウザゲーム" data-en="Browser games">ブラウザゲーム</a></li>
+            <li><a href="#apps" data-ja="提携ショップ" data-en="Partner shops">提携ショップ</a></li>
+            <li><a href="#archive" data-ja="取扱商品一覧" data-en="All items">取扱商品一覧</a></li>
+            <li><a href="#specs" data-ja="スペック表" data-en="Spec sheet">スペック表</a></li>
+            <li><a href="#guide" data-ja="ご利用ガイド" data-en="Store guide">ご利用ガイド</a></li>
+            <li><a href="#news" data-ja="お知らせ" data-en="News">お知らせ</a></li>
+            <li><a href="#voices" data-ja="お客様の声" data-en="Voices">お客様の声</a></li>
+            <li><a href="#staff" data-ja="スタッフ" data-en="Staff">スタッフ</a></li>
+            <li><a href="https://github.com/wanazhar" target="_blank" rel="noreferrer">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <div class="ticker-bar">
+        <span class="ticker-label" data-ja="重要" data-en="INFO">重要</span>
+        <marquee behavior="scroll" direction="left" class="news-ticker" data-ja="【大セール】全品0円！　在庫限り！　｜　看板娘 ミミ・サクラ・ユメ 入荷！　｜　新入荷：クアラルンプール ボクセル（祝・1000万ブロック達成）　｜　おみくじ 毎日引けるよ　｜　DOOM Kawaii♡ が iPad / Safari に対応しました　｜　送料無料・ポイント0倍　｜　年中無休・24時間営業" data-en="【BIG SALE】Everything ¥0! While stock lasts! | Mascots Mimi, Sakura &amp; Yume have arrived! | New arrival: Kuala Lumpur Voxel (10M blocks reached!) | Omikuji available every day | DOOM Kawaii♡ now supports iPad / Safari | Free shipping | 0x points | Open 24/7, all year">【大セール】全品0円！　在庫限り！　｜　看板娘 ミミ・サクラ・ユメ 入荷！　｜　新入荷：クアラルンプール ボクセル（祝・1000万ブロック達成）　｜　おみくじ 毎日引けるよ　｜　DOOM Kawaii♡ が iPad / Safari に対応しました　｜　送料無料・ポイント0倍　｜　年中無休・24時間営業</marquee>
     </div>
 
     <div class="container">
-        <header class="hero panel">
-            <p class="eyebrow">ようこそ</p>
-            <h1>wanazhar</h1>
-            <p class="hero-copy">
-                Personal site and project archive.
+        <nav class="breadcrumb" aria-label="パンくず">
+            <a href="./" data-ja="ホーム" data-en="Home">ホーム</a> &gt;
+            <a href="#featured-games" data-ja="ブラウザゲーム" data-en="Browser games">ブラウザゲーム</a> &gt;
+            <strong data-ja="全商品一覧" data-en="All items">全商品一覧</strong>
+        </nav>
+
+        <div class="shop-layout">
+            <aside class="col-left">
+                <section class="side-box">
+                    <h2 class="side-title" data-ja="カテゴリ" data-en="Categories">カテゴリ</h2>
+                    <ul class="category-tree">
+                        <li><a href="./" data-ja="トップページ" data-en="Top page">トップページ</a> <span class="count">(1)</span></li>
+                        <li>
+                            <a href="#featured-games" data-ja="ブラウザゲーム" data-en="Browser games">ブラウザゲーム</a> <span class="count">(4)</span>
+                            <ul>
+                                <li><a href="#p-emir" data-ja="エミールのカー・ワールド" data-en="Emir's Car World">エミールのカー・ワールド</a></li>
+                                <li><a href="#p-runner" data-ja="エンドレスランナー v3" data-en="Endless Runner v3">エンドレスランナー v3</a></li>
+                                <li><a href="#p-kl" data-ja="クアラルンプール ボクセル" data-en="Kuala Lumpur Voxel">クアラルンプール ボクセル</a></li>
+                                <li><a href="#p-doom">DOOM Kawaii♡</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="#apps" data-ja="提携ショップ（Webアプリ）" data-en="Partner shops (web apps)">提携ショップ（Webアプリ）</a> <span class="count">(5)</span></li>
+                        <li><a href="#archive" data-ja="GitHub 取扱商品" data-en="GitHub items">GitHub 取扱商品</a> <span class="count" data-ja="(随時更新)" data-en="(often)">(随時更新)</span></li>
+                        <li><a href="#specs" data-ja="商品スペック表" data-en="Spec sheet">商品スペック表</a></li>
+                        <li><a href="#links" data-ja="リンク集" data-en="Links">リンク集</a></li>
+                    </ul>
+                </section>
+
+                <section class="side-box" id="guide">
+                    <h2 class="side-title" data-ja="営業案内" data-en="Store info">営業案内</h2>
+                    <ul class="info-list">
+                        <li data-ja="営業時間：24時間（年中無休）" data-en="Hours: 24/7, all year round">営業時間：24時間（年中無休）</li>
+                        <li data-ja="送料：無料（すべてダウンロード不要）" data-en="Shipping: free (nothing to download)">送料：無料（すべてダウンロード不要）</li>
+                        <li data-ja="支払方法：なし（全品 ¥0）" data-en="Payment: none (everything ¥0)">支払方法：なし（全品 ¥0）</li>
+                        <li data-ja="返品：ブラウザのタブを閉じれば返品完了" data-en="Returns: closing the tab counts as a return">返品：ブラウザのタブを閉じれば返品完了</li>
+                        <li data-ja="店長：wanazhar ฅ^•ﻌ•^ฅ" data-en="Shopkeeper: wanazhar ฅ^•ﻌ•^ฅ">店長：wanazhar ฅ^•ﻌ•^ฅ</li>
+                    </ul>
+                </section>
+
+                <section class="side-box ad-box">
+                    <h2 class="side-title" data-ja="広告" data-en="Ads">広告</h2>
+                    <a class="ad-banner ad-red" href="#featured-games">
+                        <span class="ad-kicker" data-ja="大処分市" data-en="Big clearance">大処分市</span>
+                        <span class="ad-main" data-ja="全品 ¥0" data-en="Everything ¥0">全品 ¥0</span>
+                        <span class="ad-note" data-ja="今すぐクリック！" data-en="Click right now!">今すぐクリック！</span>
+                    </a>
+                    <a class="ad-banner ad-blue" href="#archive">
+                        <span class="ad-kicker" data-ja="新規開店" data-en="Grand opening">新規開店</span>
+                        <span class="ad-main" data-ja="商品数 増加中" data-en="Inventory growing">商品数 増加中</span>
+                        <span class="ad-note" data-ja="GitHub と連動中" data-en="Synced with GitHub">GitHub と連動中</span>
+                    </a>
+                    <div class="ad-banner ad-yellow blink">
+                        <span class="ad-kicker" data-ja="期間限定" data-en="Limited time">期間限定</span>
+                        <span class="ad-main" data-ja="ポイント0倍" data-en="0x points">ポイント0倍</span>
+                        <span class="ad-note" data-ja="どうして……" data-en="Why though...">どうして……</span>
+                    </div>
+                    <a class="ad-banner ad-purple" href="#featured-games">
+                        <span class="ad-kicker" data-ja="スマホ対応" data-en="Mobile ready">スマホ対応</span>
+                        <span class="ad-main" data-ja="どこでも遊べる" data-en="Play anywhere">どこでも遊べる</span>
+                        <span class="ad-note" data-ja="電車でもポチッと♪" data-en="Even on the train♪">電車でもポチッと♪</span>
+                    </a>
+                    <a class="ad-banner ad-cyan" href="https://github.com/wanazhar" target="_blank" rel="noreferrer">
+                        <span class="ad-kicker" data-ja="相互リンク" data-en="Link exchange">相互リンク</span>
+                        <span class="ad-main" data-ja="募集中♡" data-en="Open ♡">募集中♡</span>
+                        <span class="ad-note" data-ja="GitHub までご連絡を" data-en="Ping me on GitHub">GitHub までご連絡を</span>
+                    </a>
+                </section>
+            </aside>
+
+            <main class="col-main">
+                <section class="hero-banner" id="featured">
+                    <div class="hero-sale-ribbon blink">SALE</div>
+                    <span class="hero-sticker sticker-a blink" data-ja="全品0円!!" data-en="ALL ¥0!!">全品0円!!</span>
+                    <span class="hero-sticker sticker-b" data-ja="24時間営業" data-en="OPEN 24H">24時間営業</span>
+                    <span class="hero-sticker sticker-c" data-ja="アニメ化希望" data-en="Anime when?">アニメ化希望</span>
+                    <div class="hero-text">
+                        <p class="hero-eyebrow" data-ja="ようこそ PLAY☆WANAZHAR へ" data-en="Welcome to PLAY☆WANAZHAR">ようこそ PLAY☆WANAZHAR へ</p>
+                        <h1 data-ja="コーディング大処分市！！" data-en="Coding Mega Clearance!!">コーディング大処分市！！</h1>
+                        <p class="hero-copy" data-ja="個人開発のブラウザゲーム・アプリを、全品0円・送料無料で大放出中。カートは空のまま、心は満タン。" data-en="Personal browser games and apps, all ¥0 with free shipping. Your cart stays empty, your heart stays full.">個人開発のブラウザゲーム・アプリを、全品0円・送料無料で大放出中。カートは空のまま、心は満タン。</p>
+                        <ul class="hero-points">
+                            <li data-ja="◎ 登録不要・ダウンロード不要" data-en="◎ No signup, no downloads">◎ 登録不要・ダウンロード不要</li>
+                            <li data-ja="◎ スマホ / タブレット / PC 対応" data-en="◎ Works on phone / tablet / PC">◎ スマホ / タブレット / PC 対応</li>
+                            <li data-ja="◎ 全品 0円（税込）" data-en="◎ Everything ¥0 (tax included)">◎ 全品 0円（税込）</li>
+                        </ul>
+                    </div>
+                    <div class="hero-actions">
+                        <a href="#featured-games" class="pixel-button" data-ja="商品を見る ▼" data-en="See the goods ▼">商品を見る ▼</a>
+                        <a href="https://github.com/wanazhar" class="pixel-button alt" target="_blank" rel="noreferrer" data-ja="店舗(GitHub)へ" data-en="Visit the shop (GitHub)">店舗(GitHub)へ</a>
+                    </div>
+                    <div class="hero-mascot">
+                        <img src="images/mascot-mimi.svg" alt="看板娘ミミ / Shop mascot Mimi">
+                        <p class="mascot-name"><span data-ja="看板娘・ミミ" data-en="Mascot: Mimi">看板娘・ミミ</span><span class="mascot-bubble-inline" data-ja="いらっしゃいませ〜♪" data-en="Welcome~♪">いらっしゃいませ〜♪</span></p>
+                    </div>
+                </section>
+
+                <div class="tag-cloud panel">
+                    <span class="tag-cloud-label" data-ja="人気キーワード：" data-en="Popular keywords:">人気キーワード：</span>
+                    <a href="#featured-games" data-ja="無料ゲーム" data-en="free games">無料ゲーム</a>
+                    <a href="#p-emir" data-ja="3Dドライビング" data-en="3D driving">3Dドライビング</a>
+                    <a href="#p-kl" data-ja="ボクセル" data-en="voxel">ボクセル</a>
+                    <a href="#p-doom" data-ja="DOOM" data-en="DOOM">DOOM</a>
+                    <a href="#p-runner" data-ja="ランナー" data-en="runner">ランナー</a>
+                    <a href="#apps" data-ja="PDF" data-en="PDF">PDF</a>
+                    <a href="#apps" data-ja="AI履歴書" data-en="AI resume">AI履歴書</a>
+                    <a href="#apps" data-ja="ハラール" data-en="halal">ハラール</a>
+                    <a href="#archive" data-ja="GitHub" data-en="GitHub">GitHub</a>
+                    <a href="#specs" data-ja="スペック" data-en="specs">スペック</a>
+                </div>
+
+                <section class="panel timesale">
+                    <div class="timesale-head">
+                        <span class="timesale-badge blink" data-ja="タイムセール" data-en="TIME SALE">タイムセール</span>
+                        <p class="timesale-copy" data-ja="本日23:59まで！全品0円!! 急いでポチッと♪" data-en="Until 23:59 today! Everything ¥0!! Hurry and click♪">本日23:59まで！全品0円!! 急いでポチッと♪</p>
+                    </div>
+                    <div class="timesale-body">
+                        <img class="timesale-mascot" src="images/mascot-yume.svg" alt="接客担当ユメ / Shop mascot Yume">
+                        <div class="timesale-timer">
+                            <p class="countdown-label" data-ja="終了まで" data-en="Ends in">終了まで</p>
+                            <div class="countdown" id="countdown">--:--:--</div>
+                        </div>
+                        <a class="pixel-button small" href="#featured-games" data-ja="急いで見る ▶" data-en="Hurry, see items ▶">急いで見る ▶</a>
+                    </div>
+                </section>
+
+                <section class="panel section-block" id="featured-games">
+                    <div class="section-heading">
+                        <h2 data-ja="【注目商品】ブラウザゲーム 特選4点" data-en="【Featured】Four browser game picks">【注目商品】ブラウザゲーム 特選4点</h2>
+                        <p data-ja="このモノレポに同居している自作ゲームたち。クリックですぐ遊べます。" data-en="Self-made games living in this monorepo. One click to play.">このモノレポに同居している自作ゲームたち。クリックですぐ遊べます。</p>
+                        <span class="result-count" id="search-status">全店の商品を表示中</span>
+                    </div>
+
+                    <div class="product-grid">
+                        <article class="product-card searchable-card" id="p-emir">
+                            <div class="product-thumb thumb-emir">
+                                <span class="thumb-art">🚗</span>
+                                <span class="thumb-corner">NEW</span>
+                                <span class="thumb-rank" data-ja="1位" data-en="No.1">1位</span>
+                            </div>
+                            <div class="product-body">
+                                <div class="badge-row">
+                                    <span class="badge badge-sale">SALE</span>
+                                    <span class="badge badge-free" data-ja="送料無料" data-en="Free shipping">送料無料</span>
+                                    <span class="badge badge-point" data-ja="ポイント5倍" data-en="5x points">ポイント5倍</span>
+                                    <span class="badge badge-hot" data-ja="在庫僅少" data-en="Low stock">在庫僅少</span>
+                                    <span class="badge badge-love" data-ja="高評価♡" data-en="Top rated ♡">高評価♡</span>
+                                </div>
+                                <h3 class="product-title"><a href="emir/" data-ja="エミールのカー・ワールド" data-en="Emir's Car World">エミールのカー・ワールド</a></h3>
+                                <p class="product-catch" data-ja="街をぶっとばせ！物理演算つき3Dおもちゃカー・ワールド" data-en="Tear up the town in a physics-driven 3D toy car world">街をぶっとばせ！物理演算つき3Dおもちゃカー・ワールド</p>
+                                <div class="rating"><span class="stars">★★★★★</span> <b>4.8</b> <span class="review-count" data-ja="（127件のレビュー）" data-en="(127 reviews)">（127件のレビュー）</span></div>
+                                <p class="price-line"><span class="price">¥0</span> <span class="price-note" data-ja="（税込・通常価格 ¥0）" data-en="(tax incl., regular price ¥0)">（税込・通常価格 ¥0）</span></p>
+                                <p class="stock" data-ja="在庫あり◎ いまなら掘削機・トラックも同梱" data-en="In stock ◎ excavator and truck included right now">在庫あり◎ いまなら掘削機・トラックも同梱</p>
+                                <ul class="product-specs">
+                                    <li><b data-ja="ジャンル" data-en="Genre">ジャンル</b><span data-ja="オープンワールド・ドライビング" data-en="Open-world driving">オープンワールド・ドライビング</span></li>
+                                    <li><b data-ja="車種" data-en="Vehicles">車種</b><span data-ja="セダン／ハッチバック／4WD／トラック／ショベル" data-en="Sedan / hatchback / 4WD / truck / excavator">セダン／ハッチバック／4WD／トラック／ショベル</span></li>
+                                    <li><b data-ja="操作" data-en="Controls">操作</b><span data-ja="WASD・矢印キー・タッチ対応" data-en="WASD, arrow keys, touch">WASD・矢印キー・タッチ対応</span></li>
+                                    <li><b data-ja="技術" data-en="Tech">技術</b><span data-ja="Three.js + Rapier + Supabase（任意）" data-en="Three.js + Rapier + Supabase (optional)">Three.js + Rapier + Supabase（任意）</span></li>
+                                </ul>
+                                <div class="product-actions">
+                                    <button class="pixel-button small cart-add" type="button" data-cart-item-ja="エミールのカー・ワールド" data-cart-item-en="Emir's Car World" data-ja="カートに入れる" data-en="Add to cart">カートに入れる</button>
+                                    <a class="repo-link play-link" href="emir/" data-ja="今すぐあそぶ ▶" data-en="Play now ▶">今すぐあそぶ ▶</a>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="product-card searchable-card" id="p-runner">
+                            <div class="product-thumb thumb-runner">
+                                <span class="thumb-art">🏃</span>
+                                <span class="thumb-corner">v3</span>
+                                <span class="thumb-rank" data-ja="4位" data-en="No.4">4位</span>
+                            </div>
+                            <div class="product-body">
+                                <div class="badge-row">
+                                    <span class="badge badge-sale">SALE</span>
+                                    <span class="badge badge-free" data-ja="送料無料" data-en="Free shipping">送料無料</span>
+                                    <span class="badge badge-new" data-ja="新装開店" data-en="v3 relaunch">新装開店</span>
+                                    <span class="badge badge-hot" data-ja="即納" data-en="Ships now">即納</span>
+                                </div>
+                                <h3 class="product-title"><a href="endlessrunner/" data-ja="エンドレスランナー v3" data-en="Endless Runner v3">エンドレスランナー v3</a></h3>
+                                <p class="product-catch" data-ja="走れ・跳べ・空を飛べ！3レーン無限ランナー" data-en="Run, jump, fly! A 3-lane endless runner">走れ・跳べ・空を飛べ！3レーン無限ランナー</p>
+                                <div class="rating"><span class="stars">★★★★☆</span> <b>4.7</b> <span class="review-count" data-ja="（89件のレビュー）" data-en="(89 reviews)">（89件のレビュー）</span></div>
+                                <p class="price-line"><span class="price">¥0</span> <span class="price-note" data-ja="（税込・通常価格 ¥0）" data-en="(tax incl., regular price ¥0)">（税込・通常価格 ¥0）</span></p>
+                                <p class="stock" data-ja="在庫あり◎ ジェットパック／マグネット／シールド搭載" data-en="In stock ◎ jetpack / magnet / shield equipped">在庫あり◎ ジェットパック／マグネット／シールド搭載</p>
+                                <ul class="product-specs">
+                                    <li><b data-ja="ジャンル" data-en="Genre">ジャンル</b><span data-ja="3レーン・エンドレスランナー" data-en="3-lane endless runner">3レーン・エンドレスランナー</span></li>
+                                    <li><b data-ja="アイテム" data-en="Items">アイテム</b><span data-ja="ジェットパック／コインマグネット／2倍スコア／シールド" data-en="Jetpack / coin magnet / 2x score / shield">ジェットパック／コインマグネット／2倍スコア／シールド</span></li>
+                                    <li><b data-ja="操作" data-en="Controls">操作</b><span data-ja="矢印キー・WASD・スワイプ" data-en="Arrow keys, WASD, swipe">矢印キー・WASD・スワイプ</span></li>
+                                    <li><b data-ja="技術" data-en="Tech">技術</b><span data-ja="Three.js + GSAP" data-en="Three.js + GSAP">Three.js + GSAP</span></li>
+                                </ul>
+                                <div class="product-actions">
+                                    <button class="pixel-button small cart-add" type="button" data-cart-item-ja="エンドレスランナー v3" data-cart-item-en="Endless Runner v3" data-ja="カートに入れる" data-en="Add to cart">カートに入れる</button>
+                                    <a class="repo-link play-link" href="endlessrunner/" data-ja="今すぐあそぶ ▶" data-en="Play now ▶">今すぐあそぶ ▶</a>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="product-card searchable-card" id="p-kl">
+                            <div class="product-thumb thumb-kl">
+                                <span class="thumb-art">🏙️</span>
+                                <span class="thumb-corner">10M</span>
+                                <span class="thumb-rank" data-ja="2位" data-en="No.2">2位</span>
+                            </div>
+                            <div class="product-body">
+                                <div class="badge-row">
+                                    <span class="badge badge-sale">SALE</span>
+                                    <span class="badge badge-free" data-ja="送料無料" data-en="Free shipping">送料無料</span>
+                                    <span class="badge badge-point" data-ja="ポイント5倍" data-en="5x points">ポイント5倍</span>
+                                    <span class="badge badge-love" data-ja="高評価♡" data-en="Top rated ♡">高評価♡</span>
+                                    <span class="badge badge-hot" data-ja="10Mブロック" data-en="10M blocks">10Mブロック</span>
+                                </div>
+                                <h3 class="product-title"><a href="kualalumpur/" data-ja="クアラルンプール ボクセル" data-en="Kuala Lumpur Voxel">クアラルンプール ボクセル</a></h3>
+                                <p class="product-catch" data-ja="コードだけで建てたクアラルンプール、1000万ブロックの街めぐり" data-en="A code-built Kuala Lumpur — wander a city of 10 million blocks">コードだけで建てたクアラルンプール、1000万ブロックの街めぐり</p>
+                                <div class="rating"><span class="stars">★★★★★</span> <b>4.9</b> <span class="review-count" data-ja="（256件のレビュー）" data-en="(256 reviews)">（256件のレビュー）</span></div>
+                                <p class="price-line"><span class="price">¥0</span> <span class="price-note" data-ja="（税込・画像素材0枚）" data-en="(tax incl., zero image assets)">（税込・画像素材0枚）</span></p>
+                                <p class="stock" data-ja="在庫あり◎ ツインタワー・モノレール・夜景つき" data-en="In stock ◎ twin towers, monorail, night views">在庫あり◎ ツインタワー・モノレール・夜景つき</p>
+                                <ul class="product-specs">
+                                    <li><b data-ja="ジャンル" data-en="Genre">ジャンル</b><span data-ja="3Dボクセル探索" data-en="3D voxel exploration">3Dボクセル探索</span></li>
+                                    <li><b data-ja="名所" data-en="Landmarks">名所</b><span data-ja="ペトロナスツインタワー／ムルデカ118／KLタワーほか" data-en="Petronas Towers / Merdeka 118 / KL Tower and more">ペトロナスツインタワー／ムルデカ118／KLタワーほか</span></li>
+                                    <li><b data-ja="操作" data-en="Controls">操作</b><span data-ja="WASD＋マウス・タッチ移動スティック" data-en="WASD + mouse, touch move stick">WASD＋マウス・タッチ移動スティック</span></li>
+                                    <li><b data-ja="技術" data-en="Tech">技術</b><span data-ja="Three.js（全地形コード生成・チャンク分割）" data-en="Three.js (fully code-generated, chunked)">Three.js（全地形コード生成・チャンク分割）</span></li>
+                                </ul>
+                                <div class="product-actions">
+                                    <button class="pixel-button small cart-add" type="button" data-cart-item-ja="クアラルンプール ボクセル" data-cart-item-en="Kuala Lumpur Voxel" data-ja="カートに入れる" data-en="Add to cart">カートに入れる</button>
+                                    <a class="repo-link play-link" href="kualalumpur/" data-ja="今すぐあそぶ ▶" data-en="Play now ▶">今すぐあそぶ ▶</a>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="product-card searchable-card" id="p-doom">
+                            <div class="product-thumb thumb-doom">
+                                <span class="thumb-art">👾</span>
+                                <span class="thumb-corner">1993</span>
+                                <span class="thumb-rank" data-ja="3位" data-en="No.3">3位</span>
+                            </div>
+                            <div class="product-body">
+                                <div class="badge-row">
+                                    <span class="badge badge-sale">SALE</span>
+                                    <span class="badge badge-free" data-ja="送料無料" data-en="Free shipping">送料無料</span>
+                                    <span class="badge badge-new" data-ja="かわいい" data-en="Kawaii">かわいい</span>
+                                    <span class="badge badge-love" data-ja="ネタ枠♡" data-en="For the lulz ♡">ネタ枠♡</span>
+                                </div>
+                                <h3 class="product-title"><a href="doom/">DOOM Kawaii♡</a></h3>
+                                <p class="product-catch" data-ja="伝説のFPSをブラウザで。かわいい地獄へようこそ" data-en="The legendary FPS in your browser. Welcome to cute hell.">伝説のFPSをブラウザで。かわいい地獄へようこそ</p>
+                                <div class="rating"><span class="stars">★★★★★</span> <b>5.0</b> <span class="review-count" data-ja="（666件のレビュー）" data-en="(666 reviews)">（666件のレビュー）</span></div>
+                                <p class="price-line"><span class="price">¥0</span> <span class="price-note" data-ja="（shareware版 v1.9）" data-en="(shareware v1.9)">（shareware版 v1.9）</span></p>
+                                <p class="stock" data-ja="在庫あり◎ iPad / Safari 対応・タッチパッド付き" data-en="In stock ◎ iPad / Safari ready, virtual pad included">在庫あり◎ iPad / Safari 対応・タッチパッド付き</p>
+                                <ul class="product-specs">
+                                    <li><b data-ja="ジャンル" data-en="Genre">ジャンル</b><span data-ja="レトロFPS（DOOM shareware v1.9）" data-en="Retro FPS (DOOM shareware v1.9)">レトロFPS（DOOM shareware v1.9）</span></li>
+                                    <li><b data-ja="モード" data-en="Modes">モード</b><span data-ja=".jsdos ファイルの読み込み／セーブ／ロード" data-en="Load .jsdos files / save / load">.jsdos ファイルの読み込み／セーブ／ロード</span></li>
+                                    <li><b data-ja="操作" data-en="Controls">操作</b><span data-ja="矢印キー＋Ctrl / Space・仮想パッド" data-en="Arrow keys + Ctrl / Space, virtual pad">矢印キー＋Ctrl / Space・仮想パッド</span></li>
+                                    <li><b data-ja="技術" data-en="Tech">技術</b><span data-ja="js-dos（DOSBox）・CDNフォールバック内蔵" data-en="js-dos (DOSBox), built-in CDN fallback">js-dos（DOSBox）・CDNフォールバック内蔵</span></li>
+                                </ul>
+                                <div class="product-actions">
+                                    <button class="pixel-button small cart-add" type="button" data-cart-item-ja="DOOM Kawaii♡" data-cart-item-en="DOOM Kawaii♡" data-ja="カートに入れる" data-en="Add to cart">カートに入れる</button>
+                                    <a class="repo-link play-link" href="doom/" data-ja="今すぐあそぶ ▶" data-en="Play now ▶">今すぐあそぶ ▶</a>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    <p class="empty-card" id="search-empty" hidden data-ja="お探しの商品は見つかりませんでした。別のキーワードをお試しください。" data-en="No products matched. Try a different keyword.">お探しの商品は見つかりませんでした。別のキーワードをお試しください。</p>
+                </section>
+
+                <section class="panel section-block" id="voices">
+                    <div class="section-heading">
+                        <h2 data-ja="お客様の声（★4.9／実在しない口コミ）" data-en="Customer voices (★4.9 / totally fictional reviews)">お客様の声（★4.9／実在しない口コミ）</h2>
+                        <p data-ja="実際に遊んだみなさんの熱い声が届きました。全員20XX年からタイムスリップしてきた常連さんです。" data-en="Passionate words from real players. Every one of them is a regular who time-traveled here from 20XX.">実際に遊んだみなさんの熱い声が届きました。全員20XX年からタイムスリップしてきた常連さんです。</p>
+                    </div>
+                    <div class="voice-grid">
+                        <article class="voice-card">
+                            <img class="voice-avatar" src="images/mascot-chibi.svg" alt="">
+                            <div class="voice-bubble">
+                                <p class="voice-name"><span data-ja="ブラウザゲーム歴10年さん" data-en="Browser-gamer for 10 years">ブラウザゲーム歴10年さん</span> <span class="stars">★★★★★</span></p>
+                                <p data-ja="掘削機を操作した瞬間、人生が変わりました。これが0円とは……。カートは空なのに心は満タンです。" data-en="The moment I drove the excavator, my life changed. And it's ¥0... My cart is empty but my heart is full.">掘削機を操作した瞬間、人生が変わりました。これが0円とは……。カートは空なのに心は満タンです。</p>
+                            </div>
+                        </article>
+                        <article class="voice-card">
+                            <img class="voice-avatar" src="images/mascot-mimi.svg" alt="">
+                            <div class="voice-bubble">
+                                <p class="voice-name"><span data-ja="週末ボクセラーさん" data-en="Weekend voxel-er">週末ボクセラーさん</span> <span class="stars">★★★★★</span></p>
+                                <p data-ja="1000万ブロックは伊達じゃない。ツインタワーの前で思わず立ち止まって泣けます。" data-en="10 million blocks is no joke. I stopped in front of the Twin Towers and cried a little.">1000万ブロックは伊達じゃない。ツインタワーの前で思わず立ち止まって泣けます。</p>
+                            </div>
+                        </article>
+                        <article class="voice-card">
+                            <img class="voice-avatar" src="images/mascot-yume.svg" alt="">
+                            <div class="voice-bubble">
+                                <p class="voice-name"><span data-ja="かわいいもの好きさん" data-en="Lover of cute things">かわいいもの好きさん</span> <span class="stars">★★★★☆</span></p>
+                                <p data-ja="DOOM Kawaii♡ がかわいすぎて敵を撃つのをためらいます。でも撃ちます。地獄はかわいい。" data-en="DOOM Kawaii♡ is so cute I hesitate to shoot the demons. Then I shoot them. Hell is cute.">DOOM Kawaii♡ がかわいすぎて敵を撃つのをためらいます。でも撃ちます。地獄はかわいい。</p>
+                            </div>
+                        </article>
+                        <article class="voice-card">
+                            <img class="voice-avatar" src="images/mascot-sakura.svg" alt="">
+                            <div class="voice-bubble">
+                                <p class="voice-name"><span data-ja="通勤ランナーさん" data-en="Commute runner">通勤ランナーさん</span> <span class="stars">★★★★☆</span></p>
+                                <p data-ja="ジェットパックで空を飛んだ瞬間の解放感がすごい。通勤中の現実逃避に最適です。" data-en="The freedom of jetpacking into the sky is unreal. Perfect for escaping reality on the train.">ジェットパックで空を飛んだ瞬間の解放感がすごい。通勤中の現実逃避に最適です。</p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="panel section-block" id="specs">
+                    <div class="section-heading">
+                        <h2 data-ja="商品スペック早見表" data-en="Quick spec sheet">商品スペック早見表</h2>
+                        <p data-ja="モノレポ内の公開ディレクトリとソース、ビルド方法の一覧です。" data-en="Public directories, sources, and build info from this monorepo.">モノレポ内の公開ディレクトリとソース、ビルド方法の一覧です。</p>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="spec-table">
+                            <thead>
+                                <tr>
+                                    <th data-ja="商品番号" data-en="Item no.">商品番号</th>
+                                    <th data-ja="商品名" data-en="Product">商品名</th>
+                                    <th data-ja="ジャンル" data-en="Genre">ジャンル</th>
+                                    <th data-ja="使用技術" data-en="Tech">使用技術</th>
+                                    <th data-ja="操作" data-en="Controls">操作</th>
+                                    <th data-ja="ソース" data-en="Source">ソース</th>
+                                    <th data-ja="出荷状況" data-en="Status">出荷状況</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>WZ-001</td>
+                                    <td><a href="emir/" data-ja="エミールのカー・ワールド" data-en="Emir's Car World">エミールのカー・ワールド</a></td>
+                                    <td data-ja="3Dドライビング" data-en="3D driving">3Dドライビング</td>
+                                    <td>Three.js / Rapier / Supabase</td>
+                                    <td data-ja="WASD・タッチ" data-en="WASD, touch">WASD・タッチ</td>
+                                    <td><code>_emir-src/</code></td>
+                                    <td class="stock-cell" data-ja="公開中◎" data-en="Live◎">公開中◎</td>
+                                </tr>
+                                <tr>
+                                    <td>WZ-002</td>
+                                    <td><a href="endlessrunner/" data-ja="エンドレスランナー v3" data-en="Endless Runner v3">エンドレスランナー v3</a></td>
+                                    <td data-ja="3Dランナー" data-en="3D runner">3Dランナー</td>
+                                    <td>Three.js / GSAP</td>
+                                    <td data-ja="矢印・スワイプ" data-en="Arrows, swipe">矢印・スワイプ</td>
+                                    <td><code>_endlessrunner-src/</code></td>
+                                    <td class="stock-cell" data-ja="公開中◎" data-en="Live◎">公開中◎</td>
+                                </tr>
+                                <tr>
+                                    <td>WZ-003</td>
+                                    <td><a href="kualalumpur/" data-ja="クアラルンプール ボクセル" data-en="Kuala Lumpur Voxel">クアラルンプール ボクセル</a></td>
+                                    <td data-ja="3D探索" data-en="3D exploration">3D探索</td>
+                                    <td data-ja="Three.js（コード生成）" data-en="Three.js (code-generated)">Three.js（コード生成）</td>
+                                    <td data-ja="WASD＋マウス" data-en="WASD + mouse">WASD＋マウス</td>
+                                    <td><code>_kualalumpur-src/</code></td>
+                                    <td class="stock-cell" data-ja="公開中◎" data-en="Live◎">公開中◎</td>
+                                </tr>
+                                <tr>
+                                    <td>WZ-004</td>
+                                    <td><a href="doom/">DOOM Kawaii♡</a></td>
+                                    <td data-ja="レトロFPS" data-en="Retro FPS">レトロFPS</td>
+                                    <td>js-dos / DOSBox</td>
+                                    <td data-ja="矢印＋Ctrl" data-en="Arrows + Ctrl">矢印＋Ctrl</td>
+                                    <td><code>doom/</code></td>
+                                    <td class="stock-cell" data-ja="公開中◎" data-en="Live◎">公開中◎</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="table-note">
+                        <span data-ja="※ ビルドと出荷は GitHub Actions（" data-en="※ Build and shipping are handled by GitHub Actions (">※ ビルドと出荷は GitHub Actions（</span><code>.github/workflows/pages.yml</code><span data-ja="）が担当。各 " data-en="). Each ">）が担当。各 </span><code>_*-src</code><span data-ja=" を " data-en=" runs "> を </span><code>npm ci &amp;&amp; npm run build</code><span data-ja=" してこの店頭に並べています。" data-en=" before hitting the shelves."> してこの店頭に並べています。</span>
+                    </p>
+                </section>
+
+                <section class="panel section-block" id="apps">
+                    <div class="section-heading">
+                        <h2 data-ja="提携ショップの商品（Webアプリ）" data-en="Partner shop items (web apps)">提携ショップの商品（Webアプリ）</h2>
+                        <p data-ja="系列店・提携店で販売中の実用アプリ。いずれも正規品・全品0円です。" data-en="Practical apps from affiliated shops. All genuine, all ¥0.">系列店・提携店で販売中の実用アプリ。いずれも正規品・全品0円です。</p>
+                    </div>
+                    <div id="featured-projects" class="product-grid partner-grid" aria-live="polite">
+                        <div class="loading-card" data-ja="提携商品を読み込み中…" data-en="Loading partner items…">提携商品を読み込み中…</div>
+                    </div>
+                </section>
+
+                <section class="panel section-block" id="archive">
+                    <div class="section-heading">
+                        <h2 data-ja="取扱商品一覧（GitHub 在庫）" data-en="All items (GitHub inventory)">取扱商品一覧（GitHub 在庫）</h2>
+                        <p data-ja="GitHub にある公開リポジトリの全ラインナップ。更新が新しい順です。" data-en="Every public repo, newest updates first.">GitHub にある公開リポジトリの全ラインナップ。更新が新しい順です。</p>
+                    </div>
+                    <div class="archive-toolbar">
+                        <label for="repo-search" class="sr-only" data-ja="在庫を検索" data-en="Search inventory">在庫を検索</label>
+                        <input id="repo-search" type="search" placeholder="在庫を検索（例：python, game, pdf）" data-ja-placeholder="在庫を検索（例：python, game, pdf）" data-en-placeholder="Search inventory (e.g. python, game, pdf)">
+                        <button id="toggle-archive" class="pixel-button small" type="button">在庫を隠す</button>
+                    </div>
+                    <div id="archive-projects" class="repo-grid compact" aria-live="polite">
+                        <div class="loading-card" data-ja="在庫を確認中…" data-en="Checking inventory…">在庫を確認中…</div>
+                    </div>
+                </section>
+
+                <section class="panel section-block" id="staff">
+                    <div class="section-heading">
+                        <h2 data-ja="スタッフ紹介" data-en="Meet the staff">スタッフ紹介</h2>
+                        <p data-ja="当店は3人（+ちび1匹）で切り盛りしています。みんな0円で働いてくれています（誇張）。" data-en="Three girls (plus one chibi) run this shop. They all work for ¥0 (not a joke).">当店は3人（+ちび1匹）で切り盛りしています。みんな0円で働いてくれています（誇張）。</p>
+                    </div>
+                    <div class="staff-grid">
+                        <article class="staff-card">
+                            <img src="images/mascot-mimi.svg" alt="看板娘ミミ / Mascot Mimi">
+                            <h3 data-ja="ミミ（店長代理）" data-en="Mimi (acting manager)">ミミ（店長代理）</h3>
+                            <p class="staff-role" data-ja="担当：店頭・接客・看板" data-en="Role: storefront, greetings, signage">担当：店頭・接客・看板</p>
+                            <p class="staff-voice" data-ja="「いらっしゃいませ〜！今日も全品0円です♪ ゆっくり見ていってね！」" data-en="&quot;Welcome~! Everything is ¥0 again today♪ Take your time!&quot;">「いらっしゃいませ〜！今日も全品0円です♪ ゆっくり見ていってね！」</p>
+                            <p class="staff-hobby" data-ja="趣味：ツインテールの手入れ／特技：ウインク" data-en="Hobby: twintail care / Skill: winking">趣味：ツインテールの手入れ／特技：ウインク</p>
+                        </article>
+                        <article class="staff-card">
+                            <img src="images/mascot-sakura.svg" alt="開発部サクラ / Mascot Sakura">
+                            <h3 data-ja="サクラ（開発部）" data-en="Sakura (engineering)">サクラ（開発部）</h3>
+                            <p class="staff-role" data-ja="担当：新作ゲーム・ビルド・物理演算" data-en="Role: new games, builds, physics">担当：新作ゲーム・ビルド・物理演算</p>
+                            <p class="staff-voice" data-ja="「新作、鋭意制作中です……たぶん。npm ci は通ります。」" data-en="&quot;New titles in the works... probably. npm ci passes, at least.&quot;">「新作、鋭意制作中です……たぶん。npm ci は通ります。」</p>
+                            <p class="staff-hobby" data-ja="趣味：ヘッドホン収集／特技：3レーン回避" data-en="Hobby: headphone collecting / Skill: dodging on 3 lanes">趣味：ヘッドホン収集／特技：3レーン回避</p>
+                        </article>
+                        <article class="staff-card">
+                            <img src="images/mascot-yume.svg" alt="接客担当ユメ / Mascot Yume">
+                            <h3 data-ja="ユメ（接客担当）" data-en="Yume (customer care)">ユメ（接客担当）</h3>
+                            <p class="staff-role" data-ja="担当：タイムセール・お茶出し・癒やし" data-en="Role: time sales, tea, good vibes">担当：タイムセール・お茶出し・癒やし</p>
+                            <p class="staff-voice" data-ja="「ごゆっくりどうぞ〜。お茶でもいかがですか？ カートは空っぽでも大丈夫です。」" data-en="&quot;Take your time~. Tea? It's fine to leave your cart empty, too.&quot;">「ごゆっくりどうぞ〜。お茶でもいかがですか？ カートは空っぽでも大丈夫です。」</p>
+                            <p class="staff-hobby" data-ja="趣味：浴衣の新作／特技：23:59の見張り番" data-en="Hobby: new yukata designs / Skill: guarding the 23:59 deadline">趣味：浴衣の新作／特技：23:59の見張り番</p>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="panel section-block" id="news">
+                    <div class="section-heading">
+                        <h2 data-ja="お知らせ・入荷情報" data-en="News &amp; restocks">お知らせ・入荷情報</h2>
+                    </div>
+                    <ul class="news-list">
+                        <li><span class="news-date">2026/09/30</span> <span data-ja="看板娘のミミ・サクラ・ユメ、そしてちびミミが入荷しました。右の「今日の運勢」でおみくじも引けます。" data-en="Mascots Mimi, Sakura, and Yume — plus chibi Mimi — have arrived. Try the omikuji in the &quot;Today's fortune&quot; box.">看板娘のミミ・サクラ・ユメ、そしてちびミミが入荷しました。右の「今日の運勢」でおみくじも引けます。</span></li>
+                        <li><span class="news-date">2026/09/30</span> <span data-ja="店頭を「日本のネット商店」風に大改装しました。全品0円は据え置きです。" data-en="The storefront got a big &quot;Japanese online shop&quot; makeover. Everything is still ¥0.">店頭を「日本のネット商店」風に大改装しました。全品0円は据え置きです。</span></li>
+                        <li><span class="news-date">2026/09/30</span> <span data-ja="クアラルンプール ボクセル、1000万ブロック達成記念でポイント5倍（0倍）キャンペーン実施中。" data-en="Kuala Lumpur Voxel hit 10M blocks — 5x points (which is 0x) campaign running now.">クアラルンプール ボクセル、1000万ブロック達成記念でポイント5倍（0倍）キャンペーン実施中。</span></li>
+                        <li><span class="news-date">2026/04/26</span> <span data-ja="DOOM Kawaii♡ が iPad / Safari 環境に対応しました。" data-en="DOOM Kawaii♡ now supports iPad / Safari.">DOOM Kawaii♡ が iPad / Safari 環境に対応しました。</span></li>
+                        <li><span class="news-date">2026/04/26</span> <span data-ja="エミールのカー・ワールドに車両5種類と物理演算を追加入荷。" data-en="Emir's Car World restocked with five vehicle types and physics.">エミールのカー・ワールドに車両5種類と物理演算を追加入荷。</span></li>
+                    </ul>
+                </section>
+            </main>
+
+            <aside class="col-right">
+                <section class="side-box">
+                    <h2 class="side-title" data-ja="週間ランキング" data-en="Weekly ranking">週間ランキング</h2>
+                    <ol class="ranking-list">
+                        <li class="rank-1"><span class="rank-num" data-ja="1位" data-en="No.1">1位</span> <a href="emir/" data-ja="エミールのカー・ワールド" data-en="Emir's Car World">エミールのカー・ワールド</a></li>
+                        <li class="rank-2"><span class="rank-num" data-ja="2位" data-en="No.2">2位</span> <a href="kualalumpur/" data-ja="クアラルンプール ボクセル" data-en="Kuala Lumpur Voxel">クアラルンプール ボクセル</a></li>
+                        <li class="rank-3"><span class="rank-num" data-ja="3位" data-en="No.3">3位</span> <a href="doom/">DOOM Kawaii♡</a></li>
+                        <li class="rank-4"><span class="rank-num" data-ja="4位" data-en="No.4">4位</span> <a href="endlessrunner/" data-ja="エンドレスランナー v3" data-en="Endless Runner v3">エンドレスランナー v3</a></li>
+                        <li class="rank-5"><span class="rank-num" data-ja="5位" data-en="No.5">5位</span> <a href="https://idontlikepdf.vercel.app" target="_blank" rel="noreferrer">IDONTLIKEPDF</a></li>
+                    </ol>
+                    <p class="ranking-note" data-ja="※ 週間でも日間でも順位はあまり変わりません。" data-en="※ Rankings barely change, daily or weekly.">※ 週間でも日間でも順位はあまり変わりません。</p>
+                </section>
+
+                <section class="side-box">
+                    <h2 class="side-title" data-ja="今日の運勢（おみくじ）" data-en="Today's fortune (omikuji)">今日の運勢（おみくじ）</h2>
+                    <div class="omikuji">
+                        <img src="images/mascot-chibi.svg" alt="">
+                        <p class="omikuji-result" id="omikuji-result" data-ja="ボタンを押してね♪" data-en="Press the button♪">ボタンを押してね♪</p>
+                        <button id="omikuji-button" type="button" class="pixel-button small" data-ja="おみくじを引く" data-en="Draw a fortune">おみくじを引く</button>
+                        <p class="omikuji-count"><span data-ja="開運回数：" data-en="Draws: ">開運回数：</span><b id="omikuji-count">0</b><span data-ja="回" data-en="">回</span></p>
+                    </div>
+                </section>
+
+                <section class="side-box">
+                    <h2 class="side-title" data-ja="会員情報" data-en="Member info">会員情報</h2>
+                    <div class="member-card">
+                        <p class="member-name" data-ja="会員ランク：常連さん" data-en="Rank: Regular">会員ランク：常連さん</p>
+                        <p class="member-points"><span data-ja="保有ポイント：" data-en="Points: ">保有ポイント：</span><b>0 pt</b></p>
+                        <p class="member-note" data-ja="全品0円につき、ポイントは永遠に増えません。" data-en="Since everything is ¥0, your points will never grow.">全品0円につき、ポイントは永遠に増えません。</p>
+                    </div>
+                </section>
+
+                <section class="side-box ad-box">
+                    <h2 class="side-title" data-ja="ピックアップ" data-en="Pickup">ピックアップ</h2>
+                    <a class="ad-banner ad-green" href="doom/">
+                        <span class="ad-kicker" data-ja="入荷しました" data-en="Just arrived">入荷しました</span>
+                        <span class="ad-main" data-ja="かわいい地獄" data-en="Cute hell">かわいい地獄</span>
+                        <span class="ad-note">DOOM Kawaii♡</span>
+                    </a>
+                    <a class="ad-banner ad-pink" href="#apps">
+                        <span class="ad-kicker" data-ja="提携店" data-en="Partner shop">提携店</span>
+                        <span class="ad-main" data-ja="PDFはサーバーに送らない" data-en="PDFs never leave your browser">PDFはサーバーに送らない</span>
+                        <span class="ad-note">IDONTLIKEPDF</span>
+                    </a>
+                </section>
+
+                <section class="side-box" id="links">
+                    <h2 class="side-title" data-ja="リンク集" data-en="Links">リンク集</h2>
+                    <ul class="link-list">
+                        <li><a href="https://github.com/wanazhar" target="_blank" rel="noreferrer">github.com/wanazhar</a></li>
+                        <li><a href="https://aiseeker.vercel.app" target="_blank" rel="noreferrer">AI Seeker</a></li>
+                        <li><a href="https://festivities.vercel.app" target="_blank" rel="noreferrer">Festivities</a></li>
+                        <li><a href="https://wanazhar.pythonanywhere.com" target="_blank" rel="noreferrer">PythonAnywhere Lab</a></li>
+                    </ul>
+                </section>
+            </aside>
+        </div>
+
+        <footer class="footer-panel">
+            <ul class="footer-links">
+                <li><a href="./" data-ja="ホーム" data-en="Home">ホーム</a></li>
+                <li><a href="#featured-games" data-ja="ブラウザゲーム" data-en="Browser games">ブラウザゲーム</a></li>
+                <li><a href="#apps" data-ja="提携ショップ" data-en="Partner shops">提携ショップ</a></li>
+                <li><a href="#archive" data-ja="取扱商品一覧" data-en="All items">取扱商品一覧</a></li>
+                <li><a href="#specs" data-ja="スペック表" data-en="Spec sheet">スペック表</a></li>
+                <li><a href="#guide" data-ja="ご利用ガイド" data-en="Store guide">ご利用ガイド</a></li>
+                <li><a href="#news" data-ja="お知らせ" data-en="News">お知らせ</a></li>
+                <li><a href="#voices" data-ja="お客様の声" data-en="Voices">お客様の声</a></li>
+                <li><a href="#staff" data-ja="スタッフ紹介" data-en="Staff">スタッフ紹介</a></li>
+                <li><a href="#links" data-ja="リンク集" data-en="Links">リンク集</a></li>
+            </ul>
+            <p class="footer-keywords">
+                <span data-ja="人気キーワード：" data-en="Popular: ">人気キーワード：</span>
+                <a href="#featured-games" data-ja="無料ゲーム" data-en="free games">無料ゲーム</a>
+                <a href="#p-kl" data-ja="ボクセル" data-en="voxel">ボクセル</a>
+                <a href="#p-doom" data-ja="DOOM" data-en="DOOM">DOOM</a>
+                <a href="#apps" data-ja="PDF" data-en="PDF">PDF</a>
+                <a href="#p-runner" data-ja="ランナー" data-en="runner">ランナー</a>
+                <a href="#p-emir" data-ja="カー" data-en="cars">カー</a>
+                <a href="#staff" data-ja="看板娘" data-en="mascots">看板娘</a>
+                <a href="#voices" data-ja="口コミ" data-en="reviews">口コミ</a>
             </p>
-            <marquee behavior="scroll" direction="left" class="news-ticker">
-                七転び八起き ・ 継続は力なり ・ 初心忘るべからず ・ 石の上にも三年 ・ 雨降って地固まる
-            </marquee>
-            <div class="hero-actions">
-                <a href="#featured" class="pixel-button">VIEW PROJECTS</a>
-                <a href="https://github.com/wanazhar" class="pixel-button alt" target="_blank" rel="noreferrer">OPEN GITHUB</a>
-            </div>
-        </header>
-
-        <main>
-            <section class="panel intro-grid single-column">
-                <div class="terminal-box">
-                    <div class="window-title">/about</div>
-                    <p><span class="prompt">&gt;</span> name: <strong>wanazhar</strong></p>
-                    <p><span class="prompt">&gt;</span> focus: tools, experiments, and practical web projects</p>
-                </div>
-            </section>
-
-            <section id="featured" class="panel section-block">
-                <div class="section-heading">
-                    <h2>Featured Projects</h2>
-                    <p>Live apps from the shrine, with quick context on what each one actually does.</p>
-                </div>
-                <div id="featured-projects" class="repo-grid" aria-live="polite">
-                    <div class="loading-card">Loading featured projects...</div>
-                </div>
-            </section>
-
-            <section id="archive" class="panel section-block">
-                <div class="section-heading">
-                    <h2>GitHub Repository</h2>
-                    <p>All public repositories, sorted by recent activity.</p>
-                </div>
-                <div class="archive-toolbar">
-                    <label for="repo-search" class="sr-only">Search repositories</label>
-                    <input id="repo-search" type="search" placeholder="search archive...">
-                    <button id="toggle-archive" class="pixel-button small" type="button">HIDE ARCHIVE</button>
-                </div>
-                <div id="archive-projects" class="repo-grid compact" aria-live="polite">
-                    <div class="loading-card">Loading archive...</div>
-                </div>
-            </section>
-
-            <section class="panel webring-panel">
-                <div class="webring">
-                    <a href="https://github.com/wanazhar" target="_blank" rel="noreferrer">github.com/wanazhar</a>
-                </div>
-            </section>
-        </main>
-
-        <footer class="panel footer-panel">
-            <p>2026 wanazhar // project archive</p>
+            <p class="footer-note">2026 wanazhar // PLAY☆WANAZHAR（project archive）</p>
+            <p class="footer-fine" data-ja="※ 当店は個人サイトです。表示価格はすべて実際に0円です。ポイントは本当に増えません。" data-en="※ This is a personal site. Every price really is ¥0. The points really never grow.">※ 当店は個人サイトです。表示価格はすべて実際に0円です。ポイントは本当に増えません。</p>
         </footer>
     </div>
+
+    <div id="mascot-float" class="mascot-float">
+        <button type="button" id="mascot-close" class="mascot-close" aria-label="とじる / Close">×</button>
+        <button type="button" id="mascot-say" class="mascot-say" aria-label="せりふを変える / Next line">
+            <img src="images/mascot-chibi.svg" alt="看板娘ミミ / Chibi Mimi">
+        </button>
+        <p id="mascot-message" class="mascot-message">いらっしゃいませ〜♪</p>
+    </div>
+
+    <div id="cart-toast" class="cart-toast" role="status" aria-live="polite"></div>
 
     <script src="assets/script.js"></script>
 </body>

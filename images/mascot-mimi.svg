@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400" role="img" aria-label="看板娘ミミ / Shop mascot Mimi">
+  <defs>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd6ec"/>
+      <stop offset="1" stop-color="#ff96cd"/>
+    </linearGradient>
+    <linearGradient id="hairDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffa9d8"/>
+      <stop offset="1" stop-color="#f06cb2"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff2e9"/>
+      <stop offset="1" stop-color="#ffdcc6"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.5" cy="0.38" r="0.68">
+      <stop offset="0" stop-color="#a9f0ff"/>
+      <stop offset="0.55" stop-color="#3d9cf0"/>
+      <stop offset="1" stop-color="#1d3f96"/>
+    </radialGradient>
+  </defs>
+
+  <g fill="#ffb3dd" opacity="0.9">
+    <path d="M28 92 Q30 100 38 102 Q30 104 28 112 Q26 104 18 102 Q26 100 28 92 Z"/>
+    <path d="M292 78 Q294 87 302 89 Q294 91 292 100 Q290 91 282 89 Q290 87 292 78 Z"/>
+    <path d="M300 300 Q302 308 310 310 Q302 312 300 320 Q298 312 290 310 Q298 308 300 300 Z"/>
+    <path d="M22 318 Q24 325 31 327 Q24 329 22 336 Q20 329 13 327 Q20 325 22 318 Z"/>
+  </g>
+  <g fill="#ff6fb5" opacity="0.75">
+    <path d="M40 250 c0 -6 8 -9 11 -4 c3 -5 11 -2 11 4 c0 7 -11 14 -11 14 c0 0 -11 -7 -11 -14 Z"/>
+    <path d="M256 216 c0 -5 7 -8 9 -3 c2 -5 9 -2 9 3 c0 6 -9 12 -9 12 c0 0 -9 -6 -9 -12 Z" opacity="0.8"/>
+  </g>
+
+  <ellipse cx="160" cy="176" rx="116" ry="108" fill="url(#hairDark)"/>
+
+  <g fill="url(#hair)" stroke="#c2508f" stroke-width="3">
+    <ellipse cx="40" cy="216" rx="29" ry="62" transform="rotate(14 40 216)"/>
+    <ellipse cx="280" cy="216" rx="29" ry="62" transform="rotate(-14 280 216)"/>
+  </g>
+  <g fill="#ffd0ea" opacity="0.7">
+    <ellipse cx="34" cy="196" rx="9" ry="26" transform="rotate(14 34 196)"/>
+    <ellipse cx="274" cy="196" rx="9" ry="26" transform="rotate(-14 274 196)"/>
+  </g>
+
+  <rect x="144" y="238" width="32" height="30" rx="12" fill="#f6c6ac"/>
+
+  <path d="M108 262 Q160 246 212 262 L226 338 Q160 354 94 338 Z" fill="#ffffff" stroke="#7a4a63" stroke-width="5"/>
+  <path d="M124 262 L160 300 L196 262 L208 272 L160 318 L112 272 Z" fill="#2b3a67" stroke="#1b2545" stroke-width="4"/>
+  <path d="M130 272 L160 302 L190 272" fill="none" stroke="#ffffff" stroke-width="4"/>
+  <path d="M94 336 L226 336 L240 370 Q160 388 80 370 Z" fill="#2b3a67" stroke="#1b2545" stroke-width="5"/>
+  <g stroke="#4d5b8c" stroke-width="3">
+    <path d="M120 340 L112 372"/>
+    <path d="M160 342 L160 376"/>
+    <path d="M200 340 L208 372"/>
+  </g>
+
+  <path d="M118 282 Q72 270 48 246" fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round"/>
+  <ellipse cx="46" cy="242" rx="16" ry="14" fill="#ffffff" stroke="#c9c9de" stroke-width="3"/>
+  <circle cx="34" cy="224" r="19" fill="url(#skin)" stroke="#7a4a63" stroke-width="4"/>
+  <g stroke="#c98966" stroke-width="3" stroke-linecap="round">
+    <path d="M25 214 L18 202"/>
+    <path d="M35 210 L32 197"/>
+    <path d="M45 213 L48 200"/>
+  </g>
+  <path d="M202 282 Q226 306 232 338" fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round"/>
+  <ellipse cx="232" cy="338" rx="16" ry="14" fill="#ffffff" stroke="#c9c9de" stroke-width="3"/>
+  <circle cx="236" cy="350" r="18" fill="url(#skin)" stroke="#7a4a63" stroke-width="4"/>
+
+  <ellipse cx="160" cy="176" rx="94" ry="90" fill="url(#skin)" stroke="#7a4a63" stroke-width="5"/>
+
+  <path d="M66 172 Q58 76 160 64 Q262 76 254 172 Q244 126 206 116 Q194 98 160 98 Q126 98 114 116 Q76 126 66 172 Z" fill="url(#hair)" stroke="#c2508f" stroke-width="4"/>
+  <path d="M84 120 Q120 88 168 90 Q206 92 232 116" fill="none" stroke="#fff0fa" stroke-width="9" stroke-linecap="round" opacity="0.75"/>
+  <path d="M158 60 Q146 36 170 28" fill="none" stroke="#ffb3dd" stroke-width="8" stroke-linecap="round"/>
+  <path d="M74 186 Q64 214 76 240 Q94 236 96 206 Z" fill="url(#hair)" stroke="#c2508f" stroke-width="3"/>
+  <path d="M246 186 Q256 214 244 240 Q226 236 224 206 Z" fill="url(#hair)" stroke="#c2508f" stroke-width="3"/>
+
+  <g fill="#e60012" stroke="#8c0000" stroke-width="3">
+    <path d="M70 148 L46 138 L50 164 Z"/>
+    <path d="M74 148 L96 140 L92 166 Z"/>
+    <path d="M250 148 L274 138 L270 164 Z"/>
+    <path d="M246 148 L224 140 L228 166 Z"/>
+    <circle cx="72" cy="152" r="9"/>
+    <circle cx="248" cy="152" r="9"/>
+  </g>
+
+  <path d="M100 178 Q126 158 152 178" fill="none" stroke="#7a4a63" stroke-width="8" stroke-linecap="round"/>
+  <g>
+    <ellipse cx="196" cy="184" rx="27" ry="31" fill="#ffffff" stroke="#7a4a63" stroke-width="4.5"/>
+    <circle cx="198" cy="188" r="20" fill="url(#iris)"/>
+    <circle cx="198" cy="188" r="9.5" fill="#1c2450"/>
+    <circle cx="189" cy="177" r="7.5" fill="#ffffff"/>
+    <circle cx="206" cy="199" r="3.6" fill="#ffffff" opacity="0.85"/>
+    <path d="M170 164 Q196 142 224 166" fill="none" stroke="#7a4a63" stroke-width="9" stroke-linecap="round"/>
+    <path d="M176 208 Q196 218 216 208" fill="none" stroke="#7a4a63" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  </g>
+  <path d="M172 138 Q196 130 220 140" fill="none" stroke="#c2508f" stroke-width="5" stroke-linecap="round"/>
+  <path d="M104 140 Q126 132 150 142" fill="none" stroke="#c2508f" stroke-width="5" stroke-linecap="round"/>
+
+  <ellipse cx="92" cy="212" rx="19" ry="9.5" fill="#ff8fc0" opacity="0.5"/>
+  <ellipse cx="232" cy="212" rx="19" ry="9.5" fill="#ff8fc0" opacity="0.5"/>
+
+  <path d="M146 224 Q160 242 174 224 Q160 236 146 224 Z" fill="#d4597a"/>
+  <path d="M152 228 Q160 236 168 228 Q160 232 152 228 Z" fill="#ff9db5"/>
+
+  <g fill="#e60012" stroke="#8c0000" stroke-width="3">
+    <path d="M160 306 L132 292 L137 320 Z"/>
+    <path d="M160 306 L188 292 L183 320 Z"/>
+    <path d="M148 310 L136 334 L156 324 Z"/>
+    <path d="M172 310 L184 334 L164 324 Z"/>
+    <circle cx="160" cy="306" r="10" fill="#ff3b46"/>
+  </g>
+
+  <g stroke="#ffd166" stroke-width="4" fill="#fff3c4">
+    <path d="M232 106 Q234 116 244 118 Q234 120 232 130 Q230 120 220 118 Q230 116 232 106 Z"/>
+  </g>
+</svg>
