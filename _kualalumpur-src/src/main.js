@@ -21,30 +21,32 @@ import { QuestSystem } from './game/QuestSystem.js';
 import { loadStaticChunkManifest } from './world/chunks/ChunkLoader.js';
 import { DETAIL_BUDGETS, getDetailTier } from './world/chunks/chunkVisibility.js';
 import { GeneratedDetailLayer } from './world/detail/GeneratedDetailLayer.js';
+import { GENERATED_DETAIL_VISIBLE_BUDGET } from './world/detail/generatedDetailConfig.js';
 
 const canvas = document.getElementById('game-canvas');
 const detailTier = getDetailTier();
 const visibleBudget = DETAIL_BUDGETS[detailTier].visibleInstanceCap;
+const propBudget = GENERATED_DETAIL_VISIBLE_BUDGET;
 const adaptive = new AdaptiveRenderer(canvas, { lowEndMode: detailTier !== 'desktop' });
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(64, window.innerWidth / window.innerHeight, 0.1, 1800);
 
-const hemiLight = new THREE.HemisphereLight(0xddeeff, 0x25321f, 1.7);
+const hemiLight = new THREE.HemisphereLight(0xe8f4ff, 0x5c6a52, 2.7);
 scene.add(hemiLight);
 
-const ambient = new THREE.AmbientLight(0xffffff, 0.38);
+const ambient = new THREE.AmbientLight(0xffffff, 0.95);
 scene.add(ambient);
 
-const sun = new THREE.DirectionalLight(0xfff3cf, 2.6);
+const sun = new THREE.DirectionalLight(0xfff3cf, 3.4);
 sun.position.set(-55, 96, -75);
 scene.add(sun);
 
 const world = createKualaLumpurWorld(scene);
 world.chunkManager.update(world.startPosition);
 const initialBaseVisibleInstances = world.chunkManager.getStats().visibleInstances;
-const generatedDetailLayer = new GeneratedDetailLayer(scene, world.terrain, { baseVisibleInstances: initialBaseVisibleInstances, visibleBudget });
+const generatedDetailLayer = new GeneratedDetailLayer(scene, world.terrain, { baseVisibleInstances: initialBaseVisibleInstances, visibleBudget: propBudget, collision: world.collision });
 const detailGovernor = new DetailPerformanceGovernor({ maxBudget: visibleBudget, initialBudget: visibleBudget });
-const player = new PlayerController(scene, world.terrain, world.startPosition);
+const player = new PlayerController(scene, world.terrain, world.startPosition, world.collision);
 const trainSystem = new TrainSystem(scene, world.transportPaths);
 const cityActors = new CityActors(scene, world.terrain);
 const saveSystem = new SaveSystem();
@@ -59,18 +61,64 @@ camera.lookAt(player.group.position);
 
 const controls = new OrbitControls(camera, adaptive.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.08;
+controls.dampingFactor = 0.14;
 controls.enablePan = true;
-controls.panSpeed = 0.72;
+controls.panSpeed = 0.95;
 controls.screenSpacePanning = true;
-controls.minDistance = 7;
-controls.maxDistance = 520;
+controls.rotateSpeed = 1.2;
+controls.zoomSpeed = 1.7;
+controls.zoomToCursor = true;
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+controls.minDistance = 6;
+controls.maxDistance = 460;
 controls.maxPolarAngle = Math.PI * 0.495;
 controls.target.copy(player.group.position).add(new THREE.Vector3(0, 2, 0));
 controls.update();
+setupNavigation(adaptive.domElement, controls, camera);
+
+function panCamera(camera, controls, deltaX, deltaY) {
+  const scale = camera.position.distanceTo(controls.target) * 0.0016;
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+  const move = right.multiplyScalar(-deltaX * scale).addScaledVector(up, deltaY * scale);
+  controls.target.add(move);
+  camera.position.add(move);
+
+  const limit = world.terrain.max - 20;
+  const clampedX = THREE.MathUtils.clamp(controls.target.x, -limit, limit);
+  const clampedZ = THREE.MathUtils.clamp(controls.target.z, -limit, limit);
+  const correction = new THREE.Vector3(clampedX - controls.target.x, 0, clampedZ - controls.target.z);
+  if (correction.lengthSq() > 0) {
+    controls.target.add(correction);
+    camera.position.add(correction);
+  }
+}
+
+function setupNavigation(canvas, controls, camera) {
+  const isTrackpadScroll = (event) => {
+    if (event.ctrlKey || event.shiftKey) return false;
+    const integerWheel = event.deltaX === 0 && Math.abs(event.deltaY) >= 40 && Number.isInteger(event.deltaY);
+    return !integerWheel;
+  };
+
+  window.addEventListener('wheel', (event) => {
+    if (event.target !== canvas) return;
+    if (!isTrackpadScroll(event)) {
+      // Pinch, shift-scroll and integer mouse-wheel steps stay with OrbitControls so pinch-zoom
+      // keeps working on touch hardware. Only trackpad two-finger scrolling is remapped to panning.
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    panCamera(camera, controls, event.deltaX, event.deltaY);
+    controls.update();
+    requestRender();
+  }, { capture: true, passive: false });
+}
 
 let loopRunning = false;
 let needsRender = true;
+let controlsActive = false;
 let lastTime = performance.now();
 let fps = 0;
 let frames = 0;
@@ -126,14 +174,22 @@ function placeCameraNear(target, options = 44) {
   controls.update();
 }
 
+function placeCameraOnLandmark(landmark, fallbackTarget) {
+  if (!landmark?.position) {
+    placeCameraNear(fallbackTarget, 58);
+    return;
+  }
+  const target = landmark.position.clone().add(new THREE.Vector3(0, landmark.height ?? 12, 0));
+  placeCameraNear(target, { distance: landmark.distance ?? 72, heightRatio: 0.42 });
+}
+
 function setCameraMode(mode, landmark = currentLandmark) {
   const playerTarget = player.getFocusTarget();
   if (mode === 'walk') {
     placeCameraNear(playerTarget, { distance: 24, heightRatio: 1.05 });
     hud?.showToast('Walk camera.');
   } else if (mode === 'landmark') {
-    const target = landmark?.position?.clone() ?? playerTarget;
-    placeCameraNear(target, 58);
+    placeCameraOnLandmark(landmark, playerTarget);
     hud?.showToast('Landmark camera.');
   } else {
     const target = new THREE.Vector3(0, 30, 0);
@@ -157,7 +213,7 @@ function focusLandmark(landmark) {
   questSystem.evaluate().forEach((quest) => hud?.showToast(`Quest complete: ${quest.name}`));
   hud?.setProgress(landmarkProgress);
   hud?.setGuidebook(landmark);
-  placeCameraNear(target, 58);
+  placeCameraOnLandmark(landmark, player.getFocusTarget());
   requestRender();
 }
 
@@ -190,12 +246,12 @@ function toggleTour() {
 
 function applyTimeMode(mode) {
   const settings = {
-    Day: { bg: 0x07101f, fog: 0x07101f, hemi: 1.7, ambient: 0.38, sun: 2.6, exposure: 1.05, wet: false, rain: false },
-    'Golden Hour': { bg: 0x1a2130, fog: 0x3a3140, hemi: 1.5, ambient: 0.44, sun: 2.4, exposure: 1.08, wet: false, rain: false },
-    Sunset: { bg: 0x24142a, fog: 0x39233b, hemi: 1.35, ambient: 0.48, sun: 2.2, exposure: 1.08, wet: false, rain: false },
-    Night: { bg: 0x030714, fog: 0x050816, hemi: 0.72, ambient: 0.62, sun: 0.55, exposure: 1.18, wet: false, rain: false },
-    Rain: { bg: 0x07101f, fog: 0x1b2b36, hemi: 1.0, ambient: 0.58, sun: 0.8, exposure: 1.1, wet: true, rain: true },
-    Thunderstorm: { bg: 0x020711, fog: 0x111c2a, hemi: 0.78, ambient: 0.7, sun: 0.35, exposure: 1.2, wet: true, rain: true }
+    Day: { bg: 0x8fc4ef, fog: 0xb6d9f5, hemi: 2.7, ambient: 0.95, sun: 3.4, exposure: 1.12, wet: false, rain: false },
+    'Golden Hour': { bg: 0xe8b678, fog: 0xf0cc9c, hemi: 2.3, ambient: 0.86, sun: 3.0, exposure: 1.14, wet: false, rain: false },
+    Sunset: { bg: 0xc97a6d, fog: 0xd79a86, hemi: 2.0, ambient: 0.8, sun: 2.5, exposure: 1.15, wet: false, rain: false },
+    Night: { bg: 0x030714, fog: 0x0a1424, hemi: 0.9, ambient: 0.72, sun: 0.6, exposure: 1.2, wet: false, rain: false },
+    Rain: { bg: 0x5f7787, fog: 0x7b93a3, hemi: 1.7, ambient: 0.82, sun: 1.2, exposure: 1.1, wet: true, rain: true },
+    Thunderstorm: { bg: 0x39485c, fog: 0x4f6172, hemi: 1.3, ambient: 0.78, sun: 0.7, exposure: 1.14, wet: true, rain: true }
   }[mode];
   scene.background.setHex(settings.bg);
   scene.fog.color.setHex(settings.fog);
@@ -340,10 +396,10 @@ function getWorldFocusPosition() {
   return controls.target;
 }
 
-function updateCameraTarget() {
+function updateCameraTarget(deltaSeconds) {
   const desired = player.getFocusTarget();
   const before = controls.target.clone();
-  controls.target.lerp(desired, 0.24);
+  controls.target.lerp(desired, 1 - Math.exp(-11 * deltaSeconds));
   const delta = controls.target.clone().sub(before);
   camera.position.add(delta);
   recentCameraTarget.copy(controls.target);
@@ -359,7 +415,7 @@ function loop(now) {
   lastTime = now;
 
   const playerMoved = player.update(deltaSeconds, camera);
-  if (playerMoved) updateCameraTarget();
+  if (playerMoved && !controlsActive) updateCameraTarget(deltaSeconds);
   const controlsChanged = controls.update();
   const worldFocusPosition = getWorldFocusPosition();
   const focusMoved = worldFocusPosition.distanceToSquared(previousWorldFocus) > 1.0;
@@ -424,7 +480,8 @@ function loop(now) {
     fpsClock = now;
     const budgetUpdate = detailGovernor.update({ fps, now });
     if (budgetUpdate.changed) {
-      generatedDetailLayer.setVisibleBudget(budgetUpdate.budget);
+      const ratio = visibleBudget > 0 ? budgetUpdate.budget / visibleBudget : 1;
+      generatedDetailLayer.setVisibleBudget(Math.max(600, Math.round(propBudget * ratio)));
       needsRender = true;
     }
   }
@@ -452,11 +509,15 @@ function loop(now) {
 }
 
 controls.addEventListener('start', () => {
+  controlsActive = true;
   trainSystem.wake();
   requestRender();
 });
 controls.addEventListener('change', requestRender);
-controls.addEventListener('end', requestRender);
+controls.addEventListener('end', () => {
+  controlsActive = false;
+  requestRender();
+});
 
 window.addEventListener('resize', () => {
   adaptive.resize(camera);
