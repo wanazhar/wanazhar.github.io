@@ -1,4 +1,4 @@
-export const DEFAULT_CHUNK_SIZE = 64;
+export const DEFAULT_CHUNK_SIZE = 128;
 
 export function getDetailTier(environment = globalThis) {
   const nav = environment.navigator ?? {};
@@ -14,21 +14,21 @@ export function getDetailTier(environment = globalThis) {
 
 export const DETAIL_BUDGETS = {
   mobile: {
-    baseVisibleRadius: 3,
+    baseVisibleRadius: 1,
+    highRadius: 1,
+    mediumRadius: 1,
+    visibleInstanceCap: 350000
+  },
+  balanced: {
+    baseVisibleRadius: 2,
     highRadius: 1,
     mediumRadius: 2,
     visibleInstanceCap: 350000
   },
-  balanced: {
-    baseVisibleRadius: 5,
+  desktop: {
+    baseVisibleRadius: 4,
     highRadius: 2,
     mediumRadius: 3,
-    visibleInstanceCap: 350000
-  },
-  desktop: {
-    baseVisibleRadius: 8,
-    highRadius: 2,
-    mediumRadius: 4,
     visibleInstanceCap: 350000
   }
 };

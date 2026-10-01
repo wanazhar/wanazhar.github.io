@@ -475,6 +475,13 @@ kbd {
   pointer-events: none;
 }
 
+/* Touch controls only make sense on touch hardware; a narrow desktop window still uses mouse + keyboard. */
+@media (pointer: coarse) {
+  .touch-overlay {
+    display: block;
+  }
+}
+
 .touch-hint {
   position: absolute;
   left: 50%;
@@ -668,10 +675,6 @@ kbd {
   #mini-map {
     width: 120px;
     height: 120px;
-  }
-
-  .touch-overlay {
-    display: block;
   }
 
   .toast {

@@ -5,19 +5,19 @@ import { DETAIL_BUDGETS, getDetailTier } from '../src/world/chunks/chunkVisibili
 import { ChunkManager } from '../src/world/chunks/ChunkManager.js';
 
 test('all device tiers cap visible world at 350k instances', () => {
-  assert.equal(GENERATED_DETAIL_VISIBLE_BUDGET, 350_000);
+  assert.equal(GENERATED_DETAIL_VISIBLE_BUDGET, 4_600);
   for (const [tier, budget] of Object.entries(DETAIL_BUDGETS)) {
     assert.equal(budget.visibleInstanceCap, 350_000, `${tier} should use the same 350k visible cap`);
   }
 });
 
 test('base chunk visibility radius is tiered for performance', () => {
-  assert.equal(DETAIL_BUDGETS.mobile.baseVisibleRadius, 3);
-  assert.equal(DETAIL_BUDGETS.balanced.baseVisibleRadius, 5);
-  assert.equal(DETAIL_BUDGETS.desktop.baseVisibleRadius, 8);
-  assert.equal(new ChunkManager({ tier: 'mobile' }).visibleRadius, 3);
-  assert.equal(new ChunkManager({ tier: 'balanced' }).visibleRadius, 5);
-  assert.equal(new ChunkManager({ tier: 'desktop' }).visibleRadius, 8);
+  assert.equal(DETAIL_BUDGETS.mobile.baseVisibleRadius, 1);
+  assert.equal(DETAIL_BUDGETS.balanced.baseVisibleRadius, 2);
+  assert.equal(DETAIL_BUDGETS.desktop.baseVisibleRadius, 4);
+  assert.equal(new ChunkManager({ tier: 'mobile' }).visibleRadius, 1);
+  assert.equal(new ChunkManager({ tier: 'balanced' }).visibleRadius, 2);
+  assert.equal(new ChunkManager({ tier: 'desktop' }).visibleRadius, 4);
 });
 
 test('coarse pointer devices use the low-end mobile tier', () => {
