@@ -79,11 +79,13 @@ function createVoxelCharacter() {
 }
 
 export class PlayerController {
-  constructor(scene, terrain, startPosition) {
+  constructor(scene, terrain, startPosition, collision = null) {
     this.terrain = terrain;
+    this.collision = collision;
     this.group = createVoxelCharacter();
     this.group.position.copy(startPosition);
     this.velocity = new THREE.Vector3();
+    this.moveSpeed = 0;
     this.heading = 0;
     this.walkTime = 0;
     this.onGround = true;
@@ -132,9 +134,33 @@ export class PlayerController {
     return this.keys.has(name) || this.virtualKeys.has(name);
   }
 
+  isSpaceFree(x, z, radius = 0.42) {
+    if (!this.collision) return true;
+    return (
+      !this.collision.isBlocked(x - radius, z - radius) &&
+      !this.collision.isBlocked(x + radius, z - radius) &&
+      !this.collision.isBlocked(x - radius, z + radius) &&
+      !this.collision.isBlocked(x + radius, z + radius)
+    );
+  }
+
+  findFreeSpot(position) {
+    if (this.isSpaceFree(position.x, position.z)) return position;
+    for (let radius = 1; radius <= 16; radius += 1) {
+      for (let step = 0; step < 16; step += 1) {
+        const angle = (step / 16) * Math.PI * 2;
+        const x = position.x + Math.cos(angle) * radius;
+        const z = position.z + Math.sin(angle) * radius;
+        if (this.isSpaceFree(x, z)) return { x, z };
+      }
+    }
+    return position;
+  }
+
   warpTo(position) {
-    const ground = this.terrain.surfaceYAt(position.x, position.z);
-    this.group.position.set(position.x, ground + 0.05, position.z);
+    const target = this.findFreeSpot({ x: position.x, z: position.z });
+    const ground = this.terrain.surfaceYAt(target.x, target.z);
+    this.group.position.set(target.x, ground + 0.05, target.z);
     this.velocity.set(0, 0, 0);
     this.onGround = true;
   }
@@ -157,7 +183,9 @@ export class PlayerController {
     camera.getWorldDirection(cameraForward);
     cameraForward.y = 0;
     cameraForward.normalize();
-    const cameraRight = new THREE.Vector3(cameraForward.z, 0, -cameraForward.x).normalize();
+    // right = normalize(cross(forward, up)); the previous (z, 0, -x) form pointed left,
+    // which inverted both the thumb-stick and the A/D keys.
+    const cameraRight = new THREE.Vector3(-cameraForward.z, 0, cameraForward.x).normalize();
 
     const move = new THREE.Vector3();
     move.addScaledVector(cameraForward, forwardInput);
@@ -165,13 +193,26 @@ export class PlayerController {
     if (move.lengthSq() > 0) move.normalize();
 
     const sprint = this.hasInput('sprint') ? 2.05 : 1;
-    const speed = 16 * sprint * (wantsMove ? inputStrength : 0);
+    const targetSpeed = 16 * sprint * (wantsMove ? inputStrength : 0);
+    this.moveSpeed = THREE.MathUtils.damp(this.moveSpeed, targetSpeed, wantsMove ? 14 : 20, deltaSeconds);
+    const speed = this.moveSpeed;
     const previous = this.group.position.clone();
-    this.group.position.addScaledVector(move, speed * deltaSeconds);
+    const nextX = this.group.position.x + move.x * speed * deltaSeconds;
+    const nextZ = this.group.position.z + move.z * speed * deltaSeconds;
+    if (this.isSpaceFree(nextX, nextZ)) {
+      this.group.position.x = nextX;
+      this.group.position.z = nextZ;
+    } else if (this.isSpaceFree(nextX, this.group.position.z)) {
+      this.group.position.x = nextX;
+    } else if (this.isSpaceFree(this.group.position.x, nextZ)) {
+      this.group.position.z = nextZ;
+    }
     this.terrain.clampXZ(this.group.position);
 
     if (wantsMove) {
-      this.heading = Math.atan2(move.x, move.z);
+      const targetHeading = Math.atan2(move.x, move.z);
+      const delta = ((targetHeading - this.heading + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      this.heading += delta * (1 - Math.exp(-14 * deltaSeconds));
       this.group.rotation.y = this.heading;
       this.walkTime += deltaSeconds * speed * 0.9;
     }

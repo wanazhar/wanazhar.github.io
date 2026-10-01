@@ -1,3513 +1,988 @@
 {
   "formatVersion": 1,
-  "generatedAt": "2026-04-27T14:22:47.057Z",
+  "generatedAt": "2026-09-30T20:20:23.195Z",
   "mode": "phase4-10m-generated-detail",
   "note": "10M authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.",
-  "totalInstances": 309208,
-  "generatedDetailInstances": 10000000,
-  "totalAuthoredWithGeneratedDetail": 10309208,
-  "chunkSize": 64,
+  "totalInstances": 284350,
+  "generatedDetailInstances": 4200,
+  "totalAuthoredWithGeneratedDetail": 288550,
+  "chunkSize": 128,
   "chunks": [
-    {
-      "id": "-4_-4",
-      "cx": -4,
-      "cz": -4,
-      "count": 1944,
-      "meshCount": 9,
-      "path": "summaries/-4_-4.json",
-      "materialKinds": 9
-    },
-    {
-      "id": "-4_-3",
-      "cx": -4,
-      "cz": -3,
-      "count": 3248,
-      "meshCount": 12,
-      "path": "summaries/-4_-3.json",
-      "materialKinds": 12
-    },
-    {
-      "id": "-4_-2",
-      "cx": -4,
-      "cz": -2,
-      "count": 3243,
-      "meshCount": 13,
-      "path": "summaries/-4_-2.json",
-      "materialKinds": 13
-    },
-    {
-      "id": "-4_-1",
-      "cx": -4,
-      "cz": -1,
-      "count": 3229,
-      "meshCount": 11,
-      "path": "summaries/-4_-1.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "-4_0",
-      "cx": -4,
-      "cz": 0,
-      "count": 3248,
-      "meshCount": 11,
-      "path": "summaries/-4_0.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "-4_1",
-      "cx": -4,
-      "cz": 1,
-      "count": 3248,
-      "meshCount": 14,
-      "path": "summaries/-4_1.json",
-      "materialKinds": 14
-    },
-    {
-      "id": "-4_2",
-      "cx": -4,
-      "cz": 2,
-      "count": 5160,
-      "meshCount": 24,
-      "path": "summaries/-4_2.json",
-      "materialKinds": 24
-    },
-    {
-      "id": "-4_3",
-      "cx": -4,
-      "cz": 3,
-      "count": 1999,
-      "meshCount": 10,
-      "path": "summaries/-4_3.json",
-      "materialKinds": 10
-    },
-    {
-      "id": "-3_-4",
-      "cx": -3,
-      "cz": -4,
-      "count": 3285,
-      "meshCount": 11,
-      "path": "summaries/-3_-4.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "-3_-3",
-      "cx": -3,
-      "cz": -3,
-      "count": 5051,
-      "meshCount": 6,
-      "path": "summaries/-3_-3.json",
-      "materialKinds": 6
-    },
-    {
-      "id": "-3_-2",
-      "cx": -3,
-      "cz": -2,
-      "count": 5035,
-      "meshCount": 8,
-      "path": "summaries/-3_-2.json",
-      "materialKinds": 8
-    },
-    {
-      "id": "-3_-1",
-      "cx": -3,
-      "cz": -1,
-      "count": 5458,
-      "meshCount": 10,
-      "path": "summaries/-3_-1.json",
-      "materialKinds": 10
-    },
-    {
-      "id": "-3_0",
-      "cx": -3,
-      "cz": 0,
-      "count": 5102,
-      "meshCount": 6,
-      "path": "summaries/-3_0.json",
-      "materialKinds": 6
-    },
-    {
-      "id": "-3_1",
-      "cx": -3,
-      "cz": 1,
-      "count": 5376,
-      "meshCount": 8,
-      "path": "summaries/-3_1.json",
-      "materialKinds": 8
-    },
-    {
-      "id": "-3_2",
-      "cx": -3,
-      "cz": 2,
-      "count": 5388,
-      "meshCount": 7,
-      "path": "summaries/-3_2.json",
-      "materialKinds": 7
-    },
-    {
-      "id": "-3_3",
-      "cx": -3,
-      "cz": 3,
-      "count": 3355,
-      "meshCount": 11,
-      "path": "summaries/-3_3.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "-2_-4",
-      "cx": -2,
-      "cz": -4,
-      "count": 3713,
-      "meshCount": 17,
-      "path": "summaries/-2_-4.json",
-      "materialKinds": 17
-    },
-    {
-      "id": "-2_-3",
-      "cx": -2,
-      "cz": -3,
-      "count": 5013,
-      "meshCount": 14,
-      "path": "summaries/-2_-3.json",
-      "materialKinds": 14
-    },
     {
       "id": "-2_-2",
       "cx": -2,
       "cz": -2,
-      "count": 4947,
-      "meshCount": 9,
+      "count": 13204,
+      "meshCount": 22,
       "path": "summaries/-2_-2.json",
-      "materialKinds": 9
+      "materialKinds": 22
     },
     {
       "id": "-2_-1",
       "cx": -2,
       "cz": -1,
-      "count": 6439,
-      "meshCount": 21,
+      "count": 16454,
+      "meshCount": 25,
       "path": "summaries/-2_-1.json",
-      "materialKinds": 21
+      "materialKinds": 25
     },
     {
       "id": "-2_0",
       "cx": -2,
       "cz": 0,
-      "count": 5564,
-      "meshCount": 19,
+      "count": 16509,
+      "meshCount": 25,
       "path": "summaries/-2_0.json",
-      "materialKinds": 19
+      "materialKinds": 25
     },
     {
       "id": "-2_1",
       "cx": -2,
       "cz": 1,
-      "count": 5332,
-      "meshCount": 13,
+      "count": 15775,
+      "meshCount": 31,
       "path": "summaries/-2_1.json",
-      "materialKinds": 13
-    },
-    {
-      "id": "-2_2",
-      "cx": -2,
-      "cz": 2,
-      "count": 4700,
-      "meshCount": 5,
-      "path": "summaries/-2_2.json",
-      "materialKinds": 5
-    },
-    {
-      "id": "-2_3",
-      "cx": -2,
-      "cz": 3,
-      "count": 3263,
-      "meshCount": 11,
-      "path": "summaries/-2_3.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "-1_-4",
-      "cx": -1,
-      "cz": -4,
-      "count": 3321,
-      "meshCount": 11,
-      "path": "summaries/-1_-4.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "-1_-3",
-      "cx": -1,
-      "cz": -3,
-      "count": 5622,
-      "meshCount": 12,
-      "path": "summaries/-1_-3.json",
-      "materialKinds": 12
+      "materialKinds": 31
     },
     {
       "id": "-1_-2",
       "cx": -1,
       "cz": -2,
-      "count": 5403,
-      "meshCount": 12,
+      "count": 16763,
+      "meshCount": 27,
       "path": "summaries/-1_-2.json",
-      "materialKinds": 12
+      "materialKinds": 27
     },
     {
       "id": "-1_-1",
       "cx": -1,
       "cz": -1,
-      "count": 7246,
-      "meshCount": 30,
+      "count": 19999,
+      "meshCount": 37,
       "path": "summaries/-1_-1.json",
-      "materialKinds": 30
+      "materialKinds": 37
     },
     {
       "id": "-1_0",
       "cx": -1,
       "cz": 0,
-      "count": 7205,
-      "meshCount": 25,
+      "count": 20204,
+      "meshCount": 32,
       "path": "summaries/-1_0.json",
-      "materialKinds": 25
+      "materialKinds": 32
     },
     {
       "id": "-1_1",
       "cx": -1,
       "cz": 1,
-      "count": 5630,
-      "meshCount": 18,
+      "count": 16714,
+      "meshCount": 25,
       "path": "summaries/-1_1.json",
-      "materialKinds": 18
-    },
-    {
-      "id": "-1_2",
-      "cx": -1,
-      "cz": 2,
-      "count": 6016,
-      "meshCount": 14,
-      "path": "summaries/-1_2.json",
-      "materialKinds": 14
-    },
-    {
-      "id": "-1_3",
-      "cx": -1,
-      "cz": 3,
-      "count": 3355,
-      "meshCount": 11,
-      "path": "summaries/-1_3.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "0_-4",
-      "cx": 0,
-      "cz": -4,
-      "count": 3726,
-      "meshCount": 20,
-      "path": "summaries/0_-4.json",
-      "materialKinds": 20
-    },
-    {
-      "id": "0_-3",
-      "cx": 0,
-      "cz": -3,
-      "count": 5518,
-      "meshCount": 17,
-      "path": "summaries/0_-3.json",
-      "materialKinds": 17
+      "materialKinds": 25
     },
     {
       "id": "0_-2",
       "cx": 0,
       "cz": -2,
-      "count": 6426,
-      "meshCount": 24,
+      "count": 17254,
+      "meshCount": 28,
       "path": "summaries/0_-2.json",
-      "materialKinds": 24
+      "materialKinds": 28
     },
     {
       "id": "0_-1",
       "cx": 0,
       "cz": -1,
-      "count": 7111,
-      "meshCount": 28,
+      "count": 19514,
+      "meshCount": 33,
       "path": "summaries/0_-1.json",
-      "materialKinds": 28
+      "materialKinds": 33
     },
     {
       "id": "0_0",
       "cx": 0,
       "cz": 0,
-      "count": 16755,
-      "meshCount": 49,
+      "count": 29855,
+      "meshCount": 48,
       "path": "summaries/0_0.json",
-      "materialKinds": 49
+      "materialKinds": 48
     },
     {
       "id": "0_1",
       "cx": 0,
       "cz": 1,
-      "count": 6882,
-      "meshCount": 29,
+      "count": 17172,
+      "meshCount": 26,
       "path": "summaries/0_1.json",
-      "materialKinds": 29
-    },
-    {
-      "id": "0_2",
-      "cx": 0,
-      "cz": 2,
-      "count": 4808,
-      "meshCount": 10,
-      "path": "summaries/0_2.json",
-      "materialKinds": 10
-    },
-    {
-      "id": "0_3",
-      "cx": 0,
-      "cz": 3,
-      "count": 3268,
-      "meshCount": 11,
-      "path": "summaries/0_3.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "1_-4",
-      "cx": 1,
-      "cz": -4,
-      "count": 3330,
-      "meshCount": 14,
-      "path": "summaries/1_-4.json",
-      "materialKinds": 14
-    },
-    {
-      "id": "1_-3",
-      "cx": 1,
-      "cz": -3,
-      "count": 5493,
-      "meshCount": 17,
-      "path": "summaries/1_-3.json",
-      "materialKinds": 17
+      "materialKinds": 26
     },
     {
       "id": "1_-2",
       "cx": 1,
       "cz": -2,
-      "count": 5080,
-      "meshCount": 12,
+      "count": 13199,
+      "meshCount": 21,
       "path": "summaries/1_-2.json",
-      "materialKinds": 12
+      "materialKinds": 21
     },
     {
       "id": "1_-1",
       "cx": 1,
       "cz": -1,
-      "count": 5448,
-      "meshCount": 20,
+      "count": 18697,
+      "meshCount": 30,
       "path": "summaries/1_-1.json",
-      "materialKinds": 20
+      "materialKinds": 30
     },
     {
       "id": "1_0",
       "cx": 1,
       "cz": 0,
-      "count": 6835,
-      "meshCount": 20,
+      "count": 19124,
+      "meshCount": 28,
       "path": "summaries/1_0.json",
-      "materialKinds": 20
+      "materialKinds": 28
     },
     {
       "id": "1_1",
       "cx": 1,
       "cz": 1,
-      "count": 5622,
-      "meshCount": 25,
+      "count": 13913,
+      "meshCount": 21,
       "path": "summaries/1_1.json",
-      "materialKinds": 25
-    },
-    {
-      "id": "1_2",
-      "cx": 1,
-      "cz": 2,
-      "count": 5737,
-      "meshCount": 16,
-      "path": "summaries/1_2.json",
-      "materialKinds": 16
-    },
-    {
-      "id": "1_3",
-      "cx": 1,
-      "cz": 3,
-      "count": 3668,
-      "meshCount": 16,
-      "path": "summaries/1_3.json",
-      "materialKinds": 16
-    },
-    {
-      "id": "2_-4",
-      "cx": 2,
-      "cz": -4,
-      "count": 3253,
-      "meshCount": 11,
-      "path": "summaries/2_-4.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "2_-3",
-      "cx": 2,
-      "cz": -3,
-      "count": 5014,
-      "meshCount": 8,
-      "path": "summaries/2_-3.json",
-      "materialKinds": 8
-    },
-    {
-      "id": "2_-2",
-      "cx": 2,
-      "cz": -2,
-      "count": 5910,
-      "meshCount": 20,
-      "path": "summaries/2_-2.json",
-      "materialKinds": 20
-    },
-    {
-      "id": "2_-1",
-      "cx": 2,
-      "cz": -1,
-      "count": 6458,
-      "meshCount": 16,
-      "path": "summaries/2_-1.json",
-      "materialKinds": 16
-    },
-    {
-      "id": "2_0",
-      "cx": 2,
-      "cz": 0,
-      "count": 6531,
-      "meshCount": 16,
-      "path": "summaries/2_0.json",
-      "materialKinds": 16
-    },
-    {
-      "id": "2_1",
-      "cx": 2,
-      "cz": 1,
-      "count": 6166,
-      "meshCount": 18,
-      "path": "summaries/2_1.json",
-      "materialKinds": 18
-    },
-    {
-      "id": "2_2",
-      "cx": 2,
-      "cz": 2,
-      "count": 5200,
-      "meshCount": 12,
-      "path": "summaries/2_2.json",
-      "materialKinds": 12
-    },
-    {
-      "id": "2_3",
-      "cx": 2,
-      "cz": 3,
-      "count": 3321,
-      "meshCount": 11,
-      "path": "summaries/2_3.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "3_-4",
-      "cx": 3,
-      "cz": -4,
-      "count": 1993,
-      "meshCount": 9,
-      "path": "summaries/3_-4.json",
-      "materialKinds": 9
-    },
-    {
-      "id": "3_-3",
-      "cx": 3,
-      "cz": -3,
-      "count": 3314,
-      "meshCount": 11,
-      "path": "summaries/3_-3.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "3_-2",
-      "cx": 3,
-      "cz": -2,
-      "count": 3456,
-      "meshCount": 15,
-      "path": "summaries/3_-2.json",
-      "materialKinds": 15
-    },
-    {
-      "id": "3_-1",
-      "cx": 3,
-      "cz": -1,
-      "count": 3744,
-      "meshCount": 17,
-      "path": "summaries/3_-1.json",
-      "materialKinds": 17
-    },
-    {
-      "id": "3_0",
-      "cx": 3,
-      "cz": 0,
-      "count": 3793,
-      "meshCount": 17,
-      "path": "summaries/3_0.json",
-      "materialKinds": 17
-    },
-    {
-      "id": "3_1",
-      "cx": 3,
-      "cz": 1,
-      "count": 3583,
-      "meshCount": 16,
-      "path": "summaries/3_1.json",
-      "materialKinds": 16
-    },
-    {
-      "id": "3_2",
-      "cx": 3,
-      "cz": 2,
-      "count": 3543,
-      "meshCount": 11,
-      "path": "summaries/3_2.json",
-      "materialKinds": 11
-    },
-    {
-      "id": "3_3",
-      "cx": 3,
-      "cz": 3,
-      "count": 2084,
-      "meshCount": 11,
-      "path": "summaries/3_3.json",
-      "materialKinds": 11
+      "materialKinds": 21
     }
   ],
   "generatedDetailChunks": [
     {
-      "id": "detail_-7_-7",
-      "cx": -7,
-      "cz": -7,
-      "center": {
-        "x": -416,
-        "z": -416
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_-6",
-      "cx": -7,
-      "cz": -6,
-      "center": {
-        "x": -416,
-        "z": -352
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_-5",
-      "cx": -7,
-      "cz": -5,
-      "center": {
-        "x": -416,
-        "z": -288
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_-4",
-      "cx": -7,
-      "cz": -4,
-      "center": {
-        "x": -416,
-        "z": -224
-      },
-      "authoredCount": 7697,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_-3",
-      "cx": -7,
-      "cz": -3,
-      "center": {
-        "x": -416,
-        "z": -160
-      },
-      "authoredCount": 7723,
-      "density": 0.0803,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_-2",
-      "cx": -7,
-      "cz": -2,
-      "center": {
-        "x": -416,
-        "z": -96
-      },
-      "authoredCount": 7906,
-      "density": 0.0822,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_-1",
-      "cx": -7,
-      "cz": -1,
-      "center": {
-        "x": -416,
-        "z": -32
-      },
-      "authoredCount": 18110,
-      "density": 0.1883,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_0",
-      "cx": -7,
-      "cz": 0,
-      "center": {
-        "x": -416,
-        "z": 32
-      },
-      "authoredCount": 38895,
-      "density": 0.4044,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_1",
-      "cx": -7,
-      "cz": 1,
-      "center": {
-        "x": -416,
-        "z": 96
-      },
-      "authoredCount": 11170,
-      "density": 0.1161,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_2",
-      "cx": -7,
-      "cz": 2,
-      "center": {
-        "x": -416,
-        "z": 160
-      },
-      "authoredCount": 8595,
-      "density": 0.0894,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_3",
-      "cx": -7,
-      "cz": 3,
-      "center": {
-        "x": -416,
-        "z": 224
-      },
-      "authoredCount": 8256,
-      "density": 0.0859,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_4",
-      "cx": -7,
-      "cz": 4,
-      "center": {
-        "x": -416,
-        "z": 288
-      },
-      "authoredCount": 7877,
-      "density": 0.0819,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_5",
-      "cx": -7,
-      "cz": 5,
-      "center": {
-        "x": -416,
-        "z": 352
-      },
-      "authoredCount": 7724,
-      "density": 0.0803,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_6",
-      "cx": -7,
-      "cz": 6,
-      "center": {
-        "x": -416,
-        "z": 416
-      },
-      "authoredCount": 7696,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-7_7",
-      "cx": -7,
-      "cz": 7,
-      "center": {
-        "x": -416,
-        "z": 480
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_-7",
-      "cx": -6,
-      "cz": -7,
-      "center": {
-        "x": -352,
-        "z": -416
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_-6",
-      "cx": -6,
-      "cz": -6,
-      "center": {
-        "x": -352,
-        "z": -352
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_-5",
-      "cx": -6,
-      "cz": -5,
-      "center": {
-        "x": -352,
-        "z": -288
-      },
-      "authoredCount": 7697,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_-4",
-      "cx": -6,
-      "cz": -4,
-      "center": {
-        "x": -352,
-        "z": -224
-      },
-      "authoredCount": 7748,
-      "density": 0.0806,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_-3",
-      "cx": -6,
-      "cz": -3,
-      "center": {
-        "x": -352,
-        "z": -160
-      },
-      "authoredCount": 8081,
-      "density": 0.084,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_-2",
-      "cx": -6,
-      "cz": -2,
-      "center": {
-        "x": -352,
-        "z": -96
-      },
-      "authoredCount": 9226,
-      "density": 0.0959,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_-1",
-      "cx": -6,
-      "cz": -1,
-      "center": {
-        "x": -352,
-        "z": -32
-      },
-      "authoredCount": 20828,
-      "density": 0.2166,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_0",
-      "cx": -6,
-      "cz": 0,
-      "center": {
-        "x": -352,
-        "z": 32
-      },
-      "authoredCount": 42767,
-      "density": 0.4447,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_1",
-      "cx": -6,
-      "cz": 1,
-      "center": {
-        "x": -352,
-        "z": 96
-      },
-      "authoredCount": 16228,
-      "density": 0.1687,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_2",
-      "cx": -6,
-      "cz": 2,
-      "center": {
-        "x": -352,
-        "z": 160
-      },
-      "authoredCount": 13849,
-      "density": 0.144,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_3",
-      "cx": -6,
-      "cz": 3,
-      "center": {
-        "x": -352,
-        "z": 224
-      },
-      "authoredCount": 11490,
-      "density": 0.1195,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_4",
-      "cx": -6,
-      "cz": 4,
-      "center": {
-        "x": -352,
-        "z": 288
-      },
-      "authoredCount": 8928,
-      "density": 0.0928,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_5",
-      "cx": -6,
-      "cz": 5,
-      "center": {
-        "x": -352,
-        "z": 352
-      },
-      "authoredCount": 7899,
-      "density": 0.0821,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_6",
-      "cx": -6,
-      "cz": 6,
-      "center": {
-        "x": -352,
-        "z": 416
-      },
-      "authoredCount": 7711,
-      "density": 0.0802,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-6_7",
-      "cx": -6,
-      "cz": 7,
-      "center": {
-        "x": -352,
-        "z": 480
-      },
-      "authoredCount": 7694,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_-7",
-      "cx": -5,
-      "cz": -7,
-      "center": {
-        "x": -288,
-        "z": -416
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_-6",
-      "cx": -5,
-      "cz": -6,
-      "center": {
-        "x": -288,
-        "z": -352
-      },
-      "authoredCount": 7695,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_-5",
-      "cx": -5,
-      "cz": -5,
-      "center": {
-        "x": -288,
-        "z": -288
-      },
-      "authoredCount": 7727,
-      "density": 0.0803,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_-4",
-      "cx": -5,
-      "cz": -4,
-      "center": {
-        "x": -288,
-        "z": -224
-      },
-      "authoredCount": 8103,
-      "density": 0.0843,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_-3",
-      "cx": -5,
-      "cz": -3,
-      "center": {
-        "x": -288,
-        "z": -160
-      },
-      "authoredCount": 10485,
-      "density": 0.109,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_-2",
-      "cx": -5,
-      "cz": -2,
-      "center": {
-        "x": -288,
-        "z": -96
-      },
-      "authoredCount": 17813,
-      "density": 0.1852,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_-1",
-      "cx": -5,
-      "cz": -1,
-      "center": {
-        "x": -288,
-        "z": -32
-      },
-      "authoredCount": 37285,
-      "density": 0.3877,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_0",
-      "cx": -5,
-      "cz": 0,
-      "center": {
-        "x": -288,
-        "z": 32
-      },
-      "authoredCount": 61939,
-      "density": 0.6441,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_1",
-      "cx": -5,
-      "cz": 1,
-      "center": {
-        "x": -288,
-        "z": 96
-      },
-      "authoredCount": 34567,
-      "density": 0.3594,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_2",
-      "cx": -5,
-      "cz": 2,
-      "center": {
-        "x": -288,
-        "z": 160
-      },
-      "authoredCount": 29792,
-      "density": 0.3098,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_3",
-      "cx": -5,
-      "cz": 3,
-      "center": {
-        "x": -288,
-        "z": 224
-      },
-      "authoredCount": 20829,
-      "density": 0.2166,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_4",
-      "cx": -5,
-      "cz": 4,
-      "center": {
-        "x": -288,
-        "z": 288
-      },
-      "authoredCount": 11930,
-      "density": 0.1241,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_5",
-      "cx": -5,
-      "cz": 5,
-      "center": {
-        "x": -288,
-        "z": 352
-      },
-      "authoredCount": 8399,
-      "density": 0.0873,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_6",
-      "cx": -5,
-      "cz": 6,
-      "center": {
-        "x": -288,
-        "z": 416
-      },
-      "authoredCount": 7753,
-      "density": 0.0806,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-5_7",
-      "cx": -5,
-      "cz": 7,
-      "center": {
-        "x": -288,
-        "z": 480
-      },
-      "authoredCount": 7696,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-4_-7",
-      "cx": -4,
-      "cz": -7,
-      "center": {
-        "x": -224,
-        "z": -416
-      },
-      "authoredCount": 7696,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-4_-6",
-      "cx": -4,
-      "cz": -6,
-      "center": {
-        "x": -224,
-        "z": -352
-      },
-      "authoredCount": 7719,
-      "density": 0.0803,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-4_-5",
-      "cx": -4,
-      "cz": -5,
-      "center": {
-        "x": -224,
-        "z": -288
-      },
-      "authoredCount": 7909,
-      "density": 0.0822,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-4_-4",
+      "id": "props_-4_-4",
       "cx": -4,
       "cz": -4,
       "center": {
         "x": -224,
         "z": -224
       },
-      "authoredCount": 9629,
-      "density": 0.1001,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_-3",
+      "id": "props_-4_-3",
       "cx": -4,
       "cz": -3,
       "center": {
         "x": -224,
         "z": -160
       },
-      "authoredCount": 19786,
-      "density": 0.2057,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_-2",
+      "id": "props_-4_-2",
       "cx": -4,
       "cz": -2,
       "center": {
         "x": -224,
         "z": -96
       },
-      "authoredCount": 49614,
-      "density": 0.5159,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_-1",
+      "id": "props_-4_-1",
       "cx": -4,
       "cz": -1,
       "center": {
         "x": -224,
         "z": -32
       },
-      "authoredCount": 95317,
-      "density": 0.9911,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_0",
+      "id": "props_-4_0",
       "cx": -4,
       "cz": 0,
       "center": {
         "x": -224,
         "z": 32
       },
-      "authoredCount": 120330,
-      "density": 1.2512,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_1",
+      "id": "props_-4_1",
       "cx": -4,
       "cz": 1,
       "center": {
         "x": -224,
         "z": 96
       },
-      "authoredCount": 72679,
-      "density": 0.7557,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_2",
+      "id": "props_-4_2",
       "cx": -4,
       "cz": 2,
       "center": {
         "x": -224,
         "z": 160
       },
-      "authoredCount": 51464,
-      "density": 0.5351,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_3",
+      "id": "props_-4_3",
       "cx": -4,
       "cz": 3,
       "center": {
         "x": -224,
         "z": 224
       },
-      "authoredCount": 31350,
-      "density": 0.326,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-4_4",
-      "cx": -4,
-      "cz": 4,
-      "center": {
-        "x": -224,
-        "z": 288
-      },
-      "authoredCount": 15152,
-      "density": 0.1575,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-4_5",
-      "cx": -4,
-      "cz": 5,
-      "center": {
-        "x": -224,
-        "z": 352
-      },
-      "authoredCount": 8930,
-      "density": 0.0929,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-4_6",
-      "cx": -4,
-      "cz": 6,
-      "center": {
-        "x": -224,
-        "z": 416
-      },
-      "authoredCount": 7799,
-      "density": 0.0811,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-4_7",
-      "cx": -4,
-      "cz": 7,
-      "center": {
-        "x": -224,
-        "z": 480
-      },
-      "authoredCount": 7698,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-3_-7",
-      "cx": -3,
-      "cz": -7,
-      "center": {
-        "x": -160,
-        "z": -416
-      },
-      "authoredCount": 7728,
-      "density": 0.0804,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-3_-6",
-      "cx": -3,
-      "cz": -6,
-      "center": {
-        "x": -160,
-        "z": -352
-      },
-      "authoredCount": 7958,
-      "density": 0.0828,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-3_-5",
-      "cx": -3,
-      "cz": -5,
-      "center": {
-        "x": -160,
-        "z": -288
-      },
-      "authoredCount": 9032,
-      "density": 0.0939,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-3_-4",
+      "id": "props_-3_-4",
       "cx": -3,
       "cz": -4,
       "center": {
         "x": -160,
         "z": -224
       },
-      "authoredCount": 14585,
-      "density": 0.1517,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_-3",
+      "id": "props_-3_-3",
       "cx": -3,
       "cz": -3,
       "center": {
         "x": -160,
         "z": -160
       },
-      "authoredCount": 42281,
-      "density": 0.4396,
-      "lod": "high",
+      "authoredCount": 51,
+      "density": 0.7573,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_-2",
+      "id": "props_-3_-2",
       "cx": -3,
       "cz": -2,
       "center": {
         "x": -160,
         "z": -96
       },
-      "authoredCount": 120905,
-      "density": 1.2572,
-      "lod": "high",
+      "authoredCount": 91,
+      "density": 1.3595,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_-1",
+      "id": "props_-3_-1",
       "cx": -3,
       "cz": -1,
       "center": {
         "x": -160,
         "z": -32
       },
-      "authoredCount": 223600,
-      "density": 2.325,
-      "lod": "high",
+      "authoredCount": 121,
+      "density": 1.7999,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_0",
+      "id": "props_-3_0",
       "cx": -3,
       "cz": 0,
       "center": {
         "x": -160,
         "z": 32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 107,
+      "density": 1.5947,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_1",
+      "id": "props_-3_1",
       "cx": -3,
       "cz": 1,
       "center": {
         "x": -160,
         "z": 96
       },
-      "authoredCount": 135734,
-      "density": 1.4114,
-      "lod": "high",
+      "authoredCount": 66,
+      "density": 0.9787,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_2",
+      "id": "props_-3_2",
       "cx": -3,
       "cz": 2,
       "center": {
         "x": -160,
         "z": 160
       },
-      "authoredCount": 66628,
-      "density": 0.6928,
-      "lod": "high",
+      "authoredCount": 35,
+      "density": 0.5198,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_3",
+      "id": "props_-3_3",
       "cx": -3,
       "cz": 3,
       "center": {
         "x": -160,
         "z": 224
       },
-      "authoredCount": 32049,
-      "density": 0.3333,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-3_4",
-      "cx": -3,
-      "cz": 4,
-      "center": {
-        "x": -160,
-        "z": 288
-      },
-      "authoredCount": 14725,
-      "density": 0.1531,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-3_5",
-      "cx": -3,
-      "cz": 5,
-      "center": {
-        "x": -160,
-        "z": 352
-      },
-      "authoredCount": 8843,
-      "density": 0.092,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-3_6",
-      "cx": -3,
-      "cz": 6,
-      "center": {
-        "x": -160,
-        "z": 416
-      },
-      "authoredCount": 7792,
-      "density": 0.081,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-3_7",
-      "cx": -3,
-      "cz": 7,
-      "center": {
-        "x": -160,
-        "z": 480
-      },
-      "authoredCount": 7698,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-2_-7",
-      "cx": -2,
-      "cz": -7,
-      "center": {
-        "x": -96,
-        "z": -416
-      },
-      "authoredCount": 7937,
-      "density": 0.0825,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-2_-6",
-      "cx": -2,
-      "cz": -6,
-      "center": {
-        "x": -96,
-        "z": -352
-      },
-      "authoredCount": 9286,
-      "density": 0.0966,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-2_-5",
-      "cx": -2,
-      "cz": -5,
-      "center": {
-        "x": -96,
-        "z": -288
-      },
-      "authoredCount": 14278,
-      "density": 0.1485,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-2_-4",
+      "id": "props_-2_-4",
       "cx": -2,
       "cz": -4,
       "center": {
         "x": -96,
         "z": -224
       },
-      "authoredCount": 28934,
-      "density": 0.3009,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_-3",
+      "id": "props_-2_-3",
       "cx": -2,
       "cz": -3,
       "center": {
         "x": -96,
         "z": -160
       },
-      "authoredCount": 80911,
-      "density": 0.8413,
-      "lod": "high",
+      "authoredCount": 96,
+      "density": 1.4224,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_-2",
+      "id": "props_-2_-2",
       "cx": -2,
       "cz": -2,
       "center": {
         "x": -96,
         "z": -96
       },
-      "authoredCount": 222659,
-      "density": 2.3153,
-      "lod": "high",
+      "authoredCount": 149,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_-1",
+      "id": "props_-2_-1",
       "cx": -2,
       "cz": -1,
       "center": {
         "x": -96,
         "z": -32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 149,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_0",
+      "id": "props_-2_0",
       "cx": -2,
       "cz": 0,
       "center": {
         "x": -96,
         "z": 32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 149,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_1",
+      "id": "props_-2_1",
       "cx": -2,
       "cz": 1,
       "center": {
         "x": -96,
         "z": 96
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 149,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_2",
+      "id": "props_-2_2",
       "cx": -2,
       "cz": 2,
       "center": {
         "x": -96,
         "z": 160
       },
-      "authoredCount": 96876,
-      "density": 1.0073,
-      "lod": "high",
+      "authoredCount": 65,
+      "density": 0.9664,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_3",
+      "id": "props_-2_3",
       "cx": -2,
       "cz": 3,
       "center": {
         "x": -96,
         "z": 224
       },
-      "authoredCount": 31935,
-      "density": 0.3321,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-2_4",
-      "cx": -2,
-      "cz": 4,
-      "center": {
-        "x": -96,
-        "z": 288
-      },
-      "authoredCount": 13257,
-      "density": 0.1378,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-2_5",
-      "cx": -2,
-      "cz": 5,
-      "center": {
-        "x": -96,
-        "z": 352
-      },
-      "authoredCount": 8651,
-      "density": 0.09,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-2_6",
-      "cx": -2,
-      "cz": 6,
-      "center": {
-        "x": -96,
-        "z": 416
-      },
-      "authoredCount": 7818,
-      "density": 0.0813,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-2_7",
-      "cx": -2,
-      "cz": 7,
-      "center": {
-        "x": -96,
-        "z": 480
-      },
-      "authoredCount": 7728,
-      "density": 0.0804,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-1_-7",
-      "cx": -1,
-      "cz": -7,
-      "center": {
-        "x": -32,
-        "z": -416
-      },
-      "authoredCount": 11544,
-      "density": 0.12,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-1_-6",
-      "cx": -1,
-      "cz": -6,
-      "center": {
-        "x": -32,
-        "z": -352
-      },
-      "authoredCount": 15724,
-      "density": 0.1635,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-1_-5",
-      "cx": -1,
-      "cz": -5,
-      "center": {
-        "x": -32,
-        "z": -288
-      },
-      "authoredCount": 30042,
-      "density": 0.3124,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-1_-4",
+      "id": "props_-1_-4",
       "cx": -1,
       "cz": -4,
       "center": {
         "x": -32,
         "z": -224
       },
-      "authoredCount": 60469,
-      "density": 0.6288,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_-3",
+      "id": "props_-1_-3",
       "cx": -1,
       "cz": -3,
       "center": {
         "x": -32,
         "z": -160
       },
-      "authoredCount": 131547,
-      "density": 1.3679,
-      "lod": "high",
+      "authoredCount": 133,
+      "density": 1.9768,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_-2",
+      "id": "props_-1_-2",
       "cx": -1,
       "cz": -2,
       "center": {
         "x": -32,
         "z": -96
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_-1",
+      "id": "props_-1_-1",
       "cx": -1,
       "cz": -1,
       "center": {
         "x": -32,
         "z": -32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
+      "authoredCount": 148,
+      "density": 2.2,
       "lod": "high",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_0",
+      "id": "props_-1_0",
       "cx": -1,
       "cz": 0,
       "center": {
         "x": -32,
         "z": 32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
+      "authoredCount": 148,
+      "density": 2.2,
       "lod": "high",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_1",
+      "id": "props_-1_1",
       "cx": -1,
       "cz": 1,
       "center": {
         "x": -32,
         "z": 96
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_2",
+      "id": "props_-1_2",
       "cx": -1,
       "cz": 2,
       "center": {
         "x": -32,
         "z": 160
       },
-      "authoredCount": 174444,
-      "density": 1.8139,
-      "lod": "high",
+      "authoredCount": 105,
+      "density": 1.5603,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_3",
+      "id": "props_-1_3",
       "cx": -1,
       "cz": 3,
       "center": {
         "x": -32,
         "z": 224
       },
-      "authoredCount": 54792,
-      "density": 0.5697,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-1_4",
-      "cx": -1,
-      "cz": 4,
-      "center": {
-        "x": -32,
-        "z": 288
-      },
-      "authoredCount": 21453,
-      "density": 0.2231,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-1_5",
-      "cx": -1,
-      "cz": 5,
-      "center": {
-        "x": -32,
-        "z": 352
-      },
-      "authoredCount": 13025,
-      "density": 0.1354,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_-1_6",
-      "cx": -1,
-      "cz": 6,
-      "center": {
-        "x": -32,
-        "z": 416
-      },
-      "authoredCount": 11148,
-      "density": 0.1159,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_-1_7",
-      "cx": -1,
-      "cz": 7,
-      "center": {
-        "x": -32,
-        "z": 480
-      },
-      "authoredCount": 10889,
-      "density": 0.1132,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_0_-7",
-      "cx": 0,
-      "cz": -7,
-      "center": {
-        "x": 32,
-        "z": -416
-      },
-      "authoredCount": 29211,
-      "density": 0.3037,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_0_-6",
-      "cx": 0,
-      "cz": -6,
-      "center": {
-        "x": 32,
-        "z": -352
-      },
-      "authoredCount": 35873,
-      "density": 0.373,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_0_-5",
-      "cx": 0,
-      "cz": -5,
-      "center": {
-        "x": 32,
-        "z": -288
-      },
-      "authoredCount": 58046,
-      "density": 0.6036,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_0_-4",
+      "id": "props_0_-4",
       "cx": 0,
       "cz": -4,
       "center": {
         "x": 32,
         "z": -224
       },
-      "authoredCount": 98803,
-      "density": 1.0274,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_-3",
+      "id": "props_0_-3",
       "cx": 0,
       "cz": -3,
       "center": {
         "x": 32,
         "z": -160
       },
-      "authoredCount": 167870,
-      "density": 1.7455,
-      "lod": "high",
+      "authoredCount": 123,
+      "density": 1.8249,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_-2",
+      "id": "props_0_-2",
       "cx": 0,
       "cz": -2,
       "center": {
         "x": 32,
         "z": -96
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_-1",
+      "id": "props_0_-1",
       "cx": 0,
       "cz": -1,
       "center": {
         "x": 32,
         "z": -32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
+      "authoredCount": 148,
+      "density": 2.2,
       "lod": "high",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_0",
+      "id": "props_0_0",
       "cx": 0,
       "cz": 0,
       "center": {
         "x": 32,
         "z": 32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
+      "authoredCount": 148,
+      "density": 2.2,
       "lod": "high",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_1",
+      "id": "props_0_1",
       "cx": 0,
       "cz": 1,
       "center": {
         "x": 32,
         "z": 96
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_2",
+      "id": "props_0_2",
       "cx": 0,
       "cz": 2,
       "center": {
         "x": 32,
         "z": 160
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 117,
+      "density": 1.7449,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_3",
+      "id": "props_0_3",
       "cx": 0,
       "cz": 3,
       "center": {
         "x": 32,
         "z": 224
       },
-      "authoredCount": 102339,
-      "density": 1.0641,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_0_4",
-      "cx": 0,
-      "cz": 4,
-      "center": {
-        "x": 32,
-        "z": 288
-      },
-      "authoredCount": 50384,
-      "density": 0.5239,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_0_5",
-      "cx": 0,
-      "cz": 5,
-      "center": {
-        "x": 32,
-        "z": 352
-      },
-      "authoredCount": 33244,
-      "density": 0.3457,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_0_6",
-      "cx": 0,
-      "cz": 6,
-      "center": {
-        "x": 32,
-        "z": 416
-      },
-      "authoredCount": 28824,
-      "density": 0.2997,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_0_7",
-      "cx": 0,
-      "cz": 7,
-      "center": {
-        "x": 32,
-        "z": 480
-      },
-      "authoredCount": 28181,
-      "density": 0.293,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_1_-7",
-      "cx": 1,
-      "cz": -7,
-      "center": {
-        "x": 96,
-        "z": -416
-      },
-      "authoredCount": 16286,
-      "density": 0.1693,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_1_-6",
-      "cx": 1,
-      "cz": -6,
-      "center": {
-        "x": 96,
-        "z": -352
-      },
-      "authoredCount": 21716,
-      "density": 0.2258,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_1_-5",
-      "cx": 1,
-      "cz": -5,
-      "center": {
-        "x": 96,
-        "z": -288
-      },
-      "authoredCount": 39528,
-      "density": 0.411,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_1_-4",
+      "id": "props_1_-4",
       "cx": 1,
       "cz": -4,
       "center": {
         "x": 96,
         "z": -224
       },
-      "authoredCount": 70063,
-      "density": 0.7285,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_-3",
+      "id": "props_1_-3",
       "cx": 1,
       "cz": -3,
       "center": {
         "x": 96,
         "z": -160
       },
-      "authoredCount": 112601,
-      "density": 1.1708,
-      "lod": "high",
+      "authoredCount": 77,
+      "density": 1.1501,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_-2",
+      "id": "props_1_-2",
       "cx": 1,
       "cz": -2,
       "center": {
         "x": 96,
         "z": -96
       },
-      "authoredCount": 207476,
-      "density": 2.1574,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_-1",
+      "id": "props_1_-1",
       "cx": 1,
       "cz": -1,
       "center": {
         "x": 96,
         "z": -32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_0",
+      "id": "props_1_0",
       "cx": 1,
       "cz": 0,
       "center": {
         "x": 96,
         "z": 32
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_1",
+      "id": "props_1_1",
       "cx": 1,
       "cz": 1,
       "center": {
         "x": 96,
         "z": 96
       },
-      "authoredCount": 230810,
-      "density": 2.4,
-      "lod": "high",
+      "authoredCount": 148,
+      "density": 2.2,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_2",
+      "id": "props_1_2",
       "cx": 1,
       "cz": 2,
       "center": {
         "x": 96,
         "z": 160
       },
-      "authoredCount": 203283,
-      "density": 2.1138,
-      "lod": "high",
+      "authoredCount": 88,
+      "density": 1.3026,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_3",
+      "id": "props_1_3",
       "cx": 1,
       "cz": 3,
       "center": {
         "x": 96,
         "z": 224
       },
-      "authoredCount": 90724,
-      "density": 0.9434,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_1_4",
-      "cx": 1,
-      "cz": 4,
-      "center": {
-        "x": 96,
-        "z": 288
-      },
-      "authoredCount": 42270,
-      "density": 0.4395,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_1_5",
-      "cx": 1,
-      "cz": 5,
-      "center": {
-        "x": 96,
-        "z": 352
-      },
-      "authoredCount": 22014,
-      "density": 0.2289,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_1_6",
-      "cx": 1,
-      "cz": 6,
-      "center": {
-        "x": 96,
-        "z": 416
-      },
-      "authoredCount": 16315,
-      "density": 0.1696,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_1_7",
-      "cx": 1,
-      "cz": 7,
-      "center": {
-        "x": 96,
-        "z": 480
-      },
-      "authoredCount": 15468,
-      "density": 0.1608,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_2_-7",
-      "cx": 2,
-      "cz": -7,
-      "center": {
-        "x": 160,
-        "z": -416
-      },
-      "authoredCount": 8232,
-      "density": 0.0856,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_2_-6",
-      "cx": 2,
-      "cz": -6,
-      "center": {
-        "x": 160,
-        "z": -352
-      },
-      "authoredCount": 10492,
-      "density": 0.1091,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_2_-5",
-      "cx": 2,
-      "cz": -5,
-      "center": {
-        "x": 160,
-        "z": -288
-      },
-      "authoredCount": 17833,
-      "density": 0.1854,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_2_-4",
+      "id": "props_2_-4",
       "cx": 2,
       "cz": -4,
       "center": {
         "x": 160,
         "z": -224
       },
-      "authoredCount": 29898,
-      "density": 0.3109,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_-3",
+      "id": "props_2_-3",
       "cx": 2,
       "cz": -3,
       "center": {
         "x": 160,
         "z": -160
       },
-      "authoredCount": 44792,
-      "density": 0.4657,
-      "lod": "high",
+      "authoredCount": 40,
+      "density": 0.5967,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_-2",
+      "id": "props_2_-2",
       "cx": 2,
       "cz": -2,
       "center": {
         "x": 160,
         "z": -96
       },
-      "authoredCount": 77300,
-      "density": 0.8038,
-      "lod": "high",
+      "authoredCount": 82,
+      "density": 1.2166,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_-1",
+      "id": "props_2_-1",
       "cx": 2,
       "cz": -1,
       "center": {
         "x": 160,
         "z": -32
       },
-      "authoredCount": 152565,
-      "density": 1.5864,
-      "lod": "high",
+      "authoredCount": 136,
+      "density": 2.0174,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_0",
+      "id": "props_2_0",
       "cx": 2,
       "cz": 0,
       "center": {
         "x": 160,
         "z": 32
       },
-      "authoredCount": 222643,
-      "density": 2.3151,
-      "lod": "high",
+      "authoredCount": 147,
+      "density": 2.174,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_1",
+      "id": "props_2_1",
       "cx": 2,
       "cz": 1,
       "center": {
         "x": 160,
         "z": 96
       },
-      "authoredCount": 164173,
-      "density": 1.7071,
-      "lod": "high",
+      "authoredCount": 99,
+      "density": 1.4733,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_2",
+      "id": "props_2_2",
       "cx": 2,
       "cz": 2,
       "center": {
         "x": 160,
         "z": 160
       },
-      "authoredCount": 94667,
-      "density": 0.9844,
-      "lod": "high",
+      "authoredCount": 49,
+      "density": 0.724,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_3",
+      "id": "props_2_3",
       "cx": 2,
       "cz": 3,
       "center": {
         "x": 160,
         "z": 224
       },
-      "authoredCount": 50126,
-      "density": 0.5212,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_2_4",
-      "cx": 2,
-      "cz": 4,
-      "center": {
-        "x": 160,
-        "z": 288
-      },
-      "authoredCount": 25017,
-      "density": 0.2601,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_2_5",
-      "cx": 2,
-      "cz": 5,
-      "center": {
-        "x": 160,
-        "z": 352
-      },
-      "authoredCount": 12274,
-      "density": 0.1276,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_2_6",
-      "cx": 2,
-      "cz": 6,
-      "center": {
-        "x": 160,
-        "z": 416
-      },
-      "authoredCount": 8479,
-      "density": 0.0882,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_2_7",
-      "cx": 2,
-      "cz": 7,
-      "center": {
-        "x": 160,
-        "z": 480
-      },
-      "authoredCount": 7908,
-      "density": 0.0822,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_-7",
-      "cx": 3,
-      "cz": -7,
-      "center": {
-        "x": 224,
-        "z": -416
-      },
-      "authoredCount": 7772,
-      "density": 0.0808,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_-6",
-      "cx": 3,
-      "cz": -6,
-      "center": {
-        "x": 224,
-        "z": -352
-      },
-      "authoredCount": 8252,
-      "density": 0.0858,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_-5",
-      "cx": 3,
-      "cz": -5,
-      "center": {
-        "x": 224,
-        "z": -288
-      },
-      "authoredCount": 9798,
-      "density": 0.1019,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_-4",
+      "id": "props_3_-4",
       "cx": 3,
       "cz": -4,
       "center": {
         "x": 224,
         "z": -224
       },
-      "authoredCount": 12262,
-      "density": 0.1275,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_3_-3",
+      "id": "props_3_-3",
       "cx": 3,
       "cz": -3,
       "center": {
         "x": 224,
         "z": -160
       },
-      "authoredCount": 15055,
-      "density": 0.1565,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_3_-2",
+      "id": "props_3_-2",
       "cx": 3,
       "cz": -2,
       "center": {
         "x": 224,
         "z": -96
       },
-      "authoredCount": 21229,
-      "density": 0.2207,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_3_-1",
+      "id": "props_3_-1",
       "cx": 3,
       "cz": -1,
       "center": {
         "x": 224,
         "z": -32
       },
-      "authoredCount": 44321,
-      "density": 0.4609,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_3_0",
+      "id": "props_3_0",
       "cx": 3,
       "cz": 0,
       "center": {
         "x": 224,
         "z": 32
       },
-      "authoredCount": 75971,
-      "density": 0.79,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_3_1",
+      "id": "props_3_1",
       "cx": 3,
       "cz": 1,
       "center": {
         "x": 224,
         "z": 96
       },
-      "authoredCount": 43949,
-      "density": 0.457,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_3_2",
+      "id": "props_3_2",
       "cx": 3,
       "cz": 2,
       "center": {
         "x": 224,
         "z": 160
       },
-      "authoredCount": 29648,
-      "density": 0.3083,
-      "lod": "high",
+      "authoredCount": 0,
+      "density": 0,
+      "lod": "medium",
       "format": "deterministic-procedural-v1"
     },
     {
-      "id": "detail_3_3",
+      "id": "props_3_3",
       "cx": 3,
       "cz": 3,
       "center": {
         "x": 224,
         "z": 224
       },
-      "authoredCount": 20480,
-      "density": 0.213,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_4",
-      "cx": 3,
-      "cz": 4,
-      "center": {
-        "x": 224,
-        "z": 288
-      },
-      "authoredCount": 13396,
-      "density": 0.1393,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_5",
-      "cx": 3,
-      "cz": 5,
-      "center": {
-        "x": 224,
-        "z": 352
-      },
-      "authoredCount": 9202,
-      "density": 0.0957,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_6",
-      "cx": 3,
-      "cz": 6,
-      "center": {
-        "x": 224,
-        "z": 416
-      },
-      "authoredCount": 7906,
-      "density": 0.0822,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_3_7",
-      "cx": 3,
-      "cz": 7,
-      "center": {
-        "x": 224,
-        "z": 480
-      },
-      "authoredCount": 7709,
-      "density": 0.0802,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_-7",
-      "cx": 4,
-      "cz": -7,
-      "center": {
-        "x": 288,
-        "z": -416
-      },
-      "authoredCount": 7702,
-      "density": 0.0801,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_-6",
-      "cx": 4,
-      "cz": -6,
-      "center": {
-        "x": 288,
-        "z": -352
-      },
-      "authoredCount": 7754,
-      "density": 0.0806,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_-5",
-      "cx": 4,
-      "cz": -5,
-      "center": {
-        "x": 288,
-        "z": -288
-      },
-      "authoredCount": 7920,
-      "density": 0.0824,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_-4",
-      "cx": 4,
-      "cz": -4,
-      "center": {
-        "x": 288,
-        "z": -224
-      },
-      "authoredCount": 8178,
-      "density": 0.085,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_-3",
-      "cx": 4,
-      "cz": -3,
-      "center": {
-        "x": 288,
-        "z": -160
-      },
-      "authoredCount": 8451,
-      "density": 0.0879,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_-2",
-      "cx": 4,
-      "cz": -2,
-      "center": {
-        "x": 288,
-        "z": -96
-      },
-      "authoredCount": 9152,
-      "density": 0.0952,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_-1",
-      "cx": 4,
-      "cz": -1,
-      "center": {
-        "x": 288,
-        "z": -32
-      },
-      "authoredCount": 20582,
-      "density": 0.214,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_0",
-      "cx": 4,
-      "cz": 0,
-      "center": {
-        "x": 288,
-        "z": 32
-      },
-      "authoredCount": 42450,
-      "density": 0.4414,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_1",
-      "cx": 4,
-      "cz": 1,
-      "center": {
-        "x": 288,
-        "z": 96
-      },
-      "authoredCount": 14298,
-      "density": 0.1487,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_2",
-      "cx": 4,
-      "cz": 2,
-      "center": {
-        "x": 288,
-        "z": 160
-      },
-      "authoredCount": 10716,
-      "density": 0.1114,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_3",
-      "cx": 4,
-      "cz": 3,
-      "center": {
-        "x": 288,
-        "z": 224
-      },
-      "authoredCount": 9748,
-      "density": 0.1014,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_4",
-      "cx": 4,
-      "cz": 4,
-      "center": {
-        "x": 288,
-        "z": 288
-      },
-      "authoredCount": 8673,
-      "density": 0.0902,
-      "lod": "high",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_5",
-      "cx": 4,
-      "cz": 5,
-      "center": {
-        "x": 288,
-        "z": 352
-      },
-      "authoredCount": 7957,
-      "density": 0.0827,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_6",
-      "cx": 4,
-      "cz": 6,
-      "center": {
-        "x": 288,
-        "z": 416
-      },
-      "authoredCount": 7730,
-      "density": 0.0804,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_4_7",
-      "cx": 4,
-      "cz": 7,
-      "center": {
-        "x": 288,
-        "z": 480
-      },
-      "authoredCount": 7696,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_-7",
-      "cx": 5,
-      "cz": -7,
-      "center": {
-        "x": 352,
-        "z": -416
-      },
-      "authoredCount": 7694,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_-6",
-      "cx": 5,
-      "cz": -6,
-      "center": {
-        "x": 352,
-        "z": -352
-      },
-      "authoredCount": 7696,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_-5",
-      "cx": 5,
-      "cz": -5,
-      "center": {
-        "x": 352,
-        "z": -288
-      },
-      "authoredCount": 7706,
-      "density": 0.0801,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_-4",
-      "cx": 5,
-      "cz": -4,
-      "center": {
-        "x": 352,
-        "z": -224
-      },
-      "authoredCount": 7719,
-      "density": 0.0803,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_-3",
-      "cx": 5,
-      "cz": -3,
-      "center": {
-        "x": 352,
-        "z": -160
-      },
-      "authoredCount": 7733,
-      "density": 0.0804,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_-2",
-      "cx": 5,
-      "cz": -2,
-      "center": {
-        "x": 352,
-        "z": -96
-      },
-      "authoredCount": 7862,
-      "density": 0.0818,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_-1",
-      "cx": 5,
-      "cz": -1,
-      "center": {
-        "x": 352,
-        "z": -32
-      },
-      "authoredCount": 17994,
-      "density": 0.1871,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_0",
-      "cx": 5,
-      "cz": 0,
-      "center": {
-        "x": 352,
-        "z": 32
-      },
-      "authoredCount": 38644,
-      "density": 0.4018,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_1",
-      "cx": 5,
-      "cz": 1,
-      "center": {
-        "x": 352,
-        "z": 96
-      },
-      "authoredCount": 10626,
-      "density": 0.1105,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_2",
-      "cx": 5,
-      "cz": 2,
-      "center": {
-        "x": 352,
-        "z": 160
-      },
-      "authoredCount": 7924,
-      "density": 0.0824,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_3",
-      "cx": 5,
-      "cz": 3,
-      "center": {
-        "x": 352,
-        "z": 224
-      },
-      "authoredCount": 7867,
-      "density": 0.0818,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_4",
-      "cx": 5,
-      "cz": 4,
-      "center": {
-        "x": 352,
-        "z": 288
-      },
-      "authoredCount": 7780,
-      "density": 0.0809,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_5",
-      "cx": 5,
-      "cz": 5,
-      "center": {
-        "x": 352,
-        "z": 352
-      },
-      "authoredCount": 7717,
-      "density": 0.0802,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_6",
-      "cx": 5,
-      "cz": 6,
-      "center": {
-        "x": 352,
-        "z": 416
-      },
-      "authoredCount": 7696,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_5_7",
-      "cx": 5,
-      "cz": 7,
-      "center": {
-        "x": 352,
-        "z": 480
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_-7",
-      "cx": 6,
-      "cz": -7,
-      "center": {
-        "x": 416,
-        "z": -416
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_-6",
-      "cx": 6,
-      "cz": -6,
-      "center": {
-        "x": 416,
-        "z": -352
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_-5",
-      "cx": 6,
-      "cz": -5,
-      "center": {
-        "x": 416,
-        "z": -288
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_-4",
-      "cx": 6,
-      "cz": -4,
-      "center": {
-        "x": 416,
-        "z": -224
-      },
-      "authoredCount": 7694,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_-3",
-      "cx": 6,
-      "cz": -3,
-      "center": {
-        "x": 416,
-        "z": -160
-      },
-      "authoredCount": 7694,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_-2",
-      "cx": 6,
-      "cz": -2,
-      "center": {
-        "x": 416,
-        "z": -96
-      },
-      "authoredCount": 7792,
-      "density": 0.081,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_-1",
-      "cx": 6,
-      "cz": -1,
-      "center": {
-        "x": 416,
-        "z": -32
-      },
-      "authoredCount": 17851,
-      "density": 0.1856,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_0",
-      "cx": 6,
-      "cz": 0,
-      "center": {
-        "x": 416,
-        "z": 32
-      },
-      "authoredCount": 38424,
-      "density": 0.3995,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_1",
-      "cx": 6,
-      "cz": 1,
-      "center": {
-        "x": 416,
-        "z": 96
-      },
-      "authoredCount": 10390,
-      "density": 0.108,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_2",
-      "cx": 6,
-      "cz": 2,
-      "center": {
-        "x": 416,
-        "z": 160
-      },
-      "authoredCount": 7709,
-      "density": 0.0802,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_3",
-      "cx": 6,
-      "cz": 3,
-      "center": {
-        "x": 416,
-        "z": 224
-      },
-      "authoredCount": 7701,
-      "density": 0.0801,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_4",
-      "cx": 6,
-      "cz": 4,
-      "center": {
-        "x": 416,
-        "z": 288
-      },
-      "authoredCount": 7697,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_5",
-      "cx": 6,
-      "cz": 5,
-      "center": {
-        "x": 416,
-        "z": 352
-      },
-      "authoredCount": 7694,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_6",
-      "cx": 6,
-      "cz": 6,
-      "center": {
-        "x": 416,
-        "z": 416
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_6_7",
-      "cx": 6,
-      "cz": 7,
-      "center": {
-        "x": 416,
-        "z": 480
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_-7",
-      "cx": 7,
-      "cz": -7,
-      "center": {
-        "x": 480,
-        "z": -416
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_-6",
-      "cx": 7,
-      "cz": -6,
-      "center": {
-        "x": 480,
-        "z": -352
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_-5",
-      "cx": 7,
-      "cz": -5,
-      "center": {
-        "x": 480,
-        "z": -288
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_-4",
-      "cx": 7,
-      "cz": -4,
-      "center": {
-        "x": 480,
-        "z": -224
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_-3",
-      "cx": 7,
-      "cz": -3,
-      "center": {
-        "x": 480,
-        "z": -160
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_-2",
-      "cx": 7,
-      "cz": -2,
-      "center": {
-        "x": 480,
-        "z": -96
-      },
-      "authoredCount": 7790,
-      "density": 0.081,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_-1",
-      "cx": 7,
-      "cz": -1,
-      "center": {
-        "x": 480,
-        "z": -32
-      },
-      "authoredCount": 17847,
-      "density": 0.1856,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_0",
-      "cx": 7,
-      "cz": 0,
-      "center": {
-        "x": 480,
-        "z": 32
-      },
-      "authoredCount": 38418,
-      "density": 0.3995,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_1",
-      "cx": 7,
-      "cz": 1,
-      "center": {
-        "x": 480,
-        "z": 96
-      },
-      "authoredCount": 10382,
-      "density": 0.108,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_2",
-      "cx": 7,
-      "cz": 2,
-      "center": {
-        "x": 480,
-        "z": 160
-      },
-      "authoredCount": 7700,
-      "density": 0.0801,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_3",
-      "cx": 7,
-      "cz": 3,
-      "center": {
-        "x": 480,
-        "z": 224
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_4",
-      "cx": 7,
-      "cz": 4,
-      "center": {
-        "x": 480,
-        "z": 288
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_5",
-      "cx": 7,
-      "cz": 5,
-      "center": {
-        "x": 480,
-        "z": 352
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_6",
-      "cx": 7,
-      "cz": 6,
-      "center": {
-        "x": 480,
-        "z": 416
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
-      "lod": "medium",
-      "format": "deterministic-procedural-v1"
-    },
-    {
-      "id": "detail_7_7",
-      "cx": 7,
-      "cz": 7,
-      "center": {
-        "x": 480,
-        "z": 480
-      },
-      "authoredCount": 7693,
-      "density": 0.08,
+      "authoredCount": 0,
+      "density": 0,
       "lod": "medium",
       "format": "deterministic-procedural-v1"
     }
@@ -3515,19 +990,18 @@
   "runtimeBudget": {
     "tier": "mobile",
     "visibleInstanceCap": 350000,
-    "generatedDetailVisibleBudget": 350000,
-    "visibleRadius": 3
+    "generatedDetailVisibleBudget": 4600,
+    "visibleRadius": 1
   },
   "sectionCounts": {
-    "terrain": 233438,
-    "outerDistrictExpansion": 52856,
-    "roads": 4952,
-    "denseUrbanInfill": 3105,
+    "terrain": 231482,
+    "outerDistrictExpansion": 30742,
+    "cityBlocks": 7328,
     "transit": 2373,
     "tourismExpansion": 1710,
     "petronas": 1508,
     "sultanAbdulSamad": 1392,
-    "cityBuildings": 1269,
+    "streets": 1320,
     "nationalMosque": 894,
     "merdeka118": 851,
     "bukitBintang": 728,
@@ -3539,62 +1013,62 @@
     "nationalMuseum": 435,
     "theanHouTemple": 404,
     "centralMarket": 387,
-    "streetDetails": 110,
     "railwayStation": 9
   },
   "materialCounts": {
-    "grass": 104985,
-    "clay": 14080,
-    "dirt": 10797,
-    "stoneDark": 14081,
-    "grass2": 54630,
-    "grassDark": 34893,
+    "stone": 36127,
+    "clay": 14238,
+    "dirt": 8841,
+    "stoneDark": 54208,
+    "grass": 10696,
+    "grass2": 3073,
+    "grassDark": 1366,
+    "road": 50701,
+    "concrete": 46000,
+    "concreteDark": 21656,
+    "plaza": 22994,
+    "lineWhite": 1048,
+    "lampGlow": 535,
+    "warning": 361,
     "water": 437,
-    "treeTrunk": 117,
-    "treeLeaf": 380,
-    "treeLeaf2": 132,
-    "road": 39667,
-    "lineWhite": 1504,
-    "parkPath": 2814,
-    "concrete": 15154,
-    "gatewayPurple": 117,
-    "lampGlow": 281,
-    "glassGreen": 87,
-    "concreteDark": 842,
-    "plaza": 5491,
+    "treeTrunk": 258,
+    "treeLeaf": 803,
+    "treeLeaf2": 273,
+    "parkPath": 2850,
+    "gatewayPurple": 92,
+    "glassGreen": 44,
     "templeGold": 33,
     "caveLimestone": 11,
-    "warning": 49,
-    "mosqueWhite": 67,
+    "mosqueWhite": 35,
     "mosqueBlue": 10,
-    "awningStripe": 46,
-    "marketRed": 38,
-    "glassDark": 3082,
-    "mallGold": 52,
-    "blackGlass": 60,
-    "glass": 2873,
-    "steel": 69,
-    "redBrick": 29,
-    "merdekaGlass": 63,
+    "awningStripe": 70,
+    "marketRed": 71,
+    "glassDark": 4477,
+    "mallGold": 31,
+    "stationRoof": 20,
+    "redBrick": 26,
+    "roofCopper": 39,
+    "silver": 249,
+    "steel": 178,
+    "blackGlass": 32,
+    "glass": 155,
+    "templeRed": 10,
+    "marketBlue": 12,
+    "littleIndiaPink": 9,
+    "trainBlue": 27,
+    "trainYellow": 21,
+    "station": 102,
+    "monumentBronze": 29,
     "rail": 1456,
-    "station": 24,
-    "stationRoof": 19,
-    "busGreen": 4,
     "riverBlue": 268,
-    "templeRed": 4,
-    "roofCopper": 10,
     "museumBrown": 9,
     "palaceWall": 1,
     "palaceGold": 2,
-    "marketBlue": 6,
-    "littleIndiaPink": 3,
     "pavilionRed": 6,
-    "silver": 71,
     "petronasTrim": 312,
+    "merdekaGlass": 30,
     "merdekaTrim": 13,
     "klTowerWhite": 3,
-    "klTowerRed": 2,
-    "stone": 2,
-    "monumentBronze": 22
+    "klTowerRed": 2
   }
 }

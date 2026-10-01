@@ -19,9 +19,10 @@ export class CityActors {
     };
 
     const roadLoops = [
-      [new THREE.Vector3(-78, 0, -8), new THREE.Vector3(78, 0, -8)],
-      [new THREE.Vector3(18, 0, -72), new THREE.Vector3(18, 0, 70)],
-      [new THREE.Vector3(-72, 0, 42), new THREE.Vector3(78, 0, 42)]
+      [new THREE.Vector3(-120, 0, -1.5), new THREE.Vector3(120, 0, -1.5)],
+      [new THREE.Vector3(22.5, 0, -96), new THREE.Vector3(22.5, 0, 96)],
+      [new THREE.Vector3(-96, 0, 70.5), new THREE.Vector3(96, 0, 70.5)],
+      [new THREE.Vector3(-46.5, 0, -72), new THREE.Vector3(-46.5, 0, 72)]
     ];
 
     roadLoops.forEach((points, index) => {
@@ -35,13 +36,21 @@ export class CityActors {
       }
     });
 
-    [[-6, -55], [-48, -32], [-12, 38], [35, 30], [56, -18]].forEach(([x, z], index) => {
+    const pedestrianLanes = [
+      [-34, 2, -6, 2],
+      [18, -3, 44, -3],
+      [2, 18, 2, 44],
+      [21, 6, 21, 30],
+      [-54, 2, -30, 2]
+    ];
+
+    pedestrianLanes.forEach(([x1, z1, x2, z2], index) => {
       const group = new THREE.Group();
       group.add(makeBox(materials.pedestrian, new THREE.Vector3(0.45, 1.2, 0.45), new THREE.Vector3(0, 0.6, 0)));
       scene.add(group);
       this.actors.push({
         group,
-        points: [new THREE.Vector3(x - 4, 0, z), new THREE.Vector3(x + 4, 0, z + 2)],
+        points: [new THREE.Vector3(x1, 0, z1), new THREE.Vector3(x2, 0, z2)],
         progress: index * 0.21,
         speed: 0.015,
         terrain

@@ -4,12 +4,13 @@ A browser game prototype built with **Vite + Three.js**. The scene is a Minecraf
 
 ## Features
 
-- Explorable third-person voxel character
+- Explorable third-person voxel character with building collision and wall sliding
 - Orbit camera controls with zoom
+- Day / golden hour / sunset / night / rain / thunderstorm lighting modes
 - Tasteful touch navigation overlay for phones/tablets
   - analog left thumb-stick for movement
   - jump, sprint, focus-camera, and train toggle buttons
-- Large terraced terrain generated from deterministic code noise
+- Large terraced hills outside a flat, paved city plateau
 - Code-built landmarks:
   - Petronas Twin Towers with skybridge
   - Merdeka 118
@@ -18,7 +19,8 @@ A browser game prototype built with **Vite + Three.js**. The scene is a Minecraf
   - Masjid Negara inspired mosque
   - Tugu Negara inspired monument
   - Lake Gardens inspired park
-- Procedural skyscraper district
+- Street-grid downtown with a tower cluster, mid-rise blocks, shophouses and kampung houses
+- Sidewalks, lane markings, traffic lights, parks, plazas and parking blocks
 - Roads, plazas, parks, lake, trees, public transport stations
 - Elevated rail / monorail inspired lines with animated voxel trains
 - Browser performance optimizations:
@@ -78,25 +80,31 @@ The built static site will be created in:
 dist/
 ```
 
+## City layout: street grid, blocks, and props
+
+The city is laid out on a deterministic **street grid** instead of scattered random buildings:
+
+- `src/world/layout/streetGrid.js` — grid math: 24-unit block pitch, 6-unit streets, sidewalk bands, district rings around the KLCC core.
+- `src/world/layout/buildings.js` — building kit: setback towers, mid-rise blocks, shophouse rows with awnings, kampung houses, parks, roof clutter, plus collision volumes.
+- `src/world/layout/cityBlocks.js` — classifies every block (tower / mid-rise / low-rise / shophouse / kampung / park / plaza / parking / reserved landmark plot) and fills it with lots that respect setbacks and each other.
+- `src/world/layout/collision.js` — building footprint map used by the player for wall collision and sliding.
+
+Landmarks get reserved plots so nothing is built on top of them, transit lines run along street lines, and the ground itself is zoned: asphalt on streets, concrete/paving in built blocks, grass in parks, and natural terrain outside the city.
+
+Street furniture (lamps, trees, benches, bins, parked cars, signs, planters, hydrants) is generated as a separate, grid-aware detail layer (`src/world/detail/`) that places props on the sidewalk bands and skips building footprints.
+
 ## Measurement and budgets
 
-The voxel world has guardrail scripts so large detail passes do not accidentally ship an oversized static scene:
+The voxel world has guardrail scripts so detail passes do not accidentally ship an oversized scene:
 
 ```bash
 npm run measure:world
 npm run validate:budget
 ```
 
-`measure:world` builds the scene in Node and reports authored instance totals, material counts, section counts, chunk count, generated detail totals, and instanced mesh count. `validate:budget` enforces the current generated-detail ceilings before export.
+`measure:world` builds the scene in Node and reports authored instance totals, material counts, section counts, chunk count, prop totals, and instanced mesh count. `validate:budget` enforces the authored/mesh/chunk/visible ceilings before export.
 
-Current runtime detail remains bundled in the Vite app for GitHub Pages compatibility. The instancer now releases its CPU-side queued instance arrays after `finalize()` and renders the static world as shared-material chunk groups, which provides the visibility foundation for later external chunk files without changing the current map APIs.
-
-
-## 10M generated detail layer
-
-The map now includes a deterministic high-detail layer targeting **10,000,000 authored regional detail instances** on top of the bundled base world. Runtime rendering keeps the combined base + generated detail visibility target at **1,100,000 visible instances** across desktop and mobile tiers. The generated detail is distributed across 225 static/procedural chunks with higher density around KLCC, Bukit Bintang/TRX, Merdeka/Chinatown, PJ, Subang/Sunway, Shah Alam, Klang, Putrajaya, KLIA/Sepang, Batu Caves/Gombak, Genting foothills, and Kuala Selangor.
-
-This is deliberately a chunked/generated layer rather than 10M simultaneously visible cubes. The 10M authored target is measured by `npm run measure:world`; the shipped GitHub Pages manifest is exported to `public/chunks/metadata.json` by `npm run export:chunks`. The HUD includes a compact debug readout for FPS, active/loaded generated chunks, rendered/authored visible generated detail, authored generated detail, total authored count, and the shared visible budget.
+Current numbers: ~284k authored base instances (mostly terrain), ~4.2k authored street props, ~460 instanced meshes, 16 base chunks at 128 units, and a 350k visible-instance cap per device tier.
 
 ## Deploy to `wanazhar.github.io/kualalumpur`
 
