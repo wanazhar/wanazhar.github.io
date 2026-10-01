@@ -3,8 +3,8 @@ import { createKualaLumpurWorld } from '../src/world/createKualaLumpurWorld.js';
 import { getGeneratedDetailSummary } from '../src/world/detail/generatedDetailConfig.js';
 
 const BUDGETS = {
-  maxAuthoredInstances: 10_400_000,
-  maxInstancedMeshes: 1200,
+  maxAuthoredInstances: 400_000,
+  maxInstancedMeshes: 900,
   maxChunks: 100,
   maxVisibleInstances: 350000
 };
@@ -21,7 +21,9 @@ const checks = [
   ['instanced meshes', stats.meshes, BUDGETS.maxInstancedMeshes],
   ['chunks', stats.chunks, BUDGETS.maxChunks],
   ['base visible instances', chunkStats.visibleInstances, Math.min(BUDGETS.maxVisibleInstances, chunkStats.visibleInstanceCap)],
-  ['target visible instances incl generated detail', generatedDetail.visibleBudget, BUDGETS.maxVisibleInstances]
+  ['target visible instances incl generated detail', generatedDetail.visibleBudget, BUDGETS.maxVisibleInstances],
+  ['blocked cells at spawn point', world.collision.isBlocked(world.startPosition.x, world.startPosition.z) ? 1 : 0, 0],
+  ['building collision cells', world.collision.size > 2000 ? 0 : 1, 0]
 ];
 
 let failed = false;

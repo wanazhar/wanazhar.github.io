@@ -293,6 +293,7 @@ export function setupHud({
 
   if (joystick && stick) {
     const radius = 46;
+    const DEAD_ZONE = 0.16;
     let activePointerId = null;
     let origin = { x: 0, y: 0 };
 
@@ -301,10 +302,14 @@ export function setupHud({
       const limited = distance > radius ? radius / distance : 1;
       const dx = x * limited;
       const dy = y * limited;
-      const axisX = dx / radius;
-      const axisY = -dy / radius;
+      const magnitude = Math.min(1, distance / radius);
+      const directionX = distance > 0.001 ? x / distance : 0;
+      const directionY = distance > 0.001 ? y / distance : 0;
+      const shaped = magnitude <= DEAD_ZONE
+        ? 0
+        : Math.pow((magnitude - DEAD_ZONE) / (1 - DEAD_ZONE), 1.25);
       stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-      player.setVirtualAxis(axisX, axisY);
+      player.setVirtualAxis(directionX * shaped, -directionY * shaped);
       trainSystem.wake();
       requestRender();
     };

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { VOXEL_PALETTE } from '../VoxelInstancer.js';
 import { createGeneratedDetailChunkPlan, GENERATED_DETAIL_VISIBLE_BUDGET, GENERATED_DETAIL_MATERIALS } from './generatedDetailConfig.js';
 import { chunkDistance, chunkCoordsForPosition } from '../chunks/chunkVisibility.js';
+import { BLOCK_PITCH, isStreetCoord, streetLinesWithin } from '../layout/streetGrid.js';
 
 function mulberry32(seed) {
   let value = seed >>> 0;
@@ -18,19 +19,6 @@ function seedForChunk(cx, cz) {
   return ((cx + 101) * 73856093) ^ ((cz + 103) * 19349663) ^ 0x9e3779b9;
 }
 
-function sampleUrbanUse(random, localZ) {
-  const roll = random();
-  if (Math.abs(localZ) < 0.055 && roll < 0.55) return 'road';
-  if (roll < 0.035) return 'grassDark';
-  if (roll < 0.075) return 'lampGlow';
-  if (roll < 0.48) return 'concrete';
-  return 'glassDark';
-}
-
-function materialForSample(random, localZ) {
-  return sampleUrbanUse(random, localZ);
-}
-
 function createMaterial(key) {
   return new THREE.MeshLambertMaterial({
     color: VOXEL_PALETTE[key],
@@ -39,14 +27,78 @@ function createMaterial(key) {
   });
 }
 
+const SIDEWALK_OFFSET = 2.5;
+const SPACING = 7;
+
+function addPropBox(list, x, y, z, sx, sy, sz, key) {
+  list.push({ x, y, z, sx, sy, sz, key });
+}
+
+function buildProp(kind, x, z, ground) {
+  const boxes = [];
+  const put = (y, sx, sy, sz, key) => addPropBox(boxes, x, y, z, sx, sy, sz, key);
+
+  switch (kind) {
+    case 'lamp':
+      put(ground + 2.1, 0.3, 4.2, 0.3, 'concreteDark');
+      put(ground + 4.4, 0.9, 0.4, 0.9, 'lampGlow');
+      break;
+    case 'tree':
+      put(ground + 1.6, 0.6, 3.2, 0.6, 'treeTrunk');
+      put(ground + 3.6, 3, 2, 3, 'treeLeaf');
+      put(ground + 4.8, 2, 1.2, 2, 'treeLeaf2');
+      break;
+    case 'bench':
+      put(ground + 0.65, 2.2, 0.4, 0.8, 'silver');
+      put(ground + 0.3, 0.3, 0.6, 0.7, 'concreteDark');
+      put(ground + 0.3, 0.3, 0.6, 0.7, 'concreteDark');
+      break;
+    case 'bin':
+      put(ground + 0.6, 0.9, 1.2, 0.9, 'stationRoof');
+      break;
+    case 'car':
+      put(ground + 0.65, 2.6, 0.9, 1.3, 'silver');
+      put(ground + 1.25, 1.4, 0.5, 1.1, 'concreteDark');
+      break;
+    case 'sign':
+      put(ground + 1.7, 0.25, 3.4, 0.25, 'concreteDark');
+      put(ground + 3.5, 1.7, 1, 0.22, 'warning');
+      break;
+    case 'hydrant':
+      put(ground + 0.6, 0.5, 1.2, 0.5, 'warning');
+      break;
+    case 'planter':
+      put(ground + 0.35, 1.7, 0.7, 1.7, 'concreteDark');
+      put(ground + 0.85, 1.4, 0.5, 1.4, 'treeLeaf');
+      break;
+    default:
+      put(ground + 0.5, 0.9, 1, 0.9, 'stationRoof');
+  }
+  return boxes;
+}
+
+function chooseKind(random) {
+  const roll = random();
+  if (roll < 0.3) return 'lamp';
+  if (roll < 0.55) return 'tree';
+  if (roll < 0.62) return 'bench';
+  if (roll < 0.68) return 'bin';
+  if (roll < 0.78) return 'car';
+  if (roll < 0.86) return 'sign';
+  if (roll < 0.92) return 'planter';
+  if (roll < 0.96) return 'hydrant';
+  return 'bin';
+}
+
 export class GeneratedDetailLayer {
   constructor(scene, terrain, options = {}) {
     this.scene = scene;
     this.terrain = terrain;
+    this.collision = options.collision ?? null;
     this.chunkSize = options.chunkSize ?? 64;
     this.baseVisibleInstances = options.baseVisibleInstances ?? 0;
     this.visibleBudget = options.visibleBudget ?? GENERATED_DETAIL_VISIBLE_BUDGET;
-    this.detailBudget = Math.max(0, this.visibleBudget - this.baseVisibleInstances);
+    this.detailBudget = this.visibleBudget;
     this.chunkPlan = options.chunkPlan ?? createGeneratedDetailChunkPlan();
     this.loaded = new Map();
     this.geometry = new THREE.BoxGeometry(1, 1, 1);
@@ -58,17 +110,14 @@ export class GeneratedDetailLayer {
   }
 
   setBaseVisibleInstances(count) {
-    const next = Math.max(0, count ?? 0);
-    if (next !== this.baseVisibleInstances) this.lastOrigin = null;
-    this.baseVisibleInstances = next;
-    this.detailBudget = Math.max(0, this.visibleBudget - this.baseVisibleInstances);
+    this.baseVisibleInstances = Math.max(0, count ?? 0);
   }
 
   setVisibleBudget(budget) {
     const next = Math.max(0, budget ?? 0);
     if (next !== this.visibleBudget) this.lastOrigin = null;
     this.visibleBudget = next;
-    this.detailBudget = Math.max(0, this.visibleBudget - this.baseVisibleInstances);
+    this.detailBudget = next;
   }
 
   chooseChunks(position) {
@@ -81,44 +130,71 @@ export class GeneratedDetailLayer {
     let authored = 0;
     if (this.detailBudget <= 0) return { origin, chunks: [], authored };
     for (const chunk of ranked) {
+      if (chunk.authoredCount <= 0) continue;
       if (authored >= this.detailBudget && chosen.length > 0) break;
-      if (chunk.distance > 4 && authored > this.detailBudget * 0.85) break;
+      if (chunk.distance > 3 && authored > this.detailBudget * 0.85) break;
       chosen.push(chunk);
       authored += chunk.authoredCount;
     }
     return { origin, chunks: chosen, authored };
   }
 
+  collectProps(chunk) {
+    const props = [];
+    const x0 = chunk.cx * this.chunkSize;
+    const z0 = chunk.cz * this.chunkSize;
+    const x1 = x0 + this.chunkSize;
+    const z1 = z0 + this.chunkSize;
+    const random = mulberry32(seedForChunk(chunk.cx, chunk.cz));
+
+    const verticalLines = streetLinesWithin(x0 - BLOCK_PITCH, x1 + BLOCK_PITCH);
+    for (const line of verticalLines) {
+      let index = 0;
+      for (let z = z0; z < z1; z += SPACING, index += 1) {
+        if (isStreetCoord(z)) continue;
+        const side = index % 2 === 0 ? 1 : -1;
+        const x = line + side * SIDEWALK_OFFSET;
+        if (this.isBlocked(x, z)) continue;
+        props.push(...buildProp(chooseKind(random), x, z, this.terrain.surfaceYAt(x, z)));
+      }
+    }
+
+    const horizontalLines = streetLinesWithin(z0 - BLOCK_PITCH, z1 + BLOCK_PITCH);
+    for (const line of horizontalLines) {
+      let index = 0;
+      for (let x = x0; x < x1; x += SPACING, index += 1) {
+        if (isStreetCoord(x)) continue;
+        const side = index % 2 === 0 ? -1 : 1;
+        const z = line + side * SIDEWALK_OFFSET;
+        if (this.isBlocked(x, z)) continue;
+        props.push(...buildProp(chooseKind(random), x, z, this.terrain.surfaceYAt(x, z)));
+      }
+    }
+
+    return props;
+  }
+
+  isBlocked(x, z) {
+    return this.collision ? this.collision.isBlocked(x, z) : false;
+  }
+
   createChunkGroup(chunk, renderCount) {
     const group = new THREE.Group();
     group.name = `generated_detail_${chunk.id}`;
-    group.userData.generatedDetail = { id: chunk.id, authoredCount: chunk.authoredCount, renderCount };
 
+    const props = this.collectProps(chunk);
+    const limit = Math.min(renderCount, props.length * 1);
     const byMaterial = new Map(GENERATED_DETAIL_MATERIALS.map((key) => [key, []]));
-    const random = mulberry32(seedForChunk(chunk.cx, chunk.cz));
-    const originX = chunk.cx * this.chunkSize;
-    const originZ = chunk.cz * this.chunkSize;
-
-    for (let index = 0; index < renderCount; index += 1) {
-      const lx = random();
-      const lz = random();
-      const worldX = originX + lx * this.chunkSize;
-      const worldZ = originZ + lz * this.chunkSize;
-      const y = this.terrain.surfaceYAt(worldX, worldZ);
-      const localZ = lz - 0.5;
-      const key = materialForSample(random, localZ);
-      const towerish = key === 'glassDark';
-      const midRise = key === 'concrete';
-      const sx = towerish ? 1.1 + random() * 1.9 : midRise ? 1.2 + random() * 2.2 : 0.8 + random() * 1.8;
-      const sz = towerish ? 1.1 + random() * 1.9 : midRise ? 1.2 + random() * 2.2 : 0.8 + random() * 1.8;
-      const sy = key === 'road' ? 0.08 : key === 'lampGlow' ? 0.5 : towerish ? 5 + random() * 18 : midRise ? 2 + random() * 7 : 0.35 + random() * 1.1;
-      byMaterial.get(key).push({ x: worldX, y: y + sy / 2 + 0.08, z: worldZ, sx, sy, sz });
+    for (let index = 0; index < props.length && byMaterial.get(props[index].key).length < limit; index += 1) {
+      const prop = props[index];
+      byMaterial.get(prop.key).push(prop);
     }
 
     const matrix = new THREE.Matrix4();
     const position = new THREE.Vector3();
     const quaternion = new THREE.Quaternion();
     const scale = new THREE.Vector3();
+    let rendered = 0;
 
     for (const [key, data] of byMaterial.entries()) {
       if (!data.length) continue;
@@ -136,8 +212,10 @@ export class GeneratedDetailLayer {
       });
       mesh.computeBoundingSphere();
       group.add(mesh);
+      rendered += data.length;
     }
 
+    group.userData.generatedDetail = { id: chunk.id, authoredCount: chunk.authoredCount, renderCount: rendered };
     this.scene.add(group);
     return group;
   }

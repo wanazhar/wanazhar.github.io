@@ -25,11 +25,20 @@ test('low-end renderer keeps crisp voxel pixel quality while 350k cap handles FP
   assert.match(renderer, /this\.maxPixelRatio\s*=\s*Math\.min\(window\.devicePixelRatio \|\| 1, this\.lowEndMode \? 1\.25 : 1\.5\)/, 'low-end can recover above 1x on capable devices');
 });
 
-test('generated terrain is more building-dense and less empty grass', () => {
-  assert.match(detailLayer, /function sampleUrbanUse\s*\(/, 'detail layer should classify samples as urban buildings, roads, or small accents');
-  assert.match(detailLayer, /return 'glassDark';/, 'glass towers should be a primary generated use');
-  assert.match(detailLayer, /return 'concrete';/, 'concrete mid-rise buildings should be a primary generated use');
-  assert.match(detailLayer, /roll < 0\.035/, 'grass/void samples should be rare, not a dominant generated material');
-  assert.match(world, /function addDenseUrbanInfill\s*\(/, 'base world should add deterministic infill around road grids');
-  assert.match(world, /addSection\('denseUrbanInfill'/, 'infill should be part of the authored world build');
+test('city is laid out on a street grid instead of scattered random buildings', () => {
+  assert.match(world, /createBlockPlan\s*\(/, 'world should plan city blocks on a street grid');
+  assert.match(world, /fillCityBlocks\s*\(/, 'blocks should be filled from the plan');
+  assert.match(world, /addStreetMarkings\s*\(/, 'streets should carry lane markings');
+  assert.match(world, /registerLandmarkCollision\s*\(/, 'landmark structures should register collision volumes');
+  assert.match(world, /new CollisionMap\s*\(/, 'world should expose a building collision map');
+  assert.doesNotMatch(world, /function addDenseUrbanInfill\s*\(/, 'the random infill scatter should be gone');
+  assert.doesNotMatch(world, /mulberry32\(2026/, 'layout randomness should come from deterministic block hashes');
+});
+
+test('generated detail is street furniture, not random building slabs', () => {
+  assert.match(detailLayer, /function buildProp\s*\(/, 'detail layer should build street furniture props');
+  assert.match(detailLayer, /SIDEWALK_OFFSET/, 'props should sit on the sidewalk band of the street grid');
+  assert.match(detailLayer, /collectProps\s*\(/, 'props should be collected per chunk from the street grid');
+  assert.match(detailLayer, /this\.collision\.isBlocked|isBlocked\(/, 'props should avoid building footprints');
+  assert.doesNotMatch(detailLayer, /sampleUrbanUse/, 'the random urban sample classifier should be gone');
 });
