@@ -1,24 +1,36 @@
 export class PhysicsWorld {
   constructor(rapier) {
     this.rapier = rapier;
-    this.world = new rapier.World({ x: 0, y: -9.81, z: 0 });
     this.fixedDt = 1 / 60;
     this.accumulator = 0;
-    this.#createWorldFloor();
+    this.builds = 0;
+    this.world = this.createWorld();
   }
 
-  #createWorldFloor() {
-    const groundBody = this.world.createRigidBody(this.rapier.RigidBodyDesc.fixed().setTranslation(0, -0.12, 0));
-    const groundCollider = this.rapier.ColliderDesc.cuboid(720, 0.1, 720).setFriction(1.05).setRestitution(0.02);
-    this.world.createCollider(groundCollider, groundBody);
+  createWorld() {
+    this.builds += 1;
+    return new this.rapier.World({ x: 0, y: -9.81, z: 0 });
+  }
+
+  // Rapier can hand back a world whose first step produces non-finite state; swapping in a
+  // freshly constructed world is the reliable way out, so callers rebuild their colliders against
+  // this new instance. The outgoing world is abandoned rather than freed: calling free() on it
+  // leaves Rapier's global state poisoned, and every world created afterwards integrates into
+  // NaN. The abandoned world is empty of references and gets collected with the page.
+  rebuild() {
+    this.world = this.createWorld();
+    this.accumulator = 0;
+    return this.world;
   }
 
   step(dt) {
     this.accumulator += Math.min(dt, 0.05);
-    while (this.accumulator >= this.fixedDt) {
+    let steps = 0;
+    while (this.accumulator >= this.fixedDt && steps < 4) {
       this.world.timestep = this.fixedDt;
       this.world.step();
       this.accumulator -= this.fixedDt;
+      steps += 1;
     }
   }
 }
