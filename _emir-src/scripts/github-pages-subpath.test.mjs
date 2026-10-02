@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createCityLayout, BLOCK_PITCH, ROAD_WIDTH, LANDMARKS } from '../src/world/cityLayout.js';
 
 const viteConfig = readFileSync(new URL('../vite.config.js', import.meta.url), 'utf8');
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -10,11 +11,12 @@ const game = readFileSync(new URL('../src/core/Game.js', import.meta.url), 'utf8
 const uiManager = readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
 const city = readFileSync(new URL('../src/world/VoxelCity.js', import.meta.url), 'utf8');
-const inputController = readFileSync(new URL('../src/core/InputController.js', import.meta.url), 'utf8');
-const worldColliderManager = readFileSync(new URL('../src/world/WorldColliderManager.js', import.meta.url), 'utf8');
-const assetLoader = readFileSync(new URL('../src/core/AssetLoader.js', import.meta.url), 'utf8');
-const vehicleProfiles = readFileSync(new URL('../src/physics/VehicleProfiles.js', import.meta.url), 'utf8');
-const vehicleManager = readFileSync(new URL('../src/physics/VehicleManager.js', import.meta.url), 'utf8');
+const layoutModule = readFileSync(new URL('../src/world/cityLayout.js', import.meta.url), 'utf8');
+const physics = readFileSync(new URL('../src/physics/VehiclePhysics.js', import.meta.url), 'utf8');
+const models = readFileSync(new URL('../src/physics/VehicleModels.js', import.meta.url), 'utf8');
+const profiles = readFileSync(new URL('../src/physics/VehicleProfiles.js', import.meta.url), 'utf8');
+const input = readFileSync(new URL('../src/core/InputController.js', import.meta.url), 'utf8');
+const landmarksModule = readFileSync(new URL('../src/world/landmarks.js', import.meta.url), 'utf8');
 
 test('Vite app is configured for GitHub Pages emir subpath', () => {
   assert.match(viteConfig, /base:\s*['"]\/emir\/['"]/, 'Vite base should target /emir/');
@@ -22,138 +24,244 @@ test('Vite app is configured for GitHub Pages emir subpath', () => {
   assert.match(viteConfig, /emptyOutDir:\s*true/, 'build should replace only the emir route output');
 });
 
-test('Emir Car World source remains maintainable and runnable', () => {
+test('Emir Car World source remains runnable', () => {
   assert.equal(packageJson.name, 'emir-car-world');
   assert.equal(packageJson.type, 'module');
-  assert.match(packageJson.description, /Emir’s Car World/, 'package description should use the public game name');
-  assert.ok(packageJson.dependencies.three, 'Three dependency should be declared');
-  assert.ok(packageJson.dependencies['@dimforge/rapier3d-compat'], 'Rapier dependency should be declared');
   assert.match(main, /new Game\(/, 'main entry should bootstrap Game');
-  assert.match(game, /VehicleManager/, 'game should wire the vehicle manager');
-  assert.match(game, /__EMIR_DEBUG__/, 'debug query mode should expose navigation state for regression tests');
-});
-
-test('HTML and public game assets are present', () => {
-  assert.match(indexHtml, /<title>Emir’s Car World<\/title>/, 'page title should identify the game');
+  assert.match(game, /__EMIR_DEBUG__/, 'debug query mode should expose state for regression tests');
   assert.match(indexHtml, /id="app"/, 'app host should be present');
-  assert.ok(existsSync(new URL('../public/data/city-blocks.json', import.meta.url)), 'city block data should be present');
-  for (const vehicle of ['sedan', 'hatchback', 'offroader', 'truck', 'excavator']) {
-    assert.ok(existsSync(new URL(`../public/models/vehicles/${vehicle}.glb`, import.meta.url)), `${vehicle} GLB should be present`);
+});
+
+test('city layout is generated deterministically on a street grid', () => {
+  const first = createCityLayout();
+  const second = createCityLayout();
+  assert.equal(first.buildings.length, second.buildings.length, 'same seed should produce the same layout');
+  assert.ok(first.buildings.length > 200, 'city should contain a real number of buildings');
+  assert.equal(first.buildings.length, second.buildings.length);
+  assert.deepEqual(
+    first.buildings.slice(0, 12).map((b) => [b.x, b.z, Math.round(b.h)]),
+    second.buildings.slice(0, 12).map((b) => [b.x, b.z, Math.round(b.h)]),
+    'building placement should be stable across runs'
+  );
+
+  const tower = first.buildings.find((b) => b.h > 40);
+  assert.ok(tower, 'downtown should contain genuine towers');
+  assert.match(layoutModule, /BLOCK_PITCH = \d+/, 'block pitch should be explicit');
+  assert.match(layoutModule, /ROAD_WIDTH = \d+/, 'road width should be explicit');
+  assert.ok(BLOCK_PITCH > ROAD_WIDTH * 3, 'blocks should be much wider than the roads that separate them');
+});
+
+test('landmarks get their own plots and real structures', () => {
+  const layout = createCityLayout();
+  assert.equal(layout.landmarks.length, 6, 'six KL landmarks should be placed');
+  for (const landmark of layout.landmarks) {
+    assert.ok(Number.isFinite(landmark.ground), `${landmark.id} should sit on the terrain`);
+    const overlapping = layout.colliders.some(
+      (c) => c.kind === 'building' && Math.hypot(c.x - landmark.x, c.z - landmark.z) < 6
+    );
+    assert.equal(overlapping, false, `${landmark.id} should not have regular blocks on top of it`);
   }
+  assert.match(landmarksModule, /function buildTwinTowers/, 'twin towers should have a dedicated builder');
+  assert.match(landmarksModule, /skybridge|bridgeY/, 'twin towers should include a skybridge');
+  assert.match(landmarksModule, /function buildDomeMosque/, 'mosque should have a dedicated builder');
+  assert.match(landmarksModule, /function buildNeedleTower/, 'KL Tower should have a dedicated builder');
 });
 
-test('UI overlays start hidden with a visible toggle and correct public name', () => {
-  assert.match(uiManager, /this\.hidden\s*=\s*true/, 'overlays should be hidden by default');
-  assert.match(uiManager, /data-action="toggle-ui"/, 'a visible overlay toggle should be rendered');
-  assert.match(uiManager, /Emir’s Car World/, 'UI should show the exact public game name');
-  assert.doesNotMatch(uiManager, /Voxel Kuala Lumpur/, 'old technical heading should not appear in UI');
-  assert.doesNotMatch(uiManager, new RegExp(['Instanced', 'OSM', 'voxel', 'chunks'].join(' ')), 'old technical map copy should not appear in UI');
-  assert.match(styles, /\.hidden-ui \.ui-overlay/, 'hidden state should target bulky overlays');
-  assert.match(styles, /body:not\(\.hidden-ui\) \.touch-controls/, 'touch driving controls should hide when the full HUD is open');
+test('driving uses real suspension, tires and gravity', () => {
+  assert.match(physics, /GRAVITY/, 'physics should define gravity explicitly');
+  assert.match(physics, /#applySuspension/, 'suspension forces should be applied per wheel');
+  assert.match(physics, /#applyTireGrip/, 'lateral tire grip should be modelled');
+  assert.match(physics, /#torque\(0, yawTorque/, 'steering must yaw the chassis, not push it vertically');
+  assert.doesNotMatch(physics, /yawAssist/, 'the old vertical-impulse steering must not come back');
+  // A torque missing an axis arrives in wasm as undefined and NaNs the whole body.
+  assert.match(physics, /#torque\(x, y, z\) \{\s*this\.body\.applyTorqueImpulse\(\{ x, y, z \}/, 'torque impulses must carry all three axes');
+  assert.doesNotMatch(physics, /applyImpulse\(\{\s*x: 0,\s*y: [^,}]*\}/, 'impulses must not omit an axis');
+  assert.match(physics, /#applyEngineAndBrakes/, 'engine and brakes should be modelled');
+  assert.match(physics, /applyImpulseAtPoint/, 'suspension should push at the contact point');
+  assert.match(physics, /#sampleGround/, 'wheel contact should come from the analytic height field');
+  assert.doesNotMatch(physics, /\.castRay\(/, 'contact must not go through Rapier ray queries, which corrupt the world');
+  assert.doesNotMatch(physics, /setGravityScale\(0\)/, 'gravity should not be disabled on the chassis');
+  assert.doesNotMatch(physics, /setLinvel\(\{ x: horizontalVelocity/, 'velocity should not be overwritten every frame');
+  assert.doesNotMatch(physics, /#stabilizeRideHeight/, 'ride height should not be pinned artificially');
+
+  for (const vehicle of ['sedan', 'hatchback', 'offroader', 'truck', 'excavator']) {
+    assert.match(profiles, new RegExp(`${vehicle}:\\s*{`), `${vehicle} profile should exist`);
+  }
+  assert.match(profiles, /maxSpeed/, 'profiles should define a real top speed');
+  assert.match(profiles, /grip/, 'profiles should define grip');
 });
 
-test('Touch driving controls are split and readable on mobile', () => {
-  assert.match(uiManager, /class="touch-controls"/, 'touch navigation shell should be present');
-  assert.match(uiManager, /class="touch-cluster touch-steer"/, 'steering should be split into its own thumb cluster');
-  assert.match(uiManager, /class="touch-cluster touch-actions"/, 'pedals should be split into their own thumb cluster');
-  assert.match(uiManager, /data-control="throttle"/, 'accelerate control should be touch-bindable');
-  assert.match(uiManager, /data-control="steerLeft"/, 'left steering control should be touch-bindable');
-  assert.match(uiManager, /data-control="steerRight"/, 'right steering control should be touch-bindable');
-  assert.match(uiManager, /data-control="brake"/, 'brake control should be touch-bindable');
-  assert.match(uiManager, /data-control="handbrake"/, 'drift handbrake should be touch-bindable');
-  assert.match(styles, /@media \(max-width: 680px\), \(pointer: coarse\)/, 'touch controls should have a coarse-pointer/mobile layout');
-  assert.match(styles, /body:not\(\.hidden-ui\) \.touch-controls[^}]*pointer-events:\s*none/, 'touch controls should not overlap/capture taps when the HUD is open');
+test('brake doubles as reverse once stopped', () => {
+  assert.match(physics, /REVERSE_ENGAGE_SPEED/, 'there should be a speed below which braking becomes reverse');
+  assert.match(physics, /REVERSE_POWER/, 'reverse drive should have its own power factor');
+  // Reverse thrust must not be scaled by throttle — that leaves the car with no power while the
+  // brake pedal is held, which is how reverse silently did nothing.
+  const reverseBlock = physics.slice(physics.indexOf('Stopped, or already rolling back'), physics.indexOf('} else if (throttle === 0 && brake === 0'));
+  assert.match(reverseBlock, /profile\.engineForce \* REVERSE_POWER/, 'reverse must derive force from the engine, not the throttle');
+  assert.doesNotMatch(reverseBlock, /throttle \*/, 'reverse must not be gated on throttle');
 });
 
-test('Vehicle input logic uses deterministic arcade driving controls', () => {
-  assert.match(vehicleManager, /driveSpeed/, 'vehicle manager should keep an explicit drive speed so GO/BRAKE are not dependent on fragile impulse stacking');
-  assert.match(vehicleManager, /moveToward\(driveSpeed, tuning\.maxForward/, 'GO should accelerate smoothly toward a forward target speed');
-  assert.match(vehicleManager, /moveToward\(driveSpeed, target, accel \* safeDt\)/, 'BRAKE should decelerate first, then reverse predictably');
-  assert.match(vehicleManager, /this\.active\.yaw -= steerInput/, 'LEFT/RIGHT should directly change heading instead of relying on unstable wheel impulses');
-  assert.match(vehicleManager, /handbrake \? 1\.85 : 1/, 'DRIFT should boost steering authority while held');
-  assert.match(vehicleManager, /setLinvel\(\{ x: horizontalVelocity\.x/, 'arcade driving should push actual body velocity every frame');
-  assert.match(vehicleManager, /getDebugState\(\)/, 'navigation state should be inspectable in browser regression tests');
-  assert.match(vehicleManager, /const groundToi = worldMount\.y - GROUND_TOP_Y/, 'wheel visual/contact debug should fall back to deterministic flat-ground contact when Rapier ray filtering misses the floor');
-  assert.match(vehicleManager, /castRay\(ray, maxRay, true, undefined, undefined, this\.active\.collider, body\)/, 'wheel visual rays should still exclude the active vehicle body/collider');
+test('vehicles are built from code, not placeholder boxes', () => {
+  assert.match(models, /function buildSedanBody/, 'sedan body should be built from primitives');
+  assert.match(models, /function buildExcavatorBody/, 'excavator should have its own shape');
+  assert.match(models, /MeshPhysicalMaterial/, 'vehicles should use glass materials');
+  assert.match(models, /wheelMesh/, 'wheels should be round meshes');
+  assert.doesNotMatch(game, /GLTFLoader/, 'the game should not depend on external GLB placeholders');
 });
 
-test('Vehicle physics sync is stable after solid-object collision correction', () => {
-  assert.match(game, /this\.physics\.step\(dt\);\s*this\.vehicleManager\.syncAfterPhysics\(dt\)/s, 'vehicle visuals and wheel rays should sync from the post-physics body position');
-  assert.match(vehicleManager, /previousPosition/, 'manager should keep pre-step position for blocked-motion detection');
-  assert.match(vehicleManager, /commandedHorizontalVelocity/, 'manager should compare intended arcade velocity with actual Rapier displacement');
-  assert.match(vehicleManager, /setGravityScale\(0\)/, 'arcade chassis should not fight gravity without real suspension forces');
-  assert.match(vehicleManager, /#stabilizeRideHeight\(translation\)/, 'vehicle ride height should be explicitly stabilized for every profile');
-  assert.match(vehicleManager, /rideHeightFor\(profile\)/, 'ride height should be derived from wheel radius, suspension rest length, and body profile');
-  assert.match(vehicleManager, /verticalCorrection/, 'debug state should expose vertical correction for jitter regression checks');
-  assert.match(vehicleManager, /#settleBlockedMotion\(translation, safeDt\)/, 'blocked collision response should settle commanded speed after physics correction');
-  assert.match(vehicleManager, /blockedFrames >= 2/, 'solid-object damping should require repeated blocked frames instead of punishing rough off-road motion');
-  assert.match(vehicleManager, /lastGroundedCount/, 'wheel contact state should remain inspectable for stable arcade physics tests');
+test('terrain is a real heightfield, not a flat plane', () => {
+  const layout = createCityLayout();
+  const heights = [
+    layout.groundHeight(0, 0),
+    layout.groundHeight(200, 200),
+    layout.groundHeight(-320, 260),
+    layout.groundHeight(420, -380)
+  ];
+  assert.ok(new Set(heights.map((h) => h.toFixed(2))).size > 1, 'ground height should vary across the map');
+  assert.match(game, /TerrainCollider/, 'game should build a terrain collider');
+  assert.match(city, /terrain_heightfield/, 'city should build a heightfield terrain mesh');
+  assert.doesNotMatch(city, /sunny_grass_ground/, 'the flat grass placeholder should be gone');
 });
 
-test('Solid objects block vehicles while off-road ground remains driveable', () => {
-  assert.match(city, /solidSpatialHash/, 'city should expose a dedicated spatial hash for physical blockers');
-  assert.match(city, /#addSolidVoxelCollider\(voxel, type, scaleY\)/, 'buildings and towers should register solid colliders');
-  assert.match(city, /type:\s*'treeTrunk'/, 'visual trees should register trunk collision');
-  assert.match(city, /type:\s*'streetSign'/, 'placed signs should register collision');
-  assert.match(game, /spatialHash:\s*this\.city\.solidSpatialHash/, 'world colliders should stream only solid placed objects');
-  assert.doesNotMatch(worldColliderManager, /voxel\.type !== 'park'/, 'off-road park/grass driving should not depend on broad park blockers');
+test('HUD exposes speed, minimap, score and a garage without Tailwind', () => {
+  assert.match(uiManager, /this\.hidden\s*=\s*false/, 'the HUD should be visible at startup');
+  assert.match(uiManager, /data-action="toggle-ui"/, 'a visible HUD toggle should be rendered');
+  assert.match(uiManager, /data-map/, 'minimap canvas should be present');
+  assert.match(uiManager, /data-stat="speed"/, 'speed readout should be present');
+  assert.match(uiManager, /data-stat="score"/, 'score readout should be present');
+  assert.doesNotMatch(styles, /@tailwind/, 'Tailwind directives should be gone from the stylesheet');
+  assert.doesNotMatch(styles, /ui-overlay/, 'old Tailwind-oriented class names should be gone');
+  assert.match(styles, /\.hud-touch/, 'touch controls should be styled');
+  assert.match(styles, /any-pointer: coarse/, 'touch controls should appear on any coarse-pointer device');
+  assert.match(styles, /orientation: landscape/, 'short landscape screens should get their own layout');
 });
 
-test('Follow camera can orbit, zoom, and reset while driving', () => {
-  assert.match(inputController, /KeyQ:\s*\['cameraLeft'/, 'Q should rotate the follow camera left');
-  assert.match(inputController, /KeyE:\s*\['cameraRight'/, 'E should rotate the follow camera right');
-  assert.match(inputController, /Equal:\s*\['cameraZoomIn'/, 'keyboard should support camera zoom in');
-  assert.match(inputController, /Minus:\s*\['cameraZoomOut'/, 'keyboard should support camera zoom out');
-  assert.match(inputController, /KeyC:\s*\['resetCamera'/, 'C should reset the follow camera');
-  assert.match(inputController, /element\.addEventListener\('wheel'/, 'mouse wheel should zoom the camera');
-  assert.match(uiManager, /data-control="cameraZoomIn"/, 'touch UI should expose camera zoom in');
-  assert.match(uiManager, /data-control="cameraZoomOut"/, 'touch UI should expose camera zoom out');
-  assert.match(uiManager, /data-control="resetCamera"/, 'touch UI should expose camera focus/reset');
-  assert.match(inputController, /bindCameraElement\(element\)/, 'pointer drag should bind to the render canvas');
-  assert.match(game, /this\.input\.bindCameraElement\(this\.renderer\.domElement\)/, 'game should wire pointer camera drag');
-  assert.match(game, /this\.cameraYawOffset \+=/, 'camera orbit should accumulate while moving');
-  assert.match(game, /cameraZoomTarget/, 'camera should smooth toward a zoom target');
-  assert.match(game, /__EMIR_DEBUG__[\s\S]*camera:\s*\(\) => this\.getCameraDebugState\(\)/, 'debug mode should expose camera state');
-  assert.match(game, /consumePressed\('resetCamera'\)/, 'camera reset input should restore the default follow view');
+test('chase camera follows the car and stays out of geometry', () => {
+  assert.match(game, /cameraFollowYaw/, 'camera should track a follow yaw');
+  assert.match(game, /cameraOrbitOffset/, 'user orbit should be a separate offset from the follow yaw');
+  assert.match(game, /cameraPitch/, 'camera should expose a controllable pitch');
+  assert.match(game, /dampAngle/, 'yaw should be damped along the shortest arc');
+  assert.match(game, /clearFraction/, 'camera should shorten its boom when a building blocks the view');
+  assert.match(input, /cameraPitch/, 'vertical drags should drive pitch');
+  assert.match(input, /Math\.log\(this\.pinchDistance \/ span\)/, 'pinch zoom should use the finger-span ratio');
+  assert.match(input, /DOUBLE_TAP_MS/, 'double tap should reset the camera');
 });
 
-test('World remains readable and vehicles use realistic car construction', () => {
-  assert.match(game, /0x87ceeb/, 'scene should use a blue sky instead of a white void');
-  assert.match(city, /vertexColors:\s*true/, 'city instances should support per-building color variation');
-  assert.match(city, /sunny_grass_ground/, 'world should include a colored grass ground plane');
-  assert.match(city, /lane_markings/, 'roads should include visible lane markings');
-  assert.match(assetLoader, /warm_headlight/, 'vehicles should include headlights');
-  assert.match(assetLoader, /front_windshield_glass|side_window_glass/, 'vehicles should include separate glass windows');
-  assert.match(assetLoader, /#buildRealisticVehicle/, 'runtime vehicles should be rebuilt as normal car silhouettes');
-  assert.match(assetLoader, /TorusGeometry\(profile\.wheel\.radius \* 0\.78, profile\.wheel\.radius \* 0\.19, 20, 72\)/, 'tires should be visibly round high-segment torus geometry');
-  assert.match(assetLoader, /CylinderGeometry\(profile\.wheel\.radius \* 0\.78, profile\.wheel\.radius \* 0\.78, profile\.wheel\.width, 72\)/, 'wheels should include round cylindrical tire tread');
-  assert.match(assetLoader, /round_rim_/, 'vehicles should include visible round rims');
-  assert.match(assetLoader, /front_grille|left_side_mirror|painted_roof_panel/, 'vehicles should include normal road-car details');
-  assert.match(assetLoader, /sedan_trunk|hatch_tailgate|flatbed_cargo_body|roof_rack|excavator_bucket/, 'vehicle classes should get normal distinctive real-world details');
-  assert.doesNotMatch(assetLoader, /#buildToyVehicle|#applyToyCarPaint|bright_cargo_box|chunky_bumper/, 'toy-car boxes and goofy visual names should not remain');
+test('minimap and garage are usable on every screen size', () => {
+  assert.match(uiManager, /data-action="open-garage"/, 'the garage needs a button that opens it');
+  assert.match(uiManager, /toggleGarage/, 'garage open/close should be handled in one place');
+  assert.match(uiManager, /#fitMapCanvas|fitMapCanvas/, 'the minimap should size its backing store to the viewport');
+  assert.match(uiManager, /Math\.atan2\(forward\.x, -forward\.z\)/, 'the player arrow should point along the driving direction');
+  assert.match(styles, /--ui-\w+: clamp\(/, 'HUD metrics should be clamp() sizes that scale with the viewport');
+  assert.match(styles, /env\(safe-area-inset/, 'HUD should respect device safe areas');
 });
 
-test('Visual upgrade keeps assets local while adding model-kit KL landmarks', () => {
-  assert.match(assetLoader, /makeLowPolyCarBodyGeometry/, 'vehicles should use generated model-kit body geometry');
-  assert.match(assetLoader, /ExtrudeGeometry/, 'vehicles should include extruded/chamfered model panels');
-  assert.match(assetLoader, /split_spoke_rim_/, 'vehicle rims should be separated into visible detail pieces');
-  assert.match(assetLoader, /offroad_snorkel_intake/, 'vehicle classes should support model-kit accessory pieces');
-  assert.match(assetLoader, /GLTFLoader/, 'public GLB placeholders should remain compatible with GLTFLoader');
+test('touch controls drive the car and always leave a way back to the HUD', () => {
+  assert.match(uiManager, /data-stick/, 'steering should use an analogue stick');
+  assert.match(input, /bindStickElement/, 'the stick should be bound in the input controller');
+  assert.match(input, /this\.stickSteer \+ digital/, 'analogue steering should combine with the arrow keys');
+  assert.match(uiManager, /data-control="throttle"/, 'accelerate should be touch-bindable');
+  assert.match(uiManager, /data-control="brake"/, 'brake should be touch-bindable');
+  assert.match(uiManager, /data-control="handbrake"/, 'drift should be touch-bindable');
+  assert.match(uiManager, /hud-restore/, 'a restore button must survive hiding the HUD');
+  assert.match(styles, /body\.hidden-ui \.hud-restore \{ display: inline-flex/, 'the restore button shows while the HUD is hidden');
+  assert.match(styles, /\.steer-track/, 'the steering stick should be styled');
+});
 
-  assert.match(city, /#addKualaLumpurLandmarks\(\)/, 'city should add a generated KL-inspired model layer');
-  assert.match(city, /petronas_twin_towers_skybridge/, 'Petronas twin towers should include a skybridge');
-  assert.match(city, /kl_tower_needle_spire/, 'KL Tower should include a needle/spire motif');
-  assert.match(city, /merdeka_118_long_spire/, 'Merdeka 118 should include a tall spire');
-  assert.match(city, /trx_style_glass_tower_cluster/, 'TRX-style glass tower cluster should be present');
-  assert.match(city, /heritage_shophouse_row_arch_window/, 'KL shophouse rows should be present');
-  assert.match(city, /elevated_monorail_guideway_over_road/, 'elevated monorail/guideway detail should be present');
-  assert.match(city, /kl_monorail_train_on_elevated_guideway/, 'monorail guideway should include a train marker');
-  assert.match(city, /klang_gombak_river_confluence_blue_green_strip/, 'KL river confluence should be represented');
-  assert.match(city, /sultan_abdul_samad_heritage_red_brick_facade/, 'heritage civic architecture should be represented');
-  assert.match(city, /zebra_crosswalk_stripes/, 'street markings should include pedestrian crosswalks');
-  assert.match(city, /realistic_facade_window_bands/, 'dense buildings should have facade window bands');
-  assert.match(city, /slim_kl_street_lamp_poles/, 'streets should include furniture such as lamp posts');
-  assert.match(city, /klcc_drive_landmark_sign/, 'KLCC gateway sign should make the KL setting visible near the starting drive route');
-  assert.match(city, /tropical_palm_cluster/, 'tropical terrain palm details should be present');
-  assert.match(uiManager, /KL-inspired city/, 'help copy should mention the KL-inspired setting');
+test('camera can leave the car and come back', () => {
+  assert.match(game, /cameraMode = 'follow'/, 'the camera should start locked to the car');
+  assert.match(game, /enterFreeLook/, 'there must be a detached camera mode');
+  assert.match(game, /recenterCamera/, 'there must be a one-press return to the car');
+  assert.match(game, /#panFreeFocus/, 'free mode should pan the focus across the world');
+  // Coming back to the car has to restore the drive-view boom too, otherwise the camera stays
+  // wherever the free look left it and the car is still a speck.
+  const recenter = game.slice(game.indexOf('recenterCamera() {'), game.indexOf('recenterCamera() {') + 600);
+  assert.match(recenter, /cameraDistanceTarget = CAMERA_CHASE_DISTANCE/, 'recentre must restore the chase distance');
+  assert.match(recenter, /cameraDistance = CAMERA_CHASE_DISTANCE/, 'recentre must apply the chase distance immediately');
+  // Snap and follow must agree, or the camera lands in front of the car and swings round.
+  assert.match(game, /#behindYaw\(\)/, 'there should be one shared "behind the car" yaw');
+  assert.match(game, /this\.cameraFollowYaw = this\.#behindYaw\(\)/, 'the snap must use the shared yaw');
+  assert.doesNotMatch(game, /cameraFollowYaw = heading \+ Math\.PI/, 'the snap must not offset the yaw by a half turn');
+  // Enough boom to actually take in the towers and the city.
+  const maxDistance = Number(game.match(/CAMERA_DISTANCE_MAX = (\d+)/)[1]);
+  assert.ok(maxDistance >= 200, `zoom should reach the skyline, got ${maxDistance}`);
+  assert.match(game, /Math\.exp\(input\.cameraZoom/, 'zoom should be multiplicative and pull back on positive input');
+  assert.match(input, /cameraPanX/, 'two-finger drag should produce a pan');
+  assert.match(uiManager, /data-action="recenter"/, 'the HUD needs a back-to-car button');
+  assert.match(uiManager, /data-action="camera"/, 'the HUD needs a follow/free toggle');
+  // Zoom must not drag the focus back to the car.
+  const zoomBlock = game.slice(game.indexOf('this.cameraDistanceTarget = THREE.MathUtils.clamp'), game.indexOf('const speed = vehicle.getSpeedKph()'));
+  assert.doesNotMatch(zoomBlock, /cameraFocus/, 'zooming must not touch the focus point');
+});
+
+test('the brand chip sizes to its label and can never spill', () => {
+  const rule = styles.match(/\.hud-brand-mark\s*\{[^}]*\}/)[0];
+  assert.doesNotMatch(rule, /(^|[^-])width:\s*clamp/, 'a fixed width is what let EMIR overflow');
+  assert.match(rule, /min-width:/, 'the chip needs a minimum size');
+  assert.match(rule, /min-height:/, 'a fixed height would crop the label');
+  assert.match(rule, /padding:/, 'padding is what keeps the label off the edges');
+  assert.match(rule, /overflow:\s*hidden/, 'a hard guard in case a font is wider than expected');
+  assert.match(rule, /white-space:\s*nowrap/, 'the label must stay on one line');
+  assert.match(rule, /text-size-adjust:\s*none/, 'iOS must not inflate the label out of the chip');
+  assert.match(rule, /font-size:\s*\d+px/, 'an explicit px size keeps it predictable across devices');
+  assert.match(styles, /-webkit-text-size-adjust:\s*100%/, 'the whole HUD should opt out of iOS text inflation');
+});
+
+test('the wordmark styles cannot capture the brand chip', () => {
+  // `.hud-brand span` used to match the chip too and, having one more type selector, overrode its
+  // display and font size with viewport-derived values.
+  assert.doesNotMatch(styles, /(^|\n)\.hud-brand span\s*\{/,
+    'an unscoped .hud-brand span rule outranks .hud-brand-mark');
+  assert.match(styles, /\.hud-brand div span\s*\{/, 'the wordmark span rule should be scoped');
+});
+
+test('the page asks phones not to cache it', () => {
+  assert.match(indexHtml, /viewport-fit=cover/, 'safe-area insets need viewport-fit');
+  assert.match(indexHtml, /http-equiv="Cache-Control"/, 'a stale cached page hides every fix');
+});
+
+test('new players get controls help and impacts give feedback', () => {
+  assert.match(uiManager, /data-help/, 'there should be a controls overlay');
+  assert.match(uiManager, /openHelp/, 'the overlay should be openable');
+  assert.match(uiManager, /emir\.helpSeen/, 'the overlay should only auto-open once');
+  assert.match(uiManager, /data-action="help"/, 'there should be a button to reopen it');
+  assert.match(uiManager, /data-vignette/, 'impacts should flash a vignette');
+  assert.match(styles, /impact-flash/, 'the vignette needs an animation');
+  assert.match(styles, /\.hud-help/, 'the overlay should be styled');
+  assert.match(game, /addCameraShake/, 'impacts should shake the camera');
+});
+
+test('the garage sits above the controls it used to overlap', () => {
+  assert.match(uiManager, /data-scrim/, 'the garage needs a scrim to catch outside taps');
+  assert.match(uiManager, /setExclusive/, 'one place should decide which panel is open');
+  assert.match(uiManager, /this\.garageOpen \? null : 'garage'/, 'the Garage button must toggle');
+  assert.match(styles, /\.hud-scrim\s*\{[^}]*z-index:\s*2/, 'scrim under the panels');
+  assert.match(styles, /\.hud-garage\s*\{[^}]*z-index:\s*3/s, 'garage above the scrim');
+  assert.match(styles, /\.hud-top\s*\{\s*z-index:\s*3/, 'the top bar must stay tappable to toggle it off');
+  assert.match(styles, /\.hud\.garage-open \.hud-touch/, 'driving controls should stand down while it is open');
+  assert.match(styles, /\.hud\.garage-open \.touch-cam/, 'so should the camera pad');
+});
+
+test('live readouts cannot shift the buttons beside them', () => {
+  assert.match(styles, /\.hud-pill \{ font-variant-numeric: tabular-nums/,
+    'proportional digits make the top bar jitter as the values tick');
+  assert.match(styles, /\.hud-pill\[data-stat="fps"\]/, 'the fps counter changes width most often');
+});
+
+test('garage open state lands on the panel and the root, and both are used', () => {
+  // The panel needs the class to open itself; the root needs it so its siblings can stand down.
+  // Either toggle is a no-op if the stylesheet does not actually target it.
+  assert.match(uiManager, /garageEl\.classList\.toggle\('garage-open',/, 'the panel must carry its own open class');
+  assert.match(uiManager, /root\.classList\.toggle\('garage-open',/, 'the root class is what stands the controls down');
+  assert.match(styles, /\.hud-garage\.garage-open/, 'the panel class must be styled');
+  assert.match(styles, /\.hud\.garage-open/, 'the root class must be styled, or it does nothing');
+});
+
+test('objectives give the drive a purpose', () => {
+  const layout = createCityLayout();
+  assert.ok(layout.coins.length > 20, 'there should be coins to collect');
+  assert.ok(layout.ramps.length > 0, 'there should be ramps to jump');
+  assert.match(game, /landmarksFound/, 'landmark discovery should be tracked');
+  assert.match(game, /airtimeBest/, 'air time should be tracked');
+  assert.match(city, /collectCoins/, 'city should expose coin collection');
 });
