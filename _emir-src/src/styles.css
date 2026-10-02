@@ -1,64 +1,561 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
-  color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #9be27f;
-  color: #14213d;
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  --hud-bg: rgba(12, 20, 27, 0.72);
+  --hud-bg-solid: rgba(12, 20, 27, 0.9);
+  --hud-border: rgba(255, 255, 255, 0.14);
+  --hud-text: #eef4f8;
+  --hud-muted: rgba(238, 244, 248, 0.62);
+  --hud-accent: #4ade80;
+
+  /* Sizes scale with the smaller viewport axis. Every token is a plain clamp() of lengths so the
+     values stay valid on every device — a unitless "scale" multiplier cannot be derived from vmin
+     in CSS, and mixing the two silently invalidates everything that depends on it. */
+  --ui-gap: clamp(6px, 1.4vmin, 14px);
+  --ui-pad-x: max(var(--ui-gap), env(safe-area-inset-left));
+  --ui-pad-y: max(var(--ui-gap), env(safe-area-inset-top));
+  --ui-radius: clamp(11px, 2vmin, 20px);
+  --ui-font: clamp(10px, 1.55vmin, 13px);
+  --ui-font-sm: clamp(9px, 1.3vmin, 11px);
+  --ui-control: clamp(44px, 6.6vmin, 56px);
+  --ui-dial: clamp(78px, 14vmin, 112px);
+  --ui-map: clamp(104px, 19vmin, 176px);
+  --ui-btn-font: clamp(10px, 1.4vmin, 12px);
 }
 
 * { box-sizing: border-box; }
-html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #0b141b; }
+body { color: var(--hud-text); font-size: var(--ui-font); }
 canvas { display: block; touch-action: none; }
 
-.ui-shell { pointer-events: none; position: fixed; inset: 0; z-index: 10; color: #14213d; }
-.ui-panel, .ui-button, .ui-input, .touch-controls, .touch-button, .ui-toggle { pointer-events: auto; }
-.ui-panel { border: 1px solid rgba(20,33,61,.24); background: rgba(255, 250, 235, 0.88); backdrop-filter: blur(18px); box-shadow: 0 16px 60px rgba(20,33,61,.12); border-radius: 20px; }
-.ui-button { border: 1px solid rgba(20,33,61,.26); border-radius: 14px; background: #fff8df; color: #14213d; min-height: 42px; padding: 0 14px; font-size: 11px; letter-spacing: .13em; text-transform: uppercase; transition: background 140ms ease, color 140ms ease, transform 140ms ease, box-shadow 140ms ease; }
-.ui-button:hover, .ui-button:focus-visible, .ui-button[data-active="true"] { background: #2f80ed; color: #fff8df; outline: none; box-shadow: 0 10px 24px rgba(47,128,237,.22); }
-.ui-button:active { transform: translateY(1px) scale(.99); }
-.ui-toggle { position: absolute; left: max(16px, env(safe-area-inset-left)); top: max(16px, env(safe-area-inset-top)); z-index: 3; min-width: 58px; min-height: 42px; border: 1px solid rgba(20,33,61,.26); border-radius: 999px; background: rgba(255,248,223,.88); color: #14213d; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; backdrop-filter: blur(12px); box-shadow: 0 12px 28px rgba(20,33,61,.12); }
-.ui-toggle:hover, .ui-toggle:focus-visible { background: #2f80ed; color: #fff8df; outline: none; }
-.ui-input { width: 100%; border: 1px solid rgba(20,33,61,.26); border-radius: 14px; background: rgba(255,255,255,.76); min-height: 42px; padding: 0 12px; font-size: 12px; }
-.label-kicker { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: rgba(20,33,61,.68); }
-.touch-controls { position: absolute; inset: auto max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; z-index: 2; }
-.touch-cluster { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 28px; background: rgba(255, 248, 223, 0.32); backdrop-filter: blur(12px); box-shadow: 0 16px 40px rgba(20,33,61,.14); }
-.touch-actions { margin-left: auto; }
-.touch-camera { gap: 8px; position: fixed; right: max(16px, env(safe-area-inset-right)); top: max(16px, env(safe-area-inset-top)); display: flex; flex-direction: column; align-items: flex-end; z-index: 11; }
-.touch-camera.is-collapsed .touch-button--camera { display: none; }
-.touch-button { width: 68px; height: 68px; border: 1px solid rgba(20,33,61,.24); border-radius: 22px; background: rgba(255,248,223,.82); color: #14213d; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; user-select: none; -webkit-user-select: none; touch-action: none; box-shadow: 0 12px 24px rgba(20,33,61,.12); transition: transform 100ms ease, background 100ms ease, color 100ms ease, box-shadow 100ms ease; }
-.touch-button--steer { width: 82px; height: 74px; border-radius: 26px; font-size: 42px; line-height: 1; background: rgba(116, 185, 255, .86); color: #082032; }
-.touch-button--go { width: 82px; height: 82px; border-radius: 50%; background: #2ecc71; color: #092f1d; }
-.touch-button--drift { background: rgba(255, 183, 3, .9); color: #3f2b00; }
-.touch-button--camera { width: 52px; height: 52px; border-radius: 18px; background: rgba(255,255,255,.78); font-size: 18px; letter-spacing: 0; }
-.touch-button--cam-toggle { width: 52px; height: 52px; border-radius: 18px; background: #2f80ed; color: white; font-size: 10px; }
-.touch-button:active, .touch-button[data-pressed="true"] { background: #14213d; color: #fff8df; transform: translateY(2px) scale(.96); box-shadow: 0 6px 14px rgba(20,33,61,.22); }
-.hidden-ui .ui-overlay { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-6px); }
-body:not(.hidden-ui) .touch-controls { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(8px); }
-.ui-overlay, .touch-controls { transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease; }
-.perf-pill { border: 1px solid rgba(20,33,61,.24); border-radius: 999px; padding: 4px 8px; background: rgba(255,255,255,.38); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; letter-spacing: .05em; }
+.hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; font-size: var(--ui-font); }
+.hud > * { pointer-events: auto; }
+body.hidden-ui .hud-top,
+body.hidden-ui .hud-speedo,
+body.hidden-ui .hud-map,
+body.hidden-ui .hud-garage,
+body.hidden-ui .hud-touch { opacity: 0; pointer-events: none; }
+.hud-top, .hud-speedo, .hud-map, .hud-touch { transition: opacity 180ms ease; }
 
-@media (pointer: fine) and (min-width: 900px) {
-  .touch-controls { max-width: 520px; margin-left: auto; left: auto; }
+/* The HUD toggle has to survive hiding the HUD, or there is no way back on a touch device. */
+.hud-restore {
+  position: absolute;
+  top: var(--ui-pad-y);
+  right: max(var(--ui-gap), env(safe-area-inset-right));
+  display: none;
+  align-items: center;
+}
+body.hidden-ui .hud-restore { display: inline-flex; }
+
+/* ---------- top bar ---------- */
+
+.hud-top {
+  position: absolute;
+  top: var(--ui-pad-y);
+  left: var(--ui-pad-x);
+  right: max(var(--ui-gap), env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: var(--ui-gap);
+  flex-wrap: wrap;
 }
 
-@media (max-width: 680px), (pointer: coarse) {
-  .ui-panel { border-radius: 18px; }
-  .garage-drawer { max-height: min(52vh, 430px); overflow: auto; overscroll-behavior: contain; }
-  .touch-controls { gap: 10px; align-items: flex-end; }
-  .touch-cluster { gap: 8px; padding: 8px; border-radius: 24px; }
-  .touch-button { width: 58px; height: 58px; border-radius: 19px; font-size: 9px; }
-  .touch-button--steer { width: 72px; height: 68px; border-radius: 24px; font-size: 38px; }
-  .touch-button--go { width: 70px; height: 70px; }
-  .touch-actions { flex-direction: column; }
+.hud-brand { display: flex; align-items: center; gap: var(--ui-gap); min-width: 0; }
+/* A chip that is sized by its label, never the other way round. iOS cannot inflate the text
+   (text-size-adjust is off, the size is in px), the box grows to fit, and overflow:hidden is
+   the last line of defence if a device font is still wider than expected. */
+.hud-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 34px;
+  min-height: 30px;
+  padding: 0 9px;
+  border-radius: clamp(9px, 1.6vmin, 12px);
+  background: linear-gradient(140deg, var(--hud-accent), #0ea5e9);
+  color: #06121a;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+  overflow: hidden;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  font-synthesis: none;
+}
+.hud-brand strong { display: block; font-size: var(--ui-font); white-space: nowrap; }
+.hud-brand div span { display: block; font-size: var(--ui-font-sm); color: var(--hud-muted); white-space: nowrap; }
+
+.hud-pill-row { display: flex; gap: calc(var(--ui-gap) * 0.7); flex-wrap: wrap; margin-left: auto; }
+/* Digits must not change width as the values tick, or the top bar shuffles sideways under a
+   finger that is aiming at a button. */
+.hud-pill { font-variant-numeric: tabular-nums; }
+.hud-pill[data-stat="fps"] { min-width: 7ch; justify-content: center; }
+.hud-pill[data-stat="score"],
+.hud-pill[data-stat="coins"],
+.hud-pill[data-stat="landmarks"] { min-width: 8ch; justify-content: center; }
+
+.hud-pill {
+  padding: calc(var(--ui-gap) * 0.45) calc(var(--ui-gap) * 0.95);
+  border-radius: 999px;
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(12px);
+  font-size: var(--ui-font-sm);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.hud-icon-button, .hud-button {
+  border: 1px solid var(--hud-border);
+  border-radius: clamp(9px, 1.6vmin, 12px);
+  background: var(--hud-bg);
+  color: var(--hud-text);
+  backdrop-filter: blur(12px);
+  font: inherit;
+  font-size: var(--ui-font-sm);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  min-height: var(--ui-control);
+  padding: 0 calc(var(--ui-gap) * 1.1);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hud-icon-button:hover, .hud-button:hover { background: rgba(74, 222, 128, 0.22); }
+.hud-icon-button:active, .hud-button:active { background: rgba(74, 222, 128, 0.34); }
+
+/* ---------- speedometer ---------- */
+
+.hud-speedo {
+  position: absolute;
+  left: var(--ui-pad-x);
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--ui-gap) * 0.4);
+  padding: calc(var(--ui-gap) * 0.85);
+  border-radius: var(--ui-radius);
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(14px);
+}
+.speedo-dial { position: relative; width: var(--ui-dial); height: var(--ui-dial); }
+.speedo-svg { width: 100%; height: 100%; }
+.speedo-readout { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.speedo-readout strong {
+  display: block;
+  font-size: calc(var(--ui-dial) * 0.27);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.speedo-readout span { font-size: var(--ui-font-sm); color: var(--hud-muted); letter-spacing: 0.12em; }
+.gear-badge {
+  min-width: calc(var(--ui-control) * 0.6);
+  padding: 2px calc(var(--ui-gap) * 0.6);
+  border-radius: calc(var(--ui-radius) * 0.5);
+  background: rgba(250, 204, 21, 0.18);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #fde68a;
+  font-weight: 700;
+  text-align: center;
+}
+.hud-badges { display: grid; gap: 2px; justify-items: center; }
+.hud-tag { font-size: var(--ui-font-sm); color: var(--hud-muted); letter-spacing: 0.05em; }
+
+/* ---------- minimap ---------- */
+
+.hud-map {
+  position: absolute;
+  right: max(var(--ui-gap), env(safe-area-inset-right));
+  top: calc(var(--ui-pad-y) + var(--ui-control) + var(--ui-gap));
+  padding: calc(var(--ui-gap) * 0.75);
+  border-radius: calc(var(--ui-radius) * 0.85);
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(14px);
+  display: grid;
+  gap: calc(var(--ui-gap) * 0.4);
+  justify-items: center;
+}
+.hud-map canvas {
+  width: var(--ui-map);
+  height: var(--ui-map);
+  border-radius: calc(var(--ui-radius) * 0.6);
+}
+.hud-map-legend {
+  display: grid;
+  gap: 1px;
+  font-size: var(--ui-font-sm);
+  color: var(--hud-muted);
+  text-align: center;
+  max-width: var(--ui-map);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------- garage ---------- */
+
+/* Sits above the scrim so the Garage button is still tappable while the garage is open —
+   toggling the panel off with the same button that opened it. */
+.hud-top { z-index: 3; }
+
+.hud-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(4, 10, 16, 0.42);
+  backdrop-filter: blur(2px);
+  border: 0;
+}
+.hud-scrim[hidden] { display: none; }
+
+/* While a panel is up the driving clusters underneath it are unreachable, so stand them down
+   rather than letting them show through or fight the panel for taps. */
+.hud.garage-open .hud-touch,
+.hud.garage-open .touch-cam,
+.hud.garage-open .hud-speedo,
+.hud.garage-open .hud-map { display: none; }
+
+.hud-garage {
+  position: absolute;
+  z-index: 3;
+  right: max(var(--ui-gap), env(safe-area-inset-right));
+  bottom: max(var(--ui-gap), env(safe-area-inset-bottom));
+  width: min(340px, calc(100vw - 2 * var(--ui-gap)));
+  max-height: min(64vh, 620px);
+  overflow: auto;
+  padding: calc(var(--ui-gap) * 1.15);
+  border-radius: var(--ui-radius);
+  background: var(--hud-bg-solid);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(16px);
+  display: none;
+  gap: calc(var(--ui-gap) * 0.8);
+  overscroll-behavior: contain;
+}
+.hud-garage.garage-open { display: grid; }
+.hud-garage header { display: flex; align-items: center; justify-content: space-between; }
+.hud-kicker { font-size: var(--ui-font-sm); letter-spacing: 0.18em; text-transform: uppercase; color: var(--hud-muted); }
+.garage-list { display: grid; gap: calc(var(--ui-gap) * 0.6); }
+.garage-card {
+  display: grid;
+  grid-template-columns: calc(var(--ui-control) * 0.62) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: calc(var(--ui-gap) * 0.8);
+  padding: calc(var(--ui-gap) * 0.8);
+  border-radius: calc(var(--ui-radius) * 0.7);
+  border: 1px solid var(--hud-border);
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.garage-card:hover { background: rgba(74, 222, 128, 0.14); }
+.garage-card[data-active="true"] { border-color: var(--hud-accent); background: rgba(74, 222, 128, 0.18); }
+.garage-icon { font-size: calc(var(--ui-font) * 1.6); }
+.garage-copy { min-width: 0; }
+.garage-copy strong { display: block; font-size: var(--ui-font); }
+.garage-copy em {
+  display: block;
+  font-size: var(--ui-font-sm);
+  color: var(--hud-muted);
+  font-style: normal;
+  margin-bottom: 3px;
+}
+.garage-bars { display: grid; gap: 3px; }
+.garage-bars i {
+  display: block;
+  height: 3px;
+  width: min(84px, 26vw);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.16);
+  position: relative;
+  overflow: hidden;
+}
+.garage-bars i::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: calc(var(--v) * 100%);
+  background: var(--hud-accent);
+}
+.garage-mass { font-size: var(--ui-font-sm); color: var(--hud-muted); }
+.garage-save { display: grid; gap: calc(var(--ui-gap) * 0.5); border-top: 1px solid var(--hud-border); padding-top: calc(var(--ui-gap) * 0.8); }
+.garage-save-row { display: flex; gap: calc(var(--ui-gap) * 0.5); flex-wrap: wrap; }
+.garage-save input {
+  flex: 1 1 120px;
+  min-width: 0;
+  border-radius: calc(var(--ui-radius) * 0.6);
+  border: 1px solid var(--hud-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  font-size: var(--ui-font);
+  padding: 0 calc(var(--ui-gap) * 0.8);
+  min-height: var(--ui-control);
+}
+.garage-status { margin: 0; font-size: var(--ui-font-sm); color: var(--hud-muted); }
+
+/* ---------- impact vignette ---------- */
+
+.hud-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(255, 90, 60, 0) 45%, rgba(255, 70, 40, 0.55) 100%);
+}
+.hud-vignette.is-hit { animation: impact-flash 420ms ease-out; }
+@keyframes impact-flash {
+  0% { opacity: calc(var(--impact, 0.5) * 1); }
+  100% { opacity: 0; }
+}
+
+/* ---------- controls overlay ---------- */
+
+.hud-help {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 2 * var(--ui-gap)));
+  max-height: calc(100vh - 2 * var(--ui-gap));
+  overflow: auto;
+  padding: calc(var(--ui-gap) * 1.4);
+  border-radius: var(--ui-radius);
+  background: var(--hud-bg-solid);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  display: grid;
+  gap: calc(var(--ui-gap) * 0.9);
+  z-index: 2;
+}
+.hud-help[hidden] { display: none; }
+.hud-help header { display: flex; align-items: center; justify-content: space-between; }
+.help-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: calc(var(--ui-gap) * 0.55);
+  font-size: var(--ui-font);
+  color: var(--hud-text);
+}
+.help-list li {
+  padding-left: calc(var(--ui-gap) * 1.2);
+  position: relative;
+  line-height: 1.45;
+}
+.help-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--hud-accent);
+}
+.help-list b { color: #fff; }
+.help-keys { color: var(--hud-muted); }
+.help-goal { color: #ffe9a8; }
+.help-goal::before { background: #facc15; }
+.help-cta { justify-self: stretch; }
+
+/* ---------- toast ---------- */
+
+.hud-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 26%;
+  transform: translate(-50%, 12px);
+  padding: calc(var(--ui-gap) * 0.7) calc(var(--ui-gap) * 1.2);
+  border-radius: 999px;
+  background: var(--hud-bg-solid);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(12px);
+  font-size: var(--ui-font);
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 160ms ease, transform 160ms ease;
+  white-space: nowrap;
+  max-width: 88vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- touch controls ----------
+   Shown whenever the device has any coarse pointer, so tablets and touch laptops get them too. */
+
+.hud-touch {
+  position: absolute;
+  inset: auto max(var(--ui-pad-x), env(safe-area-inset-right)) max(var(--ui-gap), env(safe-area-inset-bottom)) max(var(--ui-pad-x), env(safe-area-inset-left));
+  display: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ui-gap);
+}
+.touch-cluster {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--ui-gap) * 0.6);
+  padding: calc(var(--ui-gap) * 0.6);
+  border-radius: calc(var(--ui-radius) * 1.1);
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(12px);
+}
+.touch-pedals { margin-left: auto; }
+
+/* ---------- analogue steering ---------- */
+
+.touch-steer { padding: calc(var(--ui-gap) * 0.7); }
+.steer-track {
+  position: relative;
+  width: clamp(150px, 40vmin, 240px);
+  height: clamp(54px, 9.5vmin, 70px);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.05)),
+    rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--hud-border);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* Centre tick so the neutral position is obvious. */
+.steer-track::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  bottom: 22%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.22);
+}
+.steer-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: clamp(42px, 7.4vmin, 56px);
+  height: clamp(42px, 7.4vmin, 56px);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(160deg, #f4f7fa, #b8c2cc);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+.steer-track[data-active="true"] .steer-knob { background: linear-gradient(160deg, #d9ffe7, var(--hud-accent)); }
+.touch-button {
+  min-width: var(--ui-control);
+  min-height: var(--ui-control);
+  border-radius: calc(var(--ui-radius) * 0.85);
+  border: 1px solid var(--hud-border);
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--hud-text);
+  font: inherit;
+  font-size: var(--ui-btn-font);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.touch-button[data-pressed="true"] { background: rgba(74, 222, 128, 0.42); }
+.touch-pedal--go { background: rgba(74, 222, 128, 0.3); }
+.touch-pedal--drift { background: rgba(250, 204, 21, 0.28); }
+
+/* Camera cluster sits above the pedals under the right thumb. */
+.touch-cam {
+  position: absolute;
+  right: 0;
+  bottom: calc(var(--ui-control) * 1.7);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--ui-gap) * 0.5);
+  padding: calc(var(--ui-gap) * 0.6);
+  border-radius: calc(var(--ui-radius) * 0.9);
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  backdrop-filter: blur(12px);
+}
+.touch-cam .touch-button {
+  min-width: calc(var(--ui-control) * 0.84);
+  min-height: calc(var(--ui-control) * 0.84);
+  font-size: var(--ui-font-sm);
+}
+/* "Back to the car" is the safety net when you have flown the camera off somewhere. */
+.touch-small--accent {
+  background: rgba(74, 222, 128, 0.26);
+  border-color: rgba(74, 222, 128, 0.5);
+}
+.touch-cam .touch-button[data-state="true"] {
+  background: rgba(56, 189, 248, 0.3);
+  border-color: rgba(56, 189, 248, 0.55);
+}
+
+@media (any-pointer: coarse) {
+  .hud-touch { display: flex; }
+}
+
+/* ---------- per-orientation tuning ---------- */
+
+/* Phones in portrait: brand text is redundant, pills take their own row. */
+@media (max-width: 560px) {
+  .hud-brand div { display: none; }
+  .hud-brand-mark { padding: 0 10px; }
+  .hud-pill-row { margin-left: 0; order: 3; width: 100%; }
+  .hud-top { gap: calc(var(--ui-gap) * 0.7); }
+  /* Anchor the map below the wrapped pill row instead of above the pedals. */
+  .hud-map { top: calc(var(--ui-pad-y) + var(--ui-control) * 1.9 + var(--ui-gap)); bottom: auto; }
+  .touch-cam { flex-direction: row; bottom: calc(var(--ui-control) * 1.75); }
+  .hud-garage {
+    left: max(var(--ui-gap), env(safe-area-inset-left));
+    right: max(var(--ui-gap), env(safe-area-inset-right));
+    bottom: max(var(--ui-gap), env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(72vh, 560px);
+  }
 }
 
 @media (max-width: 420px) {
-  .touch-controls { gap: 6px; }
-  .touch-cluster { gap: 6px; padding: 6px; }
-  .touch-button { width: 50px; height: 50px; border-radius: 16px; font-size: 8px; }
-  .touch-button--steer { width: 62px; height: 60px; font-size: 34px; }
-  .touch-button--go { width: 60px; height: 60px; }
+  .hud-map-legend span[data-stat="next"] { display: none; }
+}
+
+/* Short landscape (phones on their side): keep the middle of the screen clear for driving. */
+@media (orientation: landscape) and (max-height: 560px) {
+  :root {
+    --ui-dial: clamp(56px, 15vmin, 82px);
+    --ui-map: clamp(78px, 21vmin, 118px);
+    --ui-control: clamp(44px, 11vmin, 58px);
+  }
+  /* Drop the speedo under the top bar and keep the map top-right, so nothing sits in the middle. */
+  .hud-speedo { top: calc(var(--ui-pad-y) + var(--ui-control) + var(--ui-gap)); transform: none; }
+  /* Lay the camera buttons out inline with the driving controls instead of stacking upward. */
+  .touch-cam { position: static; flex-direction: row; bottom: auto; }
+  .hud-garage {
+    left: auto;
+    width: min(420px, calc(100vw - 2 * var(--ui-gap)));
+    max-height: calc(100vh - 2 * var(--ui-gap) - var(--ui-control));
+    bottom: max(var(--ui-gap), env(safe-area-inset-bottom));
+  }
+  .hud-help { max-height: calc(100vh - 2 * var(--ui-gap)); }
+  .hud-toast { bottom: 34%; }
 }
