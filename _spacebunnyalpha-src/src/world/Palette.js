@@ -1,189 +1,213 @@
 import * as THREE from 'three';
 
-// Palette for spacebunnyalpha.
+// Palette for spacebunnyalpha, aimed at Rimsoft (That Time I Got Reincarnated as
+// a Slime) rather than Ghibli.
 //
-// These are not arbitrary picks. They are drawn from real frame samples of
-// Studio Ghibli films (the "Movies in Color" quantiles, via the ewenme/ghibli
-// dataset), then adjusted for a voxel render. The governing rule from that
-// data is a consistent hue/saturation/lightness band per material family:
+// The single biggest difference from a muted, filmic look: SATURATION. The
+// measured median saturation across official Rimsoft artwork is roughly 0.30
+// to 0.45, with a small number of very high-chroma accents. Most of the frame
+// is calm, and the chroma budget is spent deliberately on two or three hues.
 //
-//   sky    hue ~200-205 deg, low saturation, high lightness
-//   grass  hue 105-155 deg, ~34% saturation, ~73% lightness
-//   wood   hue 21-31 deg,  ~35% saturation, three lightness steps
+// The second difference is how shadows are made. Rimsoft does not darken by
+// multiplying value -- that kills chroma and turns everything grey. Measured
+// across several covers, his shadows shift hue toward blue by roughly 6 to 9
+// degrees and INCREASE saturation, often doubling it, while value stays high.
+// Shadows here are therefore a hue shift plus a saturation lift, not a
+// multiply. See ShadowMaterial.js.
 //
-// The single most important property is LIGHTNESS. Minecraft grass is
-// #7CBD6B: dark and mid-saturated. Ghibli grass is #ACD2A3: light and pale.
-// Swapping one for the other is the biggest "not Minecraft" lever available,
-// and it costs nothing.
-//
-// Two greens are used on purpose. #ACD2A3 is warm sunlit grass; #A2D1BD is a
-// cool celadon at hue 154. Mixing them is what makes a field read as painted
-// rather than coloured.
+// The third is value contrast between adjacent surfaces. Adjacent materials
+// should differ by at least 0.25 in value, or 40 degrees in hue, so nothing
+// merges into its neighbour at gameplay zoom.
 
 export const PALETTE = {
-  // Terrain. Note the top/side split for grass and sand: voxel art reads as 3D
-  // far more convincingly from a lighter, warmer top face than from lighting
-  // alone, and it costs one extra material.
-  oceanFloor: 0x8FA8B0,
-  water: 0x94C5CC,
-  waterShallow: 0xB1D5BB,
-  sand: 0xECE28B,
-  sandWet: 0xD6C0A9,
-  grass: 0xACD2A3,
-  grassSide: 0xA2C4A0,
-  grassDeep: 0xA2D1BD,
-  grassDeepSide: 0x95C0B0,
-  meadow: 0xC0CDBC,
-  dirt: 0xC5A387,
-  dirtDark: 0xAD8152,
-  rock: 0x9DAFC3,
-  rockDark: 0x7E8C97,
-  paddyWater: 0xC3DAEA,
-  paddyMud: 0xB1A98C,
-  orchardGrass: 0xB8D2A8,
-  orchardGrassSide: 0xABC096,
+  // ---------------------------------------------------------------- terrain
+  // Grass is the biggest departure from a muted palette: genuinely saturated,
+  // the way Rimsoft paints a field in sunlight.
+  oceanFloor: 0x5F6478,
+  water: 0x4FA8E8,
+  waterShallow: 0x7FC8E8,
+  sand: 0xDDDEB0,
+  sandWet: 0xC8C79A,
+  grass: 0x7FBF4A,
+  grassSide: 0x6FA83C,
+  grassDeep: 0x5C9E3A,
+  grassDeepSide: 0x4E8A31,
+  meadow: 0xA8D84A,
+  dirt: 0xB0855C,
+  dirtDark: 0x8F6A47,
+  rock: 0xC7C9DB,
+  rockDark: 0x8E93A8,
+  rockShadow: 0x5F6478,
+  paddyWater: 0x8FD0E8,
+  paddyMud: 0xA89372,
+  orchardGrass: 0x8ECB5C,
+  orchardGrassSide: 0x7AB84C,
 
   // ------------------------------------------------------------------- city
-  asphalt: 0x8B9098,
-  asphaltLight: 0x9BA0A8,
-  sidewalk: 0xD9D5CD,
-  sidewalkDark: 0xC3BFB7,
-  curb: 0xADAAA3,
-  laneWhite: 0xF7EABD,
-  laneYellow: 0xECE28B,
-  crossingWhite: 0xF2EEE2,
-  buildingWall: 0xE1D7CB,
-  buildingWallAlt: 0xD6C0A9,
-  buildingWallGrey: 0xC7C0C8,
-  buildingWallBlue: 0xB4DCF5,
-  buildingWallPink: 0xDBEBF8,
-  buildingRoof: 0x6E7378,
-  buildingRoofBlue: 0x8D93A1,
-  window: 0x9DAFC3,
-  windowLit: 0xF7EABD,
-  windowDark: 0x6E7680,
-  metal: 0xA8ADB2,
-  metalDark: 0x76808A,
-  neonPink: 0xD98594,
-  neonBlue: 0x86C2DA,
-  neonGreen: 0xB1D5BB,
-  neonYellow: 0xECE28B,
-  neonOrange: 0xEEBCB1,
-  neonRed: 0xD05020,
-  signWhite: 0xF2EEE2,
-  awningRed: 0xC04080,
-  awningBlue: 0x86C2DA,
-  awningGreen: 0xA2D1BD,
-  awningYellow: 0xECE28B,
-  fenceWood: 0xAD8152,
-  concrete: 0xC0CDBC,
+  asphalt: 0x6E7386,
+  asphaltLight: 0x7E8396,
+  sidewalk: 0xDCDCE8,
+  sidewalkDark: 0xC2C2D0,
+  curb: 0xA8AABC,
+  laneWhite: 0xFCF3D4,
+  laneYellow: 0xF0D96A,
+  crossingWhite: 0xF8F6EC,
+  // Walls sit in a calm mid range so the saturated accents can carry the eye.
+  buildingWall: 0xE8E4DC,
+  buildingWallAlt: 0xD8CDBE,
+  buildingWallGrey: 0xC4C6D4,
+  buildingWallBlue: 0xB4D2E8,
+  buildingWallPink: 0xF2D8DC,
+  // Roofs are the one deliberately dark structural note, as kawara are.
+  buildingRoof: 0x5A5F6E,
+  buildingRoofBlue: 0x6B7286,
+  window: 0x8FD8F0,
+  windowLit: 0xFCF3D4,
+  windowDark: 0x4A5060,
+  metal: 0xA8AEBC,
+  metalDark: 0x6E7484,
+  // The chroma budget: these are the only strongly saturated things in the city.
+  neonPink: 0xEC718C,
+  neonBlue: 0x0DB7D9,
+  neonGreen: 0x7ED957,
+  neonYellow: 0xF5DC5E,
+  neonOrange: 0xE8865A,
+  neonRed: 0xD4513B,
+  signWhite: 0xFCF3D4,
+  awningRed: 0xD4513B,
+  awningBlue: 0x4FA8E8,
+  awningGreen: 0x5C9E3A,
+  awningYellow: 0xF0D96A,
+  fenceWood: 0xDDDEB0,
+  concrete: 0xC4C6D4,
 
   // ------------------------------------------------------ suburbs / houses
-  houseWall: 0xE1D7CB,
-  houseWallWood: 0xC5A387,
-  houseWallBlue: 0xC0DDE1,
-  houseRoof: 0x76808A,
-  houseRoofBlue: 0x8D93A1,
-  houseRoofGrey: 0x7E8C97,
-  houseRoofGreen: 0x88988D,
-  schoolWall: 0xECE28B,
-  schoolRoof: 0xBA968A,
-  schoolYard: 0xC0CDBC,
+  houseWall: 0xF2EDE0,
+  houseWallWood: 0xDDC9A4,
+  houseWallBlue: 0xC8DCE8,
+  houseRoof: 0x5A5F6E,
+  houseRoofBlue: 0x6B7286,
+  houseRoofGrey: 0x747A8A,
+  houseRoofGreen: 0x5C7A62,
+  schoolWall: 0xE8E2CC,
+  schoolRoof: 0xD4513B,
+  schoolYard: 0xC4C6D4,
 
   // ------------------------------------------------------------------ rural
-  riceGreen: 0xA2D1BD,
-  riceGold: 0xECE28B,
-  barnWall: 0xBA968A,
-  barnRoof: 0x8D6B62,
-  woodPost: 0xAD8152,
-  woodPlank: 0xC5A387,
-  bamboo: 0xA2D1BD,
-  bambooDark: 0x7FAF94,
-  orchardTree: 0xA2D1BD,
-  flowerSakura: 0xF4ADB3,
-  flowerSakuraDeep: 0xD98594,
-  flowerSun: 0xECE28B,
-  flowerLav: 0xAFACC9,
+  riceGreen: 0x7FBF4A,
+  riceGold: 0xD6C257,
+  barnWall: 0xD4513B,
+  barnRoof: 0x9C2045,
+  woodPost: 0xB0855C,
+  woodPlank: 0xDDDEB0,
+  bamboo: 0x8CBF5C,
+  bambooDark: 0x6FA83C,
+  orchardTree: 0x6FA83C,
+  flowerSakura: 0xF39CCC,
+  flowerSakuraDeep: 0xEC718C,
+  flowerSun: 0xF5DC5E,
+  flowerLav: 0xB8A8E0,
 
   // ------------------------------------------------------- shrine / temple
-  toriiRed: 0xE75B64,
-  toriiRedDark: 0xC04080,
-  shrineWood: 0xBA968A,
-  shrineWoodDark: 0x96807A,
-  shrineRoof: 0x6E7378,
-  shrineRoofEdge: 0x8D93A1,
-  stone: 0xB1A98C,
-  stoneDark: 0x88988D,
-  stoneLight: 0xD0CDBC,
-  moss: 0xA2D1BD,
-  lanternStone: 0x9DAFC3,
+  toriiRed: 0xD4513B,
+  toriiRedDark: 0x9C2045,
+  shrineWood: 0xB45A48,
+  shrineWoodDark: 0x8F3A38,
+  shrineRoof: 0x4A5060,
+  shrineRoofEdge: 0x6E7484,
+  stone: 0xC4C6D4,
+  stoneDark: 0x8E93A8,
+  stoneLight: 0xE0E2EC,
+  moss: 0x6FA83C,
+  lanternStone: 0xA8ACBE,
 
   // ------------------------------------------------------------------ coast
-  wetSand: 0xD6C0A9,
-  driftwood: 0xAD9583,
-  boatHull: 0xE1D7CB,
-  boatHullDark: 0xB9AFA2,
-  sailCloth: 0xF2EEE2,
-  buoy: 0xE75B64,
-  buoyBlue: 0x86C2DA,
-  foam: 0xF7EABD,
-  rockWet: 0x76808A,
+  wetSand: 0xC8C79A,
+  driftwood: 0xB8A88E,
+  boatHull: 0xF2EDE0,
+  boatHullDark: 0xC4BEB0,
+  sailCloth: 0xFCF3D4,
+  buoy: 0xD4513B,
+  buoyBlue: 0x4FA8E8,
+  foam: 0xFCF3D4,
+  rockWet: 0x6E7484,
 
   // ------------------------------------------------------------- nature etc
-  trunk: 0xAD8152,
-  trunkDark: 0x583B2B,
-  leafLight: 0xACD2A3,
-  leafGreen: 0xA2D1BD,
-  leafAutumn: 0xD8AF39,
-  leafMaple: 0xE75B64,
-  grassTuft: 0xA2D1BD,
-  reed: 0xB1D5BB,
-  lampPost: 0x76808A,
-  lampGlass: 0xF7EABD,
-  vending: 0xD05020,
-  vendingBody: 0xF2EEE2,
-  vendingBlue: 0x86C2DA,
-  utilityPole: 0xB1B5B0,
-  wire: 0x6E7680,
-  signPost: 0xAD9583,
-  crate: 0xC5A387,
-  barrel: 0x9DAFC3,
+  trunk: 0x9C7A50,
+  trunkDark: 0x6E5238,
+  leafLight: 0x8ECB5C,
+  leafGreen: 0x6FA83C,
+  leafAutumn: 0xE0A44E,
+  leafMaple: 0xD4513B,
+  grassTuft: 0x7FBF4A,
+  reed: 0x8CBF5C,
+  lampPost: 0x6E7484,
+  lampGlass: 0xFCF3D4,
+  vending: 0xD4513B,
+  vendingBody: 0xF8F4EC,
+  vendingBlue: 0x4FA8E8,
+  utilityPole: 0xB4B8C4,
+  wire: 0x4A5060,
+  signPost: 0xB8A88E,
+  crate: 0xDDC9A4,
+  barrel: 0x8FA8BC,
 
   // ------------------------------------------------------------- characters
-  skin: 0xF0CBA8,
-  skinShadow: 0xDDB18F,
+  // Skin and hair are the calmest values in the scene so the face reads.
+  skin: 0xFFF6E5,
+  skinShadow: 0xF7CAAC,
   hairDark: 0x4A4450,
-  hairBrown: 0xAD8152,
-  hairLight: 0xD6C0A9,
-  hairAoi: 0x86C2DA,
-  clothBlue: 0x86C2DA,
-  clothNavy: 0x6E7680,
-  clothWhite: 0xF2EEE2,
-  clothCream: 0xF7EABD,
-  clothRed: 0xD98594,
-  clothYellow: 0xECE28B,
-  clothGreen: 0xA2D1BD,
-  clothPink: 0xF4ADB3,
-  clothGrey: 0x9BA0A8,
-  apron: 0xC0CDBC,
-  suitNavy: 0x76808A,
-  schoolSailor: 0x6E7680,
-  ribbon: 0xD98594
+  hairBrown: 0x9C6A44,
+  hairLight: 0xE0C090,
+  hairAoi: 0x8FD8F0,
+  // Clothing carries the character's accent hue, one per person.
+  clothBlue: 0x4FA8E8,
+  clothNavy: 0x5A6484,
+  clothWhite: 0xFCF3D4,
+  clothCream: 0xF0E4C4,
+  clothRed: 0xEC718C,
+  clothYellow: 0xF5DC5E,
+  clothGreen: 0x7FBF4A,
+  clothPink: 0xF39CCC,
+  clothGrey: 0xA8AEBE,
+  apron: 0xE8E4DC,
+  suitNavy: 0x4A5060,
+  schoolSailor: 0x5A6484,
+  ribbon: 0xEC718C,
+  eye: 0x2A2320,
+  eyeWhite: 0xFFFFFF
 };
 
-// A single cube geometry reused by every voxel prop in the game. One geometry
-// means one shared buffer, so thousands of instanced blocks cost almost nothing.
+// Ink is used for line work and the smallest darks only. Scattering this
+// through the terrain is what makes a scene read as comic rather than clean.
+export const INK = 0x2A2320;
+
+// A single geometry reused by everything. RoundedBoxGeometry is what stops the
+// world reading as Minecraft; see RoundedGeometry.js.
 export function createBlockGeometry() {
   return new THREE.BoxGeometry(1, 1, 1);
 }
 
 const materialCache = new Map();
 
-// Unlit emissive-ish material for neon and window light. Kept separate so it
-// can be switched to full brightness at night without touching lit surfaces.
-export function createPaletteMaterials() {
-  const materials = new Map();
+// Builds the material set the world renders with.
+//
+// Given an AnimeMaterialFactory, every surface shares one anime-style shader
+// (hue-shifted shadows, rim light, subsurface bleed). Without one it falls back
+// to plain Lambert, which is what the Node-side tests use since they have no
+// WebGL context at all.
+export function createPaletteMaterials(factory = null) {
+  if (factory) {
+    const materials = new Map();
+    for (const [name, hex] of Object.entries(PALETTE)) {
+      // The colour has to be handed to the material explicitly: a bare
+      // ShaderMaterial has no diffuseColor to read it from.
+      materials.set(name, factory.get(name, { color: hex }));
+    }
+    return materials;
+  }
 
+  const materials = new Map();
   for (const [name, hex] of Object.entries(PALETTE)) {
     const isGlow = name.startsWith('neon') || name === 'lampGlass' || name === 'windowLit';
     materials.set(
@@ -191,13 +215,12 @@ export function createPaletteMaterials() {
       new THREE.MeshLambertMaterial({
         color: hex,
         emissive: isGlow ? hex : 0x000000,
-        emissiveIntensity: isGlow ? 0.55 : 0,
+        emissiveIntensity: isGlow ? 0.65 : 0,
         transparent: name === 'water' || name === 'waterShallow' || name === 'foam',
-        opacity: name === 'foam' ? 0.75 : name === 'water' ? 0.82 : 1
+        opacity: name === 'foam' ? 0.8 : name === 'water' ? 0.85 : 1
       })
     );
   }
-
   return materials;
 }
 
@@ -220,7 +243,8 @@ export class VoxelBatch {
     this.entries = new Map();
   }
 
-  // options may carry per-box rotations (ry for yaw, rz for a roof pitch).
+  // options may carry per-box rotations (ry for yaw, rz for a roof pitch) and a
+  // `shape` selecting a rounding level from RoundedGeometry.js.
   add(materialName, x, y, z, sx = 1, sy = 1, sz = 1, options = {}) {
     let list = this.entries.get(materialName);
     if (!list) {

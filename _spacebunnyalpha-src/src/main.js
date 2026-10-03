@@ -7,8 +7,9 @@ import { GameClock } from './core/GameClock.js';
 import { SaveSystem } from './core/SaveSystem.js';
 
 import { heightAt, biomeAt, regionAt, regionInfo, findSpawn, BIOMES } from './world/Terrain.js';
-import { WorldPlan, WorldStreamer, instantiateStatics, createMaterials, createGeometry } from './world/World.js';
+import { WorldPlan, WorldStreamer, instantiateStatics, createMaterials, createGeometry, createShapeGeometries } from './world/World.js';
 import { PALETTE } from './world/Palette.js';
+import { AnimeMaterialFactory } from './render/AnimeMaterial.js';
 
 import { SkySystem } from './render/SkySystem.js';
 import { OceanSystem } from './render/OceanSystem.js';
@@ -78,10 +79,11 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'hi
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, RENDER.maxPixelRatio));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// A gentle tone curve. The Ghibli palette sits high in the lightness range
-// (65-86%), so the renderer needs headroom above that or the pale greens and
-// warm creams clip into flat, dead colour instead of reading as painted.
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+// Neutral tone mapping, deliberately NOT ACES. ACES desaturates and crushes,
+// which is the opposite of what a bright, saturated anime palette needs; it
+// turns the greens to mud. Neutral holds saturation and rolls highlights off
+// gently.
+renderer.toneMapping = THREE.NeutralToneMapping ?? THREE.LinearToneMapping;
 renderer.toneMappingExposure = RENDER.exposure;
 app.appendChild(renderer.domElement);
 
@@ -101,10 +103,15 @@ setProgress(0.1);
 const plan = new WorldPlan();
 setProgress(0.5);
 
-const materials = createMaterials();
+// Anime-style materials, sharing one shader program. The factory keeps a
+// uniform block per surface name so the sky can push light direction and
+// ambient into every material at once.
+const animeMaterials = new AnimeMaterialFactory();
+const materials = createMaterials(animeMaterials);
 const geometry = createGeometry();
-const statics = instantiateStatics(plan.buildAllStatics(), geometry, materials, scene);
-const streamer = new WorldStreamer(scene, { materials, geometry });
+const shapeGeometries = createShapeGeometries();
+const statics = instantiateStatics(plan.buildAllStatics(), geometry, materials, scene, shapeGeometries);
+const streamer = new WorldStreamer(scene, { materials, geometry, shapeGeometries });
 setProgress(0.85);
 
 // ---------------------------------------------------------------------------
@@ -620,6 +627,14 @@ function frame(now) {
   // World streaming and rendering.
   streamer.update(player.position);
   sky.update(clock, camera, weather.current);
+  // Feed the sky's current light into every anime material, so one source of
+  // truth drives the sun, the shadows and the rim light together.
+  animeMaterials.syncLighting({
+    lightDir: sky.sunDirection,
+    lightColor: sky.sunLightColor,
+    ambientColor: sky.horizonColor,
+    rimStrength: sky.rimStrength
+  });
   // Keep the sea in step with the sky: same sun direction, same horizon hue.
   ocean.setSunDirection(sky.sunDirection.x, sky.sunDirection.y, sky.sunDirection.z);
   ocean.setHorizonColor(sky.horizonColor);
@@ -797,6 +812,18 @@ window.__sba = {
       followCamera.targetDistance = distance;
     }
     return 'camera set';
+  },
+
+  // Pins the weather and the hour, so a visual check judges the art rather
+  // than whatever the weather system happened to roll.
+  setConditions(weatherType, hour) {
+    if (weatherType) {
+      weather.current = weatherType;
+      weather.minutesUntilChange = 99999;
+      weather.wetness = 0;
+    }
+    if (typeof hour === 'number') clock.setMinutes(hour * 60);
+    return `weather=${weather.current} hour=${clock.label}`;
   }
 };
 

@@ -68,13 +68,20 @@ export function buildTerrainBoxes(cx, cz) {
   const originZ = cz * size;
   const boxes = new Map();
 
+  // Terrain uses the cheapest rounding level. Rounding every ground block is
+// both expensive and wrong for the art direction: anime backgrounds render
+// terrain as smooth large forms, and the read comes from the top/side colour
+  // split rather than from bevelled edges. Buildings and props, where the
+  // silhouette matters, use the softer shapes instead.
+  const GROUND_SHAPE = 'block';
+
   const push = (material, x, y, z, sx = 1, sy = 1, sz = 1) => {
     let list = boxes.get(material);
     if (!list) {
       list = [];
       boxes.set(material, list);
     }
-    list.push({ x, y, z, sx, sy, sz });
+    list.push({ x, y, z, sx, sy, sz, shape: GROUND_SHAPE });
   };
 
   for (let lx = 0; lx < size; lx += 1) {
@@ -141,22 +148,49 @@ export function buildTerrainBoxes(cx, cz) {
   return boxes;
 }
 
-// Converts per-material box lists into one InstancedMesh per material and
-// adds them to the scene.
-export function instantiateChunk(cx, cz, boxes, geometry, materials, scene) {
+// Converts per-material box lists into one InstancedMesh per material and adds
+// them to the scene.
+//
+// Instanced meshes are grouped by (material, shape): a building wants crisp
+// blocks, foliage wants soft blobs, and the two need different geometry. Shape
+// is declared per box by the builders via `options.shape`.
+export function instantiateChunk(cx, cz, boxes, geometry, materials, scene, shapeGeometries = null) {
   const chunk = new ChunkMeshes(cx, cz);
   const dummy = new THREE.Object3D();
 
+  // Group by material and shape together.
+  const groups = new Map();
   for (const [materialName, list] of boxes) {
-    if (list.length === 0) continue;
-    const material = getMaterial(materials, materialName);
-    const mesh = new THREE.InstancedMesh(geometry, material, list.length);
+    for (const box of list) {
+      const shape = box.shape ?? 'rounded';
+      const key = `${materialName}|${shape}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = { materialName, shape, list: [] };
+        groups.set(key, group);
+      }
+      group.list.push(box);
+    }
+  }
+
+  for (const group of groups.values()) {
+    if (group.list.length === 0) continue;
+    const material = getMaterial(materials, group.materialName);
+
+    // Fall back to the shared unit geometry when no shape set is supplied,
+    // which is the path the Node tests take.
+    const geo =
+      shapeGeometries && shapeGeometries[group.shape]
+        ? shapeGeometries[group.shape]
+        : geometry;
+
+    const mesh = new THREE.InstancedMesh(geo, material, group.list.length);
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     mesh.frustumCulled = true;
 
-    for (let i = 0; i < list.length; i += 1) {
-      const b = list[i];
+    for (let i = 0; i < group.list.length; i += 1) {
+      const b = group.list[i];
       dummy.position.set(b.x, b.y, b.z);
       dummy.scale.set(b.sx, b.sy, b.sz);
       // Builders may pitch a box (sloped roofs) and/or yaw it (rotated props).
@@ -174,6 +208,6 @@ export function instantiateChunk(cx, cz, boxes, geometry, materials, scene) {
   return chunk;
 }
 
-export function buildChunk(cx, cz, geometry, materials, scene) {
-  return instantiateChunk(cx, cz, buildTerrainBoxes(cx, cz), geometry, materials, scene);
+export function buildChunk(cx, cz, geometry, materials, scene, shapeGeometries = null) {
+  return instantiateChunk(cx, cz, buildTerrainBoxes(cx, cz), geometry, materials, scene, shapeGeometries);
 }

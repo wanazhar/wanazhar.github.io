@@ -292,14 +292,16 @@ export function buildLot(batch, lot) {
     const fp = footprintAt(lot, spec, i);
 
     // A shell of four wall slabs plus a cap, so the interior stays hollow and
-    // the instance count stays sane on tall towers.
-    batch.add(spec.wall, fp.x + fp.w / 2, y + 0.5, fp.z, fp.w, 1, 1);
-    batch.add(spec.wall, fp.x + fp.w / 2, y + 0.5, fp.z + fp.d - 1, fp.w, 1, 1);
-    batch.add(spec.wall, fp.x, y + 0.5, fp.z + fp.d / 2, 1, 1, fp.d);
-    batch.add(spec.wall, fp.x + fp.w - 1, y + 0.5, fp.z + fp.d / 2, 1, 1, fp.d);
+    // the instance count stays sane on tall towers. The walls are the shape
+    // that carries the silhouette, so they are rounded; the floor slabs are not
+    // seen edge-on and stay cheap.
+    batch.add(spec.wall, fp.x + fp.w / 2, y + 0.5, fp.z, fp.w, 1, 1, { shape: 'rounded' });
+    batch.add(spec.wall, fp.x + fp.w / 2, y + 0.5, fp.z + fp.d - 1, fp.w, 1, 1, { shape: 'rounded' });
+    batch.add(spec.wall, fp.x, y + 0.5, fp.z + fp.d / 2, 1, 1, fp.d, { shape: 'rounded' });
+    batch.add(spec.wall, fp.x + fp.w - 1, y + 0.5, fp.z + fp.d / 2, 1, 1, fp.d, { shape: 'rounded' });
 
     // Floor slab every few storeys so it reads as a building from outside.
-    if (i % 4 === 0) batch.add('concrete', fp.x + fp.w / 2, y + 0.05, fp.z + fp.d / 2, fp.w, 0.12, fp.d);
+    if (i % 4 === 0) batch.add('concrete', fp.x + fp.w / 2, y + 0.05, fp.z + fp.d / 2, fp.w, 0.12, fp.d, { shape: 'block' });
 
     addWindows(batch, fp, y, spec, rng);
   }
@@ -307,8 +309,15 @@ export function buildLot(batch, lot) {
   const topFp = footprintAt(lot, spec, spec.height);
   const topY = base + spec.height;
 
+  // Wall panels use a rounded shape so their corners catch the rim light: a hard
+  // 90-degree edge is the single most Minecraft-looking thing in a scene.
+  // Roof slabs stay block-shaped; nobody sees their edges and they are the bulk
+  // of the instance count.
+  const WALL_SHAPE = 'rounded';
+  const SLAB_SHAPE = 'block';
+
   // Roof cap.
-  batch.add(spec.roof, topFp.x + topFp.w / 2, topY + 0.25, topFp.z + topFp.d / 2, topFp.w, 0.5, topFp.d);
+  batch.add(spec.roof, topFp.x + topFp.w / 2, topY + 0.25, topFp.z + topFp.d / 2, topFp.w, 0.5, topFp.d, { shape: SLAB_SHAPE });
 
   // Roof clutter: tanks, vents, a water tower on the tall ones.
   if (lot.kind === TOWER || lot.kind === MIDRISE) {
@@ -316,11 +325,11 @@ export function buildLot(batch, lot) {
     for (let i = 0; i < n; i += 1) {
       const rx = topFp.x + 1 + rng() * (topFp.w - 2);
       const rz = topFp.z + 1 + rng() * (topFp.d - 2);
-      batch.add('metal', rx, topY + 0.9, rz, 1.1, 0.9, 1.1);
+      batch.add('metal', rx, topY + 0.9, rz, 1.1, 0.9, 1.1, { shape: 'soft' });
     }
     if (lot.kind === TOWER && spec.height > 30 && rng() < 0.5) {
-      batch.add('metalDark', topFp.x + topFp.w / 2, topY + 1.8, topFp.z + topFp.d / 2, 1.6, 1.6, 1.6);
-      batch.add('metal', topFp.x + topFp.w / 2, topY + 3.1, topFp.z + topFp.d / 2, 1.2, 1.2, 1.2);
+      batch.add('metalDark', topFp.x + topFp.w / 2, topY + 1.8, topFp.z + topFp.d / 2, 1.6, 1.6, 1.6, { shape: 'soft' });
+      batch.add('metal', topFp.x + topFp.w / 2, topY + 3.1, topFp.z + topFp.d / 2, 1.2, 1.2, 1.2, { shape: 'soft' });
     }
   }
 
