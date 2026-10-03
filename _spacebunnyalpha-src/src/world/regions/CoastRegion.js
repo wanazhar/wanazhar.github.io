@@ -1,7 +1,7 @@
 import { WORLD, SEED, REGIONS } from '../../config.js';
 import { heightAt, biomeAt, BIOMES, cellJitter } from '../Terrain.js';
 import { mulberry32 } from '../../util/rng.js';
-import { addTree } from './CityRegion.js';
+import { addTree } from './Trees.js';
 
 // ---------------------------------------------------------------------------
 // Beach furniture: driftwood, shells, seaweed, tide pools.

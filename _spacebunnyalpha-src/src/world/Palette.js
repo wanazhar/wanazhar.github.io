@@ -55,6 +55,9 @@ export const PALETTE = {
   // Walls sit in a calm mid range so the saturated accents can carry the eye.
   buildingWall: 0xE8E4DC,
   buildingWallAlt: 0xD8CDBE,
+  // Weathered timber cladding. Machiya are wood-fronted far more often than
+  // plaster, and a warm mid brown stops a row of pale walls reading as a fence.
+  buildingWallWood: 0xC4A882,
   buildingWallGrey: 0xC4C6D4,
   buildingWallBlue: 0xB4D2E8,
   buildingWallPink: 0xF2D8DC,

@@ -1,7 +1,7 @@
 import { WORLD, SEED, REGIONS } from '../../config.js';
 import { heightAt, biomeAt, BIOMES, MOUNTAIN, onBridge } from '../Terrain.js';
 import { mulberry32 } from '../../util/rng.js';
-import { addTree } from './CityRegion.js';
+import { addTree } from './Trees.js';
 
 // ---------------------------------------------------------------------------
 // Terraced rice paddies. Each terrace is a flat basin with a raised mud rim,

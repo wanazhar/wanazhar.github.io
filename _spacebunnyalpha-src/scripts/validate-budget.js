@@ -8,13 +8,18 @@ import { buildTerrainBoxes } from '../src/world/ChunkMeshes.js';
 import { PALETTE } from '../src/world/Palette.js';
 
 export const BUDGET = {
-  maxStaticBoxes: 30000,
+  // The machiya rebuild raised static geometry substantially: 570 narrow
+  // frontages, each with a lattice, eave plane, roof, signs and clutter, is
+  // roughly three times the work of the old detached-box lots. That detail is
+  // the whole point of the change -- a street of blank cubes is what read as
+  // generic -- so the ceiling moves rather than the detail being cut.
+  maxStaticBoxes: 42000,
   maxStaticMaterials: 140,
   maxTerrainBoxesInRange: 60000,
   maxTerrainMaterials: 30,
-  maxTotalInstances: 90000,
-  maxApproxDrawCalls: 900,
-  maxCollisionCells: 40000,
+  maxTotalInstances: 110000,
+  maxApproxDrawCalls: 1000,
+  maxCollisionCells: 45000,
   maxPlanBuildMs: 6000
 };
 
