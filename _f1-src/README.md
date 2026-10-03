@@ -388,6 +388,60 @@ degrees across, so the visible half-width at one metre is ~1.36m. Structure mean
 at the *edge* of the view has to be at x = +/-0.9m. At +/-0.4m -- where it started -- it
 is halfway across the screen and reads as a wall.
 
+### Elevation: real data, from two sources
+
+I said earlier this could not be done honestly. That was wrong, and the user was right
+to push back on it.
+
+Two obvious sources come up empty, which is what made it look impossible:
+
+- **OSM `ele` tags.** Queried directly: Monza's raceway is 216 nodes and *none* of them
+  carry elevation. Raceways are not routinely surveyed with height in OSM.
+- **The published centrelines.** The CSV mirrors the geometry comes from have no
+  elevation column at all.
+
+But the data is reachable in two stages: **OSM for where the circuit goes, a DEM for how
+high it is.** `scripts/fetch-elevation.mjs` does exactly that, per circuit:
+
+1. Overpass for the `highway=raceway` ways near the circuit's real coordinates.
+2. Open-Meteo's elevation API for a DEM reading at every one of those nodes.
+3. Project each node onto *our* centreline, so the profile is keyed by lap distance
+   rather than by OSM node order — the two start in different places and must not be
+   assumed to agree.
+4. Smooth with a circular moving average, then clamp the gradient.
+
+**The clamping is the part worth explaining.** SRTM-resolution DEM data is metre-scale
+noise with no business in a racing surface, and a profile obeying it launches cars off
+crests that do not exist. Real circuits are graded surfaces on real hills: the tens-of-metres
+change is real, the metre-scale noise is not. The profile is also kept *absolute*, so Spa
+really is 400m above sea level rather than being flattened to zero.
+
+What came back, checked against reality rather than against itself:
+
+| Circuit | Fetched | Real? |
+|---|---|---|
+| Monza | 182–196 m, 14 m range | Mon circuit sits at ~190 m, ~15 m change ✓ |
+| Monaco | 2–40 m, 38 m range | Harbour level up to La Turbie ✓ |
+| Sepang | 31–40 m | ~30–40 m ✓ |
+| Bahrain | 7–21 m | Sakhir is 7–20 m ✓ |
+| Montreal | 8–14 m | Île Notre-Dame ✓ |
+
+A test asserts those relationships, because a mis-keyed projection or a wrong circuit's
+nodes would produce a profile that *looks* perfectly fine and is not.
+
+**Seven of twenty-four so far.** The public DEM endpoint rate-limits hard — measured, not
+documented: about three calls in a burst, then 429. The script is resumable (completed
+circuits are cached, and the output is written after every circuit rather than once at
+the end, which the first version did and lost everything when it was interrupted), so
+running it again fills in the rest.
+
+### What is NOT done yet
+
+**Elevation is not rendered.** `buildTrack` now sets `sample.y` and `sample.lineY`, and
+both are tested, but the track mesh, the camera and the car physics do not read them.
+Nothing is higher or lower on screen yet. The data and the geometry are real; the
+consumption is the missing half.
+
 ### Trackside world, and per-circuit identity
 
 The centrelines are real, so every circuit's *shape* is right. Everything around it was
