@@ -98,6 +98,10 @@ export class UIManager {
           <div class="touch-steer-knob" data-stick-knob></div>
           <div class="touch-steer-label">STEER &middot; UP = GAS &middot; DOWN = BRAKE</div>
         </div>
+        <div class="touch-pedals" data-pedals hidden>
+          <button type="button" class="touch-pedal touch-pedal-brake" data-pedal="brake" aria-label="Brake">BRAKE</button>
+          <button type="button" class="touch-pedal touch-pedal-gas" data-pedal="throttle" aria-label="Throttle">GAS</button>
+        </div>
         <div class="touch-modes">
           <button type="button" class="touch-mode" data-control="ers" aria-label="Deploy energy recovery">ERS</button>
           <button type="button" class="touch-mode" data-control="drs" aria-label="Drag reduction system">DRS</button>
@@ -120,6 +124,7 @@ export class UIManager {
     this.vignette = this.root.querySelector('[data-vignette]');
     this.touch = this.root.querySelector('[data-touch]');
     this.steerZone = this.root.querySelector('[data-steer-zone]');
+    this.pedals = this.root.querySelector('[data-pedals]');
 
     const find = (name) => this.root.querySelector(`[data-${name}]`);
     this.elements = {
@@ -208,6 +213,21 @@ export class UIManager {
     ]) {
       this.input.bindButton(this.root.querySelector(`[data-control="${control}"]`), action, mode);
     }
+
+    /*
+     * Pedals for motion mode.
+     *
+     * In motion mode the stick is hidden because its vertical axis is throttle and
+     * brake, and it would fight the gyroscope for steering. That leaves the player
+     * with no pedals at all, so they get their own: two large targets at the bottom
+     * of the screen, reachable by either thumb, driven through the same
+     * `bindButton` path as every other on-screen control.
+     *
+     * `ACTIONS.throttle` and `ACTIONS.brake` rather than bespoke state, so `read()`
+     * needs to know nothing about how they were pressed.
+     */
+    this.input.bindButton(this.root.querySelector('[data-pedal="throttle"]'), ACTIONS.throttle, 'hold');
+    this.input.bindButton(this.root.querySelector('[data-pedal="brake"]'), ACTIONS.brake, 'hold');
   }
 
   /**
@@ -226,7 +246,21 @@ export class UIManager {
   setControlScheme(scheme) {
     const motion = scheme === 'motion';
     this.root.classList.toggle('uses-motion', motion);
+
+    /*
+     * Release anything currently held.
+     *
+     * A control that is hidden while a finger is still on it never receives its
+     * pointerup, so its action stays stuck down -- and a stuck throttle is a car that
+     * drives off on its own. Switching scheme hides the stick and shows the pedals,
+     * which is exactly the moment a press can be orphaned.
+     */
+    this.input.releaseHeld();
+
     if (this.steerZone) this.steerZone.hidden = motion;
+    // The pedals are the replacement for the stick's vertical axis, so they appear
+    // exactly when it goes.
+    if (this.pedals) this.pedals.hidden = !motion;
     if (this.touch) this.touch.classList.toggle('motion-mode', motion);
   }
 
