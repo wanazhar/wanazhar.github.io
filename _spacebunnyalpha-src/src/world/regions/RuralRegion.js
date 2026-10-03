@@ -20,28 +20,30 @@ export function buildPaddies(batch) {
       const h = heightAt(x, z);
       if (h <= WORLD.seaLevel) continue;
 
-      // Each terrace is a flat basin holding still water, with a raised mud bund
-      // around it. The water is a mirror: it takes a sky-tinted colour with a
-      // brighter strip toward the horizon, which at golden hour makes the whole
-      // hillside a second sky. That single effect is worth more than any
-      // amount of rice geometry.
-      const mirror = 'paddyWater';
-      const sheen = 'foam';
-      batch.add(mirror, x + 0.5, h + 0.32, z + 0.5, 2, 0.2, 2);
-      // Sun path on the water.
-      batch.add(sheen, x + 0.5, h + 0.38, z + 0.5, 1.5, 0.06, 0.5);
-      // Mud bund around the plot.
-      batch.add('paddyMud', x + 0.5, h + 0.5, z + 0.02, 2, 0.5, 0.2);
-      batch.add('paddyMud', x + 0.5, h + 0.5, z + 1.98, 2, 0.5, 0.2);
-      batch.add('paddyMud', x + 0.02, h + 0.5, z + 0.5, 0.2, 0.5, 2);
-      batch.add('paddyMud', x + 1.98, h + 0.5, z + 0.5, 0.2, 0.5, 2);
+      // Each terrace is a flat basin holding still water, with a thin mud bund
+      // around it.
+      //
+      // The water is the point: at golden hour a paddy becomes a second sky,
+      // and it is the single biggest mood lever on the island. So the bund is
+      // kept low and narrow. An earlier version used a full half-unit rim,
+      // which read as a raised brown box with a puddle in it rather than as
+      // water holding a field up.
+      batch.add('paddyWater', x + 0.5, h + 0.38, z + 0.5, 2, 0.22, 2);
+      // Sun path across the water. This is what makes it read as a mirror.
+      batch.add('foam', x + 0.5, h + 0.46, z + 0.35, 1.4, 0.06, 0.6);
 
-      // Rice seedlings in rows.
+      // A thin bund, just proud of the water and below its surface highlight.
+      batch.add('paddyMud', x + 0.5, h + 0.42, z + 0.04, 2, 0.24, 0.14);
+      batch.add('paddyMud', x + 0.5, h + 0.42, z + 1.96, 2, 0.24, 0.14);
+      batch.add('paddyMud', x + 0.04, h + 0.42, z + 0.5, 0.14, 0.24, 2);
+      batch.add('paddyMud', x + 1.96, h + 0.42, z + 0.5, 0.14, 0.24, 2);
+
+      // Rice seedlings in rows, standing in the water rather than beside it.
       const growth = cellGrowth(x, z);
       const mat = growth > 0.6 ? 'riceGold' : 'riceGreen';
-      for (let dx = 0.4; dx < 2; dx += 0.5) {
-        for (let dz = 0.4; dz < 2; dz += 0.5) {
-          batch.add(mat, x + dx, h + 0.5 + growth * 0.5, z + dz, 0.14, 0.4 + growth * 0.7, 0.14);
+      for (let dx = 0.4; dx < 2; dx += 0.55) {
+        for (let dz = 0.4; dz < 2; dz += 0.55) {
+          batch.add(mat, x + dx, h + 0.48 + growth * 0.45, z + dz, 0.13, 0.34 + growth * 0.6, 0.13);
         }
       }
     }

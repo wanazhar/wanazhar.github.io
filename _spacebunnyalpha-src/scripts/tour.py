@@ -25,28 +25,26 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # landing inside a tree canopy, a barn or a hillside, which produced black
 # frames and shots with no player visible.
 VIEWS = [
-    ("city-street", "cityStreet", 0.00, 0.34, 16),
-    ("city-crossing", "cityAlt", 1.18, 0.36, 16),
-    ("city-north", "cityNorth", 0.00, 0.34, 16),
-    ("suburb-street", "suburbStreet", 0.39, 0.34, 16),
-    ("suburb-homes", "suburbAlt", 1.57, 0.34, 16),
-    ("suburb-gate", "suburbGate", 0.79, 0.34, 16),
-    ("station", "station", 0.00, 0.34, 14),
-    ("paddy-fields", "paddyView", 0.00, 0.32, 16),
-    ("rural-road", "ruralRoad", 0.00, 0.32, 16),
-    ("highlands", "highlands", 1.57, 0.34, 16),
-    ("coast-shore", "coastShore", 0.00, 0.30, 16),
-    ("coast-village", "coastVillage", 0.00, 0.32, 16),
+    ("machiya-street", "machiyaStreet", 0.00, 0.24, 8),
+    ("machiya-alley", "machAlley", 0.00, 0.26, 9),
+    ("suburb-street", "suburbStreet", 0.39, 0.32, 14),
+    ("suburb-homes", "suburbAlt", 1.57, 0.32, 14),
+    ("paddy-fields", "paddyView", 1.60, 0.50, 18),
+    ("rural-road", "ruralRoad", 0.00, 0.30, 16),
+    ("highlands", "highlands", 1.57, 0.32, 16),
+    ("coast-shore", "coastShore", 0.00, 0.28, 16),
+    ("coast-village", "coastVillage", 0.00, 0.30, 16),
+    ("sea-torii", "seaTorii", 0.00, 0.22, 24),
 ]
 
-# Landmarks, aimed rather than merely stood next to: window.__sba.view() places
-# the player and points the camera at the subject, so it lands in frame.
+
+# Landmarks, aimed rather than merely stood next to: window.__sba.view()
+# places the player and points the camera at the subject, so it lands in frame.
 LANDMARKS = [
     ("lm-torii", "torii"),
     ("lm-shrine", "shrine"),
     ("lm-konbini", "konbini"),
     ("lm-school", "school"),
-    ("lm-mountain", "mountain"),
 ]
 
 
@@ -68,7 +66,6 @@ async def run(url, outdir, analyze=False):
     for i, (name, key) in enumerate(LANDMARKS):
         expr = f"window.__sba.view({json.dumps(key)})"
         plan.append((name, expr, f"{offset + i:02d}-{name}.png"))
-
     for name, expr, filename in plan:
         result = await b.try_evaluate(expr)
         await settle(b, 35)

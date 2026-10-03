@@ -107,74 +107,131 @@ npm run preview    # verify the production build
 
 ### Art direction
 
-The palette, lighting and detail are taken from real Studio Ghibli film frames
-(the "Movies in Color" quantiles), not chosen by eye. Three rules carry most of
-the look:
+The target is Rimsoft (*That Time I Got Reincarnated as a Slime*) rather than
+Ghibli. Those are genuinely different, and the difference is not subtle.
 
-- **Lightness before hue.** Minecraft grass is `#7CBD6B`: dark, mid-saturated.
-  Ghibli grass is `#ACD2A3`: light, pale. Raising lightness and dropping
-  saturation is the single biggest "not Minecraft" lever, and it costs nothing.
-- **Shadows are tinted, never black.** The fill is a `HemisphereLight` whose sky
-  and ground colours differ, so every surface picks up a temperature split the
-  way a painted background does. One key light casts every shadow; a weak
-  opposing light lifts distant silhouettes off the sky.
-- **Fog is the horizon colour exactly.** Grey fog is the tell of an unstyled 3D
-  scene.
+**Saturation is the whole game.** Measured median saturation across official
+Rimsoft artwork is 0.30-0.45; a muted, filmic look sits nearer 0.10. This
+palette measures 0.46, with mean lightness 0.61. Grass moved to a real green
+`#7FBF4A` from a pale celadon.
 
-The sky is a banded vertical gradient (five value steps, the way a wash is built
-up in gouache) rather than a smooth ramp, and the sea takes the sky's own colour
-with a sun path on it.
+**Shadows are hue-shifted, not multiplied.** This is the single most important
+finding. Measured across Rimsoft's covers, the shadow band of a surface rotates
+hue about 6-9 degrees *toward blue* and roughly *doubles* saturation, while
+value barely moves:
 
-"Reads as Japan" comes mostly from infrastructure rather than architecture:
-concrete utility poles with sagging catenary wires, stainless roof tanks,
-vending machines under awnings, kawara roofs built from alternating-value tile
-courses, and shoji glowing cream in the evening. These are cheap boxes and they
-do more work than any amount of building detail.
+```
+lit     #E2F2F4   H187  S0.07  V0.96
+shadow  #C8E6F1   H196  S0.17  V0.95    <- +9 deg hue, 2.3x saturation
+```
+
+Multiplying value -- the default in any lit 3D scene -- gives `#C0CECF`: dead
+grey-green. That is why value-darkened scenes always look washed out.
+`AnimeMaterial.js` does what Rimsoft does instead.
+
+The same shader adds a wide soft rim (a narrow one reads as a cel outline, the
+opposite of the target), a warm/cool subsurface bleed either side of the
+terminator, and contact darkening tinted towards the ambient rather than
+towards black, because this art direction has no true black anywhere.
+
+**The sky is banded, not a ramp.** Five value steps, the way a gouache wash is
+built up, with a dither so the banding reads as intentional. Fog takes the
+horizon colour exactly; grey fog is the tell of an unstyled 3D scene.
+
+**Geometry is rounded.** `RoundedGeometry.js` builds superellipsoids, so nothing
+is a hard 90-degree cube. Buildings keep crisp blocks so their structure still
+reads; foliage uses soft blobs in overlapping lobes. Segment counts are low on
+purpose -- an early version used four times as many and cost 11.9 million
+triangles on screen for curvature nobody can see at gameplay distance.
+
+### Making a street read as Japanese
+
+Colour was never the main problem with the city. Structure was. A Japanese
+neighbourhood street is a **narrow slot with a continuous wall on both sides**,
+not a corridor between detached objects. The first version had 20-unit streets,
+which is an arterial with a tram.
+
+Measured targets now implemented, at one world unit per metre:
+
+| | |
+|---|---|
+| residential street | 5 wide (was 20) |
+| collector street | 9, two of them |
+| roji alley | 3, cutting through the blocks |
+| machiya frontage | 3.7-5.4 |
+| machiya ridge | 7-8.4 |
+| frontage-to-ridge | 1:2.2, narrow and tall |
+| eaves | ~6, projecting 0.8, one continuous line |
+| roof pitch | 22-27 degrees, shallow; steep reads as a chalet |
+
+Machiya share party walls and sit flush against the street with **no setback at
+all**. Three types, so a row is not a fence: `tsushinikai` with its low latticed
+second floor, `sounikai` with full-height storeys, and the 1960s-80s `kanban`
+retrofit -- a modern glowing shopfront under an Edo roof, which is the most
+recognisably Japanese street form there is.
+
+Signage is layered in three bands between 0 and 6.5m. That is *why* the street
+reads as crowded but ordered: all the clutter lives in one horizontal stratum
+rather than being sprayed evenly up the facade. Below about a quarter unit,
+detail becomes colour rather than geometry -- the `koshi` lattice is one dark
+recessed plane with three ribs, not hundreds of invisible bars.
 
 ### Visual verification
 
-The game is checked by looking at it, not by asserting on the DOM. There is real
-Chrome on the dev box with a debug port, and the tooling drives it over CDP:
+Every bug in the list above was invisible to the unit tests, so the game is
+checked by looking at it. There is a real Chrome on the dev box with a debug
+port; the tooling drives it over CDP.
 
 ```bash
-python3 scripts/tour.py http://127.0.0.1:4174/ /tmp/shots   # photograph every region
-python3 scripts/analyze.py /tmp/shots/07-paddy-fields.png    # colour statistics
-node scripts/find-vantage-points.js                          # find camera positions
+# Use a dedicated browser. The shared one on 9222 accumulates tabs over a long
+# session and eventually drops its socket mid-run.
+chromium-browser --headless=new --remote-debugging-port=9333 \
+  --user-data-dir=/tmp/sba-chrome about:blank &
+SBA_CDP=9333 npm run build
+SBA_CDP=9333 python3 scripts/tour.py http://100.98.115.95:4174/ /tmp/shots
+python3 scripts/analyze.py /tmp/shots/00-machiya-street.png   # colour stats
+node scripts/find-vantage-points.js                           # camera positions
 ```
 
-`window.__sba` is an inspection handle exposed by the game: `state`, `teleport`,
-`view`, and the raw `scene`/`camera`/`player`. It exists because every visual
-bug found so far was invisible to the test suite.
-
-`find-vantage-points.js` scans for spots with real camera clearance. Hand-picked
-coordinates kept landing inside a tree canopy, a barn or a hillside, which
-produced black frames and shots with no player in them.
+`window.__sba` is the inspection handle: `state`, `teleport`, `view`, `portrait`,
+`setConditions`, and the raw `scene`/`camera`/`player`.
 
 ## Tests
 
 ```bash
-npm test           # 73 tests across terrain, regions, gameplay, budget, runtime
+npm test           # 108 tests
 npm run lint       # node --check every source file
 ```
 
 Notable suites:
 
 - `lint-undefined.test.js` — parses every module with acorn and fails on an
-  identifier that is referenced but never bound. This catches missing imports,
-  which the bundler treats as globals and therefore compiles cleanly; they only
-  surface as a `ReferenceError` at runtime. It has caught two real bugs of
-  exactly that shape.
+  identifier that is referenced but never bound. Missing imports compile
+  cleanly, because the bundler treats them as globals, and only surface as a
+  `ReferenceError` at runtime. This has caught four real bugs of that shape.
+- `character.test.js` — asserts the rig's proportions numerically: super-deformed
+  at 2.0-2.6 heads, head 1.2-1.7x torso width, arms never thicker than legs,
+  feet landing on the ground, face parts sitting on the skull surface rather
+  than inside it, and the hair cap not swallowing the head. Each of those was a
+  real bug that read as "the character looks wrong" and nothing more.
+- `machiya.test.js` — street width bands, the 1:2.2 frontage-to-ridge ratio,
+  continuous party walls, nothing built in the road or the water, and the axis
+  test: facade detail must sit on the street-facing face. Placing it on the
+  depth axis left every building turned away from the road, presenting a blank
+  back, which looked like an empty street rather than a bug.
+- `controls.test.js` / `touch-controls.test.js` — movement direction as a
+  property rather than a snapshot: forward must move along the camera view at
+  *every* camera angle, and the joystick chain is tested end to end.
+- `feel.test.js` — acceleration, braking, turning easing, and the lean, all
+  measured against the tuned constants.
 - `terrain.test.js` — island shape, biomes, and a flood-fill proof that all four
   regions are reachable on foot from the spawn.
-- `city.test.js` / `regions.test.js` — layout invariants: lots never overlap, never
-  sit on a road, never land in the water, and only ever emit known materials.
-- `gameplay.test.js` — inventory stacking limits, atomic shop transactions, crafting
-  input accounting, quest state machine, and save round-tripping.
-- `budget.test.js` — world size ceilings, plus a check that the validator itself
-  rejects an oversized world.
-- `runtime.test.js` — boots the **real built bundle** in jsdom against a stubbed
-  WebGL context and fails on any uncaught error. This catches DOM and renderer bugs
-  that a compile-only check misses.
+- `gameplay.test.js` — inventory stacking limits, atomic shop transactions,
+  crafting input accounting, quest state machine, save round-tripping.
+- `budget.test.js` — world size ceilings, plus a check that the validator
+  itself rejects an oversized world.
+- `runtime.test.js` — boots the **real built bundle** in jsdom against a
+  stubbed WebGL context and fails on any uncaught error.
 
 ### Browser smoke test
 
@@ -217,6 +274,13 @@ _spacebunnyalpha-src/
 ├─ package.json
 ├─ vite.config.js
 ├─ scripts/
+│  ├─ serve.py              local server: no-store headers, binds one address
+│  ├─ cdp.py                a correct Chrome DevTools Protocol client
+│  ├─ tour.py               photographs named viewpoints in a real browser
+│  ├─ screenshot.py         single screenshot plus console capture
+│  ├─ browser-smoke.py      boots the game and proves the loop runs
+│  ├─ analyze.py            colour statistics for a screenshot
+│  ├─ find-vantage-points.js  scans for camera positions with real clearance
 │  ├─ measure-world.js      world size report
 │  ├─ validate-budget.js    size ceilings (also imported by budget.test.js)
 │  └─ *.test.js
@@ -234,18 +298,26 @@ _spacebunnyalpha-src/
    ├─ world/
    │  ├─ Terrain.js         the island heightmap and biome rules
    │  ├─ Palette.js         named materials + VoxelBatch
+   │  ├─ RoundedGeometry.js superellipsoids, so nothing is a hard cube
    │  ├─ ChunkMeshes.js     terrain box generation and instancing
-   │  ├─ Collision.js       blocked-cell grid, shared with the visuals
-   │  ├─ World.js           world plan, city streets, chunk streaming
-   │  └─ regions/           city, suburb, rural, coast builders
+   │  ├─ Collision.js       blocked-cell grid with per-column height
+   │  ├─ World.js           world plan, street surfacing, chunk streaming
+   │  └─ regions/
+   │     ├─ Machiya.js      street network and the machiya itself
+   │     ├─ Trees.js        canopy lobes and groves, shared by all regions
+   │     ├─ SuburbRegion.js
+   │     ├─ RuralRegion.js
+   │     ├─ CoastRegion.js
+   │     └─ JapaneseDetails.js  poles, wires, tanks, vending, signage
    ├─ render/
-   │  ├─ SkySystem.js       gradient dome, sun, moon, stars, fog
-   │  ├─ OceanSystem.js     layered waves and surf
+   │  ├─ AnimeMaterial.js   hue-shifted shadows, rim, subsurface, contact
+   │  ├─ SkySystem.js       banded gradient dome, sun, moon, stars, fog
+   │  ├─ OceanSystem.js     sky-coloured water with a sun path
    │  ├─ AmbienceSystem.js  pooled particle layers
    │  └─ WeatherSystem.js   weather rolls and regional ambience rules
    ├─ characters/
-   │  ├─ CharacterRig.js    voxel humans, walk cycle, villager AI
-   │  └─ PlayerController.js input, follow camera, collision, stamina
+   │  ├─ CharacterRig.js    chibi rig, squash-and-stretch walk, villager AI
+   │  └─ PlayerController.js input, collision-aware camera, stamina
    ├─ game/
    │  ├─ Systems.js         inventory, economy, skills, crafting, activities
    │  └─ QuestSystem.js     quests, friendship, journal
@@ -256,23 +328,45 @@ _spacebunnyalpha-src/
    │  └─ recipes.js
    └─ ui/
       ├─ HUD.js             hud, panels, dialogue, nameplates
-      └─ Menus.js           journal, bag, shop, crafting, map
+      ├─ Menus.js           journal, bag, shop, crafting, map
+      └─ TouchControls.js   thumbstick and action buttons
 ```
 
 ## Design notes
 
-**Why everything is a box.** The island is ~45k instances of a single shared
-`BoxGeometry`, batched per material into `InstancedMesh`es. One geometry, one
-material set, and the draw-call count stays flat as the world grows.
+**Why the world is rounded, not boxes.** Every form is a superellipsoid, so a
+"block" is a box with softened corners. A hard 90-degree edge catches light in a
+way that draws the eye straight to it, and no amount of colour work overcomes
+it. Buildings use a crisp exponent so their structure still reads; foliage uses
+a soft one. Geometry is cached per exponent, so the whole island still shares a
+handful of buffers.
 
-**Collision shares its data with the visuals.** `Collision.js` is built from the same
-lot arrays the geometry builders use, so a wall you can see is always a wall you bump
-into. Buildings, cliffs and the water's edge are all in one blocked-cell grid.
+**Why shadows are hue-shifted.** Measured, not assumed: Rimsoft's shadow band
+shifts hue toward blue and *raises* saturation relative to its lit band. Value
+multiplication drains chroma, which is why ordinary lit 3D scenes look grey even
+when the palette is bright. `AnimeMaterial.js` rotates hue and lifts saturation
+instead.
 
-**The world is a pure function of a seed.** `Terrain.js` has no Three.js import, so
-the entire island — height, biome, region — is testable in plain Node. The tests do
-exactly that rather than mocking a renderer.
+**Collision shares its data with the visuals, and knows how tall things are.**
+`Collision.js` is built from the same lot arrays the geometry builders use, so
+a wall you can see is always a wall you bump into. It also records a height per
+column, because a 2D footprint cannot tell the camera it is inside a roof.
+
+**The city planner records which axis its street runs along.** A lot on a
+north-south street has its frontage on the X face; one on an east-west street
+has it on Z. Getting that backwards is invisible in the data and catastrophic
+on screen: every building turns its blank back to the road and the street reads
+as empty ground. `machiya.test.js` asserts it directly.
+
+**The world is a pure function of a seed.** `Terrain.js` has no Three.js import,
+so the entire island — height, biome, region — is testable in plain Node. The
+tests do exactly that rather than mocking a renderer.
 
 **Dialogue is data, not code.** NPC lines are keyed by moment (any / morning /
-evening / rainy / friendly) and the most specific pool that applies wins, so adding a
-character means adding an object to `data/npcs.js`.
+evening / rainy / friendly) and the most specific pool that applies wins, so
+adding a character means adding an object to `data/npcs.js`.
+
+**Visual bugs get tests, because nothing else catches them.** Every real defect
+in this build — the invisible player, the inverted movement, the misplaced
+facades, the hair cap swallowing a head — passed the unit suite and was found
+by looking at a screenshot. Each now has a numeric assertion.
