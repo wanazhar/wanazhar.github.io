@@ -708,7 +708,10 @@ window.__sba = {
     suburbStreet: { x: 38, z: 146 },
     suburbAlt: { x: 82, z: 190 },
     suburbGate: { x: 86, z: 150 },
-    paddyView: { x: 178, z: 66 },
+    // Stand at the edge of the largest paddy terrace, looking across it. The
+    // old spot was on high ground with no water within a hundred metres, which
+    // is why the fields read as bare mud from there.
+    paddyView: { x: 244, z: 190 },
     ruralRoad: { x: 178, z: 42 },
     highlands: { x: 178, z: 114 },
     coastShore: { x: 62, z: 246 },
