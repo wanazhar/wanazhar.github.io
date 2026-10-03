@@ -12,6 +12,7 @@ import { buildTrack } from '../track/trackGeometry.js';
 import { centrelineFor } from '../track/circuitData.js';
 import { getCircuit } from '../track/circuits.js';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../render/TrackMesh.js';
+import { buildSurrounds } from '../render/Surrounds.js';
 import { RaceSession, SESSION_TYPE, FIXED_TIMESTEP } from '../race/RaceSession.js';
 import { CameraRig } from './CameraRig.js';
 import { InputController, ACTIONS } from './InputController.js';
@@ -81,6 +82,7 @@ export class Game {
     this.track = null;
     this.trackGroup = null;
     this.environmentGroup = null;
+    this.surroundsGroup = null;
     this.drsAvailable = true;
     this.drsCooldown = 0;
     this.raceTime = 0;
@@ -124,6 +126,17 @@ export class Game {
     this.environmentGroup = buildEnvironment(this.track, circuit.theme);
     this.scene.add(this.environmentGroup);
 
+    /*
+     * Everything outside the barriers.
+     *
+     * Separate from the circuit itself because it is a consequence of *where* the
+     * circuit is, not of the racing line -- so the world can be rebuilt without
+     * rebuilding the track, and a change to how a corner is shaped cannot silently
+     * move a treeline.
+     */
+    this.surroundsGroup = buildSurrounds(this.track, circuit.theme, circuit.id);
+    this.scene.add(this.surroundsGroup);
+
     const theme = circuit.theme;
     this.scene.fog = new THREE.Fog(theme.fog, 320, 1500 * theme.daylight);
 
@@ -165,6 +178,17 @@ export class Game {
     await nextPaint();
     this.environmentGroup = buildEnvironment(this.track, circuit.theme);
     this.scene.add(this.environmentGroup);
+
+    /*
+     * Everything outside the barriers.
+     *
+     * Separate from the circuit itself because it is a consequence of *where* the
+     * circuit is, not of the racing line -- so the world can be rebuilt without
+     * rebuilding the track, and a change to how a corner is shaped cannot silently
+     * move a treeline.
+     */
+    this.surroundsGroup = buildSurrounds(this.track, circuit.theme, circuit.id);
+    this.scene.add(this.surroundsGroup);
 
     onProgress('lighting', 'Switching on the lights');
     await nextPaint();
