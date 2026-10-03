@@ -40,8 +40,13 @@
  * large ones still reach full lock.
  */
 
-/** How far the phone must be tilted, in degrees, for full lock. */
-const STEER_RANGE = 34;
+/**
+ * How far the phone must be tilted, in degrees, for full lock.
+ *
+ * 30, not 34. A full-lock tilt is a wrist movement, and asking for 34 degrees of it
+ * made the car feel like it was steering itself rather than being steered.
+ */
+const STEER_RANGE = 30;
 
 /**
  * Tilt ignored as hand tremor, degrees.
@@ -50,7 +55,7 @@ const STEER_RANGE = 34;
  * to move at all. It has to exist or a phone resting on a table slowly winds the
  * steering on.
  */
-const STEER_DEADZONE = 2.2;
+const STEER_DEADZONE = 1.6;
 
 /**
  * Smoothing, per frame at 60fps.
@@ -60,7 +65,18 @@ const STEER_DEADZONE = 2.2;
  * tremor is mostly high frequency, so a modest filter removes most of it for very
  * little delay.
  */
-const STEER_SMOOTHING = 0.45;
+/**
+ * Denoising only. Deliberately light.
+ *
+ * The controller already rate-limits every steering source at the output stage, which
+ * is what makes the stick, the keyboard and the gyroscope feel identical. Smoothing
+ * *here* as well put two lags in series: the tilt was filtered, and then the filter's
+ * output was slewed again. That double lag is what "janky" feels like -- the car keeps
+ * steering to where the phone was a moment ago.
+ *
+ * This only has to remove sensor noise. Rate limiting is somebody else's job.
+ */
+const STEER_SMOOTHING = 0.18;
 
 /**
  * Which way is right.
@@ -426,9 +442,17 @@ export class MotionControl {
   #axis(offset, range, deadzone) {
     const magnitude = Math.abs(offset);
     if (magnitude <= deadzone) return 0;
+    /*
+     * The response curve.
+     *
+     * Squared was too aggressive. It gives excellent fine control right at the centre
+     * but leaves almost nothing between 3 and 10 degrees, so the car sat dead straight
+     * and then went full lock with no warning. The exponent is 1.6: still weighted
+     * towards small inputs, but with a usable gradient through the middle of the range,
+     * which is where a corner is actually driven.
+     */
     const scaled = Math.min((magnitude - deadzone) / (range - deadzone), 1);
-    const curved = scaled * scaled;
-    return Math.sign(offset) * curved;
+    return Math.sign(offset) * scaled ** 1.6;
   }
 
 }
