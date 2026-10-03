@@ -1018,6 +1018,50 @@ test('a car that stops making progress is recovered, even while still moving', (
   assert.equal(movingRescues, 0, 'a car making progress must not be rescued');
 });
 
+test('gamepad input maps through, and a host with no navigator does not throw', () => {
+  /*
+   * This is a regression test for a real CI failure.
+   *
+   * `readGamepad` reached for the global `navigator` instead of the injected
+   * `this.target.navigator`. That passed locally -- Node 21 added a global
+   * `navigator`, so the bare global happened to exist -- and threw
+   * `ReferenceError: navigator is not defined` on Node 20, which is what CI runs.
+   * The whole class is built around an injected target; one method quietly opting out
+   * is what made it both untestable and CI-only-failing.
+   */
+
+  // A host with no navigator at all: reading controls must be a no-op, not a crash.
+  const bare = new InputController(fakeWindow());
+  const safe = bare.read(1 / 60, 0);
+  assert.equal(safe.steer, 0);
+  assert.equal(safe.throttle, 0);
+
+  // A host with a gamepad: it must actually reach the car.
+  const pad = {
+    axes: [0.5, 0],
+    buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 }))
+  };
+  pad.buttons[7] = { pressed: true, value: 0.8 }; // right trigger -> throttle
+  pad.buttons[6] = { pressed: false, value: 0.2 }; // left trigger -> brake
+
+  const withPad = new InputController(fakeWindow());
+  withPad.target.navigator = { getGamepads: () => [null, pad] };
+
+  let controls = withPad.read(1 / 60, 0);
+  assert.ok(Math.abs(controls.throttle - 0.8) < 1e-6, `right trigger should throttle, got ${controls.throttle}`);
+  assert.ok(Math.abs(controls.brake - 0.2) < 1e-6, `left trigger should brake, got ${controls.brake}`);
+
+  // Steering is slewed rather than instant, so give it a few frames to arrive.
+  let steer = 0;
+  for (let i = 0; i < 30; i += 1) steer = withPad.read(1 / 60, 0).steer;
+  assert.ok(steer > 0.3, `left stick should steer right, got ${steer}`);
+
+  // A navigator without getGamepads (older browsers, some embedded hosts).
+  const partial = new InputController(fakeWindow());
+  partial.target.navigator = {};
+  assert.equal(partial.read(1 / 60, 0).steer, 0);
+});
+
 test('the portrait block actually shows the rotate hint', () => {
   // `.rotate-hint { display: none }` came *after* the portrait media query that
   // sets `display: flex`. Equal specificity, so source order decided and the base

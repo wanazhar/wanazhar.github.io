@@ -382,7 +382,18 @@ export class InputController {
 
   readGamepad() {
     const result = { throttle: 0, brake: 0, steer: 0, handbrake: false, drs: false, ers: false };
-    const pads = navigator.getGamepads?.();
+    /*
+     * `this.target.navigator`, not the bare global.
+     *
+     * Every other listener in this class goes through the injected target, which is
+     * the whole point of taking one in the constructor. Reading the global `navigator`
+     * here quietly breaks that: the class stops being testable, and it throws outright
+     * wherever there is no global navigator at all -- which is Node 20, the version CI
+     * runs. It passed locally only because Node 21 added a global `navigator`.
+     *
+     * Optional chaining covers hosts that have a navigator without `getGamepads`.
+     */
+    const pads = this.target.navigator?.getGamepads?.();
     if (!pads) return result;
     const pad = [...pads].find((candidate) => candidate);
     if (!pad) return result;
