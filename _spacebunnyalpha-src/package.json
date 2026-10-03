@@ -1,0 +1,26 @@
+{
+  "name": "spacebunnyalpha",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A slice-of-life exploration RPG set on one seamless Japanese island, built with Vite and Three.js.",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "lint": "find src scripts -name '*.js' -print0 | xargs -0 -n1 node --check",
+    "test": "node --test scripts/*.test.js",
+    "smoke:browser": "python3 scripts/browser-smoke.py",
+    "measure:world": "node scripts/measure-world.js",
+    "validate:budget": "node scripts/validate-budget.js"
+  },
+  "dependencies": {
+    "three": "^0.184.0",
+    "vite": "^8.0.10"
+  },
+  "devDependencies": {
+    "acorn": "^8.18.0",
+    "acorn-walk": "^8.3.5",
+    "jsdom": "^30.1.1"
+  }
+}
