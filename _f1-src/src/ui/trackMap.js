@@ -128,3 +128,78 @@ export function cachedTrackMapPath(id, points, length) {
   if (!pathCache.has(id)) pathCache.set(id, trackMapPath(points, length));
   return pathCache.get(id);
 }
+
+/**
+ * A reusable world-to-map projection.
+ *
+ * `trackMapPath` projects and immediately throws the numbers away, which is right for
+ * drawing a static outline and useless for putting a moving dot on it. The minimap has
+ * to project a car position every frame, so it needs the same transform as a function
+ * it can call repeatedly -- and critically, it must be the *same* transform as the
+ * outline, or the dots drift off the line they belong to.
+ *
+ * That is the whole reason this exists rather than a second projection written for the
+ * minimap: two projections of the same circuit that disagree by a rotation or a scale
+ * would look plausible and be wrong.
+ */
+export class TrackProjection {
+  /**
+   * @param {{x: number, z: number}[]} points the circuit centreline
+   */
+  constructor(points) {
+    this.points = points;
+    const rotated = rotateToStartLine(points);
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minZ = Infinity;
+    let maxZ = -Infinity;
+    for (const point of rotated) {
+      if (point.x < minX) minX = point.x;
+      if (point.x > maxX) maxX = point.x;
+      if (point.z < minZ) minZ = point.z;
+      if (point.z > maxZ) maxZ = point.z;
+    }
+
+    const spanX = maxX - minX;
+    const spanZ = maxZ - minZ;
+    const span = Math.max(spanX, spanZ, 1e-6);
+    const usable = VIEW - PADDING * 2;
+    this.scale = usable / span;
+    this.offsetX = PADDING + (usable - spanX * this.scale) / 2;
+    this.offsetZ = PADDING + (usable - spanZ * this.scale) / 2;
+    this.minX = minX;
+    this.maxZ = maxZ;
+    this.cos = Math.cos(ROTATION_CACHED(points));
+    this.sin = Math.sin(ROTATION_CACHED(points));
+  }
+
+  /**
+   * Project a world position into viewBox coordinates.
+   * @param {number} x
+   * @param {number} z
+   * @returns {{x: number, y: number}}
+   */
+  project(x, z) {
+    const rx = x * this.cos - z * this.sin;
+    const rz = x * this.sin + z * this.cos;
+    return {
+      x: this.offsetX + (rx - this.minX) * this.scale,
+      // SVG y grows downward; the world's z grows "up the screen".
+      y: this.offsetZ + (this.maxZ - rz) * this.scale
+    };
+  }
+}
+
+/**
+ * The rotation `rotateToStartLine` applies, so a projection can apply the same one.
+ *
+ * Rotating twice would be wasteful and rotating inconsistently would put the dots on a
+ * different circuit from the outline, so the angle is derived from the same two points
+ * the rotation uses rather than stored alongside it.
+ */
+function ROTATION_CACHED(points) {
+  const first = points[0];
+  const second = points[points.length > 1 ? 1 : 0];
+  return -Math.atan2(second.z - first.z, second.x - first.x);
+}

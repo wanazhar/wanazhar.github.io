@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 
 import { buildTrack } from '../track/trackGeometry.js';
+import { centrelineFor } from '../track/circuitData.js';
 import { getCircuit } from '../track/circuits.js';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../render/TrackMesh.js';
 import { RaceSession, SESSION_TYPE, FIXED_TIMESTEP } from '../race/RaceSession.js';
@@ -16,6 +17,7 @@ import { CameraRig } from './CameraRig.js';
 import { InputController, ACTIONS } from './InputController.js';
 import { createRandom } from '../util/math.js';
 import { POWERTRAIN } from '../physics/CarPhysics.js';
+import { TrackProjection, cachedTrackMapPath, startLinePoint } from '../ui/trackMap.js';
 
 /** Geometry built from primitives does not need high precision. */
 const DEFAULT_FOV = 62;
@@ -24,6 +26,11 @@ export class Game {
   constructor(container, options = {}) {
     this.container = container;
     this.onUpdate = options.onUpdate ?? (() => {});
+    /** HUD hooks. Optional, because the headless simulator has no UI at all. */
+    this.onStartLights = options.onStartLights ?? null;
+    this.onGreenFlag = options.onGreenFlag ?? null;
+    this.onMinimap = options.onMinimap ?? null;
+    this.onMinimapFrame = options.onMinimapFrame ?? null;
     this.onImpact = options.onImpact ?? (() => {});
     this.onSessionEnd = options.onSessionEnd ?? (() => {});
     this.random = createRandom(options.seed ?? 20240218);
@@ -361,6 +368,15 @@ export class Game {
     this.rig.setMode(this.rig.mode);
     this.raceTime = 0;
     this.newLapFlash = 0;
+    this.greenShown = false;
+
+    /*
+     * Minimap, built once per session.
+     *
+     * The outline and the dots share one `TrackProjection`, so a car cannot drift off
+     * the line it belongs to. Rebuilt per circuit, never per frame.
+     */
+    this.#buildMinimap();
     this.positionFlash = 0;
     this.lastLap = this.session.player.timer.lastLap;
     this.bestLap = this.session.player.timer.bestLap;
@@ -423,7 +439,10 @@ export class Game {
     if (!this.session) return;
     this.raceTime += dt;
 
-    if (this.input.consume(ACTIONS.camera)) this.rig.cycleMode();
+    if (this.input.consume(ACTIONS.camera)) {
+      this.rig.cycleMode();
+      if (this.cockpit) this.cockpit.visible = this.rig.mode === 'cockpit';
+    }
     if (this.input.consume(ACTIONS.reset)) this.respawnPlayer();
     if (this.input.consume(ACTIONS.pause)) this.onPause?.();
 
@@ -486,8 +505,93 @@ export class Game {
     }
     this.positionFlash = Math.max(0, this.positionFlash - dt);
 
+    /*
+     * Start lights.
+     *
+     * Driven from the session's own sequence rather than a separate UI timer, so the
+     * lights and the hold can never disagree -- the gantry going dark and the car
+     * still being held is exactly the kind of thing that makes a start procedure feel
+     * broken. The transition to green is edge-triggered, because the sequence goes from
+     * "held" to "green" inside a single frame and polling would miss it entirely.
+     */
+    const start = this.session.start;
+    if (start.holding) {
+      this.onStartLights?.(start);
+    } else if (!this.greenShown && start.enabled) {
+      this.greenShown = true;
+      this.onGreenFlag?.();
+    }
+
     this.rig.update(player.physics, dt, this.#leaderPhysics());
+    if (this.cockpit?.visible) steerCockpit(this.cockpit, controls.steer);
+    this.onMinimapFrame?.(dt, (x, z) => this.minimapProjection.project(x, z), this.session.cars);
     this.onUpdate(this.#telemetry());
+  }
+
+  /**
+   * Hand the minimap everything it needs for this circuit and field.
+   *
+   * The outline, the racing line and the car dots are all produced from one
+   * `TrackProjection`. That is the point: two projections of the same circuit that
+   * disagree by a rotation or a scale would look perfectly plausible and put every car
+   * on the wrong part of the track.
+   *
+   * Emitted once per session. Rebuilding per frame would re-project several hundred
+   * points for a picture that does not change.
+   */
+  #buildMinimap() {
+    const circuitId = this.track.circuit.id;
+    const points = centrelineFor(circuitId);
+    this.minimapProjection = new TrackProjection(points);
+
+    this.onMinimap?.({
+      path: cachedTrackMapPath(circuitId, points, this.track.length),
+      linePath: this.#racingLinePath(),
+      start: startLinePoint(points),
+      cars: this.session.cars.map((car) => ({ isPlayer: car.isPlayer })),
+      name: this.track.circuit.name
+    });
+  }
+
+  /**
+   * Build the cockpit interior once and hang it off the camera.
+   *
+   * Parented to the camera rather than to the car, so it needs no per-frame transform
+   * and cannot lag a frame behind the view -- which an interior attached to a moving
+   * body would, visibly, at exactly the moment the player is looking at it.
+   *
+   * Visibility follows the camera mode, so it costs nothing in a chase-camera race.
+   */
+  #ensureCockpit() {
+    if (this.cockpit) return this.cockpit;
+    this.cockpit = buildCockpit();
+    // A camera's children are in camera space, so they must not be culled against the
+    // world frustum or the interior vanishes when the car itself is behind something.
+    this.cockpit.frustumCulled = false;
+    this.cockpit.renderOrder = 10;
+    // The camera has to be in the scene graph for its children to render at all.
+    this.scene.add(this.camera);
+    this.camera.add(this.cockpit);
+    this.cockpit.visible = this.rig.mode === 'cockpit';
+    return this.cockpit;
+  }
+
+  /**
+   * The racing line as an SVG path, in the same projection as the outline.
+   *
+   * Sampled down to a couple of hundred points: the line is smooth by construction, so
+   * every sample of a several-thousand-point track would be wasted path data and a
+   * slower parse for a shape 2rem across.
+   */
+  #racingLinePath() {
+    const samples = this.track.samples;
+    const stride = Math.max(1, Math.floor(samples.length / 200));
+    let d = '';
+    for (let i = 0; i < samples.length; i += stride) {
+      const point = this.minimapProjection.project(samples[i].lineX, samples[i].lineZ);
+      d += `${d ? 'L' : 'M'}${point.x.toFixed(2)} ${point.y.toFixed(2)} `;
+    }
+    return `${d}Z`;
   }
 
   #toggleDrs() {
