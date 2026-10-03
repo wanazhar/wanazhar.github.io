@@ -15,6 +15,14 @@ const SESSION_LABEL = { qualifying: 'QUALIFYING', race: 'RACE' };
 /** Build phases, in order, used to advance the loading bar. */
 const LOADING_PHASES = ['track', 'mesh', 'scenery', 'lighting', 'grid'];
 
+/**
+ * How often the minimap redraws, seconds.
+ *
+ * See `updateMinimap`. Twenty is well past the point where the movement reads as
+ * continuous, and it is a fifth of the DOM work.
+ */
+const MINIMAP_INTERVAL = 1 / 20;
+
 export class UIManager {
   constructor(root, { input = null, onAction = () => {} } = {}) {
     this.root = root;
@@ -35,28 +43,60 @@ export class UIManager {
           <div class="hud-lap"><span data-lap>1</span><span class="hud-lap-total">/1</span></div>
         </div>
 
-        <div class="hud-topright">
-          <div class="hud-position"><span data-position>1</span><sup data-position-total></sup></div>
-          <div class="hud-gap" data-gap></div>
-        </div>
+        <!--
+          Position, gap and the timing tower live in one column so they stack instead
+          of being positioned independently. They used to be two absolutely-positioned
+          elements with a hand-computed offset between them, and the offset silently
+          evaluated to nothing -- so the timer panel sat on top of the position number.
+          A column cannot overlap itself.
+        -->
+        <div class="hud-right" data-hud-right>
+          <div class="hud-topright">
+            <div class="hud-position"><span data-position>1</span><sup data-position-total></sup></div>
+            <div class="hud-gap" data-gap></div>
+          </div>
 
-        <div class="hud-timer">
-          <div class="hud-time-row">
-            <span class="hud-time-label">CURRENT</span>
-            <span class="hud-time" data-current-time>0:00.000</span>
+            <div class="hud-timer">
+            <div class="hud-time-row">
+              <span class="hud-time-label">CURRENT</span>
+              <span class="hud-time" data-current-time>0:00.000</span>
+            </div>
+            <div class="hud-time-row">
+              <span class="hud-time-label">LAST</span>
+              <span class="hud-time" data-last-time>--:--.---</span>
+            </div>
+            <div class="hud-time-row hud-time-best">
+              <span class="hud-time-label">BEST</span>
+              <span class="hud-time" data-best-time>--:--.---</span>
+            </div>
+            <div class="hud-sectors" data-sectors></div>
           </div>
-          <div class="hud-time-row">
-            <span class="hud-time-label">LAST</span>
-            <span class="hud-time" data-last-time>--:--.---</span>
-          </div>
-          <div class="hud-time-row hud-time-best">
-            <span class="hud-time-label">BEST</span>
-            <span class="hud-time" data-best-time>--:--.---</span>
-          </div>
-          <div class="hud-sectors" data-sectors></div>
         </div>
 
         <div class="hud-standings" data-standings></div>
+
+        <div class="hud-minimap" data-minimap hidden>
+          <svg class="minimap-svg" data-minimap-svg viewBox="0 0 100 100" aria-hidden="true">
+            <path class="minimap-track" data-minimap-track fill="none" stroke="currentColor"
+                  stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.55"/>
+            <path class="minimap-line" data-minimap-line fill="none" stroke="var(--accent)"
+                  stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" opacity="0.5"/>
+            <g data-minimap-cars></g>
+            <circle class="minimap-start" data-minimap-start r="2.4" />
+          </svg>
+          <div class="minimap-label" data-minimap-label></div>
+        </div>
+
+        <div class="hud-lights" data-lights hidden>
+          <div class="light-gantry">
+            <div class="light-lamp" data-lamp></div>
+            <div class="light-lamp" data-lamp></div>
+            <div class="light-lamp" data-lamp></div>
+            <div class="light-lamp" data-lamp></div>
+            <div class="light-lamp" data-lamp></div>
+          </div>
+          <div class="light-caption" data-light-caption></div>
+        </div>
 
         <div class="hud-bottomright">
           <div class="hud-ers">
@@ -125,6 +165,17 @@ export class UIManager {
     this.touch = this.root.querySelector('[data-touch]');
     this.steerZone = this.root.querySelector('[data-steer-zone]');
     this.pedals = this.root.querySelector('[data-pedals]');
+    this.lights = this.root.querySelector('[data-lights]');
+    this.lightLamps = [...this.root.querySelectorAll('[data-lamp]')];
+    this.lightCaption = this.root.querySelector('[data-light-caption]');
+    this.minimap = this.root.querySelector('[data-minimap]');
+    this.minimapTrack = this.root.querySelector('[data-minimap-track]');
+    this.minimapLine = this.root.querySelector('[data-minimap-line]');
+    this.minimapCars = this.root.querySelector('[data-minimap-cars]');
+    this.minimapStart = this.root.querySelector('[data-minimap-start]');
+    this.minimapLabel = this.root.querySelector('[data-minimap-label]');
+    this.minimapDots = [];
+    this.greenTimer = null;
 
     const find = (name) => this.root.querySelector(`[data-${name}]`);
     this.elements = {
@@ -287,6 +338,123 @@ export class UIManager {
     element.classList.remove('is-visible');
     void element.offsetWidth;
     element.classList.add('is-visible');
+  }
+
+  /**
+   * Show the start lights.
+   *
+   * @param {{state: string, lightsOn: number}} start the session's start sequence
+   */
+  setStartLights(start) {
+    const holding = start.state !== 'green';
+    if (this.lights) this.lights.hidden = !holding;
+    if (!holding) return;
+
+    for (const [index, lamp] of this.lightLamps.entries()) {
+      // Lit lamps are the first N. A light pair is on or off -- never half-lit -- so
+      // this is a threshold rather than a ramp.
+      lamp.classList.toggle('is-lit', index < start.lightsOn);
+    }
+
+    if (this.lightCaption && !this.lightCaption.classList.contains('is-go')) {
+      this.lightCaption.textContent =
+        start.state === 'pending' ? 'GET READY' : start.state === 'hold' ? 'HOLD' : 'LIGHTS';
+    }
+  }
+
+  /**
+   * Flash the caption green at lights out, then get out of the way.
+   *
+   * Timed rather than cleared on the next frame: a "GO" that appears for one frame is
+   * not seen at all, and one that lingers is a HUD element competing with the corner
+   * the player is trying to take.
+   */
+  showGreenFlag() {
+    if (!this.lights) return;
+    this.lights.hidden = false;
+    for (const lamp of this.lightLamps) lamp.classList.remove('is-lit');
+    if (this.lightCaption) {
+      this.lightCaption.textContent = 'GO';
+      this.lightCaption.classList.add('is-go');
+    }
+    clearTimeout(this.greenTimer);
+    this.greenTimer = setTimeout(() => {
+      if (this.lights) this.lights.hidden = true;
+    }, 1400);
+  }
+
+  /**
+   * Build the minimap for a circuit.
+   *
+   * The outline and the car dots must come from the *same* projection, or the dots
+   * drift off the line they belong to. `TrackProjection` exists for exactly that.
+   *
+   * @param {object} circuit
+   * @param {string} circuit.path SVG outline path data
+   * @param {string} [circuit.linePath] racing line, drawn under the cars
+   * @param {{x: number, y: number}} circuit.start start/finish marker
+   * @param {Array<{isPlayer: boolean}>} circuit.cars
+   * @param {string} [circuit.name]
+   */
+  setMinimapCircuit(circuit) {
+    if (!this.minimap) return;
+    this.minimapTrack?.setAttribute('d', circuit.path ?? '');
+    this.minimapLine?.setAttribute('d', circuit.linePath ?? circuit.path ?? '');
+    if (this.minimapStart) {
+      this.minimapStart.setAttribute('cx', circuit.start.x.toFixed(2));
+      this.minimapStart.setAttribute('cy', circuit.start.y.toFixed(2));
+    }
+    if (this.minimapLabel) this.minimapLabel.textContent = circuit.name ?? '';
+    this.minimap.hidden = false;
+
+    if (!this.minimapCars) return;
+    const cars = circuit.cars ?? [];
+    // Rebuilt only when the field size changes, not every frame.
+    if (this.minimapDots.length !== cars.length) {
+      this.minimapCars.replaceChildren();
+      this.minimapDots = cars.map((car) => {
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('r', car.isPlayer ? '3' : '2');
+        dot.setAttribute('fill', car.isPlayer ? 'var(--accent)' : 'rgba(255,255,255,0.6)');
+        if (car.isPlayer) {
+          dot.setAttribute('stroke', '#0b0e14');
+          dot.setAttribute('stroke-width', '1');
+        }
+        this.minimapCars.append(dot);
+        return dot;
+      });
+    }
+  }
+
+  /**
+   * Move the minimap dots.
+   *
+   * Throttled to 20Hz. 23 dots rewritten every frame is 23 DOM attribute writes per
+   * frame for something nobody can read at that rate -- the field is spread over a few
+   * hundred metres, so 20Hz is well past the point where it reads as continuous.
+   *
+   * @param {number} dt seconds
+   * @param {(x: number, z: number) => {x: number, y: number}} project
+   * @param {Array<{x: number, z: number}>} cars
+   */
+  updateMinimap(dt, project, cars) {
+    if (!this.minimap || this.minimap.hidden) return;
+
+    this.minimapAccumulator += dt;
+    if (this.minimapAccumulator < MINIMAP_INTERVAL) return;
+    this.minimapAccumulator = 0;
+
+    for (const [index, dot] of this.minimapDots.entries()) {
+      const car = cars[index];
+      if (!car) {
+        dot.setAttribute('opacity', '0');
+        continue;
+      }
+      const point = project(car.x, car.z);
+      dot.setAttribute('cx', point.x.toFixed(2));
+      dot.setAttribute('cy', point.y.toFixed(2));
+      dot.setAttribute('opacity', '1');
+    }
   }
 
   setSession({ type, circuitName, totalLaps }) {

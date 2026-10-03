@@ -14,11 +14,20 @@ import { LapTimer, RaceOrder } from './LapTimer.js';
 import { setupForEntry } from '../championship/ChampionshipManager.js';
 import { getCompound, getWeather } from '../physics/compounds.js';
 import { inContact, resolveCarContacts } from './collision.js';
+import { StartSequence } from './startSequence.js';
 import { clamp } from '../util/math.js';
 
 /** Fixed physics timestep. Rendering runs free; physics never does. */
 export const FIXED_TIMESTEP = 1 / 120;
 const MAX_SUBSTEPS = 8;
+
+/**
+ * The controls a car receives while the start lights are on.
+ *
+ * Frozen and shared. Every held car gets this same object, and nothing mutates controls
+ * after `read()`, so there is no reason to allocate one per car per frame.
+ */
+const HELD = Object.freeze({ throttle: 0, brake: 0, steer: 0, handbrake: false });
 
 /**
  * How far off the road, and how stationary, before a car is recovered.
@@ -87,6 +96,23 @@ export class RaceSession {
      * before rather than better.
      */
     this.contacts = contacts;
+
+    /*
+     * Lights, and the hold that goes with them.
+     *
+     * A race starts when the lights go out, not when the scene loads. Until then every
+     * car is held and all input is ignored, so the player's throttle held from the
+     * moment the HUD appears does not launch them off the line.
+     *
+     * Disabled for qualifying: there is no standing start and no field to hold, only
+     * one car and a flying lap.
+     */
+    this.start = new StartSequence({
+      enabled: type !== SESSION_TYPE.qualifying,
+      // A little grace before the first light so the grid is on screen before
+      // anything starts happening.
+      delayBefore: 1.4
+    });
     this.weatherState = getWeather(this.conditions.weather);
     this.type = type;
     this.totalLaps = totalLaps;
@@ -176,6 +202,17 @@ export class RaceSession {
 
   #step(dt, playerControls) {
     this.time += dt;
+    this.start.update(dt);
+
+    /*
+     * Input is discarded, not clamped, while the lights are on.
+     *
+     * Zeroing rather than scaling, because "the game ignores you until lights out" is
+     * only believable if it is total: a car that creeps under full throttle reads as a
+     * broken input rather than a start procedure.
+     */
+    const held = this.start.holding;
+    const controls = held ? HELD : playerControls;
 
     for (const car of this.cars) {
       if (car.retired) continue;
@@ -183,8 +220,10 @@ export class RaceSession {
       // `isPlayer` instead means an AI cannot be attached to the player slot --
       // which is exactly what the headless simulator does, and what leaves that
       // car sitting on the grid with no throttle.
-      const controls = car.ai ? this.#aiControls(car, dt) : playerControls;
-      car.physics.step(dt, controls, { grip: car.surfaceGrip });
+      const carControls = car.ai ? this.#aiControls(car, dt) : controls;
+      // Belt and braces: the AI must be held as firmly as the player, or the field
+      // pulls away on its own and the player is dropped into a race already under way.
+      car.physics.step(dt, held ? HELD : carControls, { grip: car.surfaceGrip });
       car.physics.odometer = (car.physics.odometer ?? 0) + car.physics.speed * dt;
 
       this.#resolveBarriers(car, dt);
@@ -356,6 +395,17 @@ export class RaceSession {
  * The penalty is the time lost getting there, which is what it should be.
  */
 #rescueStuckCars(dt) {
+    /*
+     * Never during the start lights.
+     *
+     * Every car is stationary on the grid by definition, so the "spun and crawling"
+     * rescue -- which exists precisely to catch stationary cars -- would fire on the
+     * entire field a couple of seconds into the countdown and scatter the grid across
+     * the track. Being held is indistinguishable from being stuck; only the lights can
+     * tell them apart.
+     */
+    if (this.start.holding) return;
+
     for (const car of this.cars) {
       if (car.retired || car.finished) continue;
 

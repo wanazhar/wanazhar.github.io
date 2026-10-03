@@ -562,6 +562,41 @@ export function buildEnvironment(track, theme) {
   gantry.rotation.y = Math.PI / 2 - startSample.heading;
   group.add(gantry);
 
+  /*
+   * The ground.
+   *
+   * There was no ground. Everything past the 26m run-off was the lower half of the sky
+   * gradient, so the world outside the barriers was a flat green field with no texture,
+   * no horizon and no parallax -- which is why the circuits read as "literally grass"
+   * and why the cockpit view looked like the car was floating in a void.
+   *
+   * A single large quad with the grass texture repeated often enough to survive the
+   * magnification. The repeat is the whole trick: at `repeat: [2, 1]` a 256px texture
+   * covers the entire circuit, so every texel spans tens of metres and the detail
+   * averages out to flat paint. One tile per ~12m is coarse enough not to shimmer at
+   * 300kph and fine enough to still read as grass.
+   *
+   * Kept deliberately featureless. Real terrain -- hills, trees, elevation -- would be
+   * a large amount of work for a circuit that is meant to look flat and fast, and
+   * anything tall near the track would occlude the barriers and the crowds, which are
+   * the things that actually sell the venue.
+   */
+  const groundSpan = Math.max(1400, (track.circuit?.radius ?? 700) * 4);
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(groundSpan, groundSpan, 1, 1),
+    new THREE.MeshStandardMaterial({
+      map: toTexture(grassTexture(), { repeat: [groundSpan / 12, groundSpan / 12] }),
+      color: theme.grass ?? 0xffffff,
+      roughness: 1,
+      metalness: 0
+    })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  // Just below the road surface, so the tarmac always sits on top of it and there is
+  // never a z-fighting seam at the edge of the run-off.
+  ground.position.y = -0.08;
+  group.add(ground);
+
   return group;
 }
 

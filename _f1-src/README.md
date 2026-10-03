@@ -301,6 +301,93 @@ actually does. Measured effect on Albert Park: 140.6s -> 129.5s.
 Spa still fails standalone at every pace setting. That is a separate geometry problem,
 not a pace problem, and it is not fixed.
 
+### Start lights
+
+A race begins when the lights go out, not when the scene loads.
+
+Five pairs light one per second, then all out, with a short reaction delay between
+lights-out and the field moving. Input is **discarded, not clamped**, while the lights
+are on -- a car that creeps under full throttle reads as a broken input rather than as
+a start procedure.
+
+Two things this needed that were not obvious:
+
+- **The rescue must be suppressed during the hold.** Every car is stationary on the grid
+  by definition, so the "spun and crawling" rescue -- which exists precisely to catch
+  stationary cars -- fired on the entire field two seconds into the countdown and
+  scattered the grid across the track. Being held is indistinguishable from being
+  stuck; only the lights can tell them apart.
+- **Green is edge-triggered.** The sequence goes from held to green inside a single
+  frame, so polling for the state misses it and the gantry never changes. It is also
+  driven from the session rather than a UI timer, so the lights and the hold cannot
+  disagree.
+
+The fifth light initially never appeared: the count of completed intervals reaches five
+one second *before* the fifth pair should light. Caught by a test asserting the lights
+come on as 1,2,3,4,5.
+
+### Minimap
+
+Top centre -- the one region no other HUD element occupies, and where a broadcast puts
+the track map anyway.
+
+The outline, the racing line and the car dots all come from a single `TrackProjection`.
+That is the point: two projections of the same circuit differing by a rotation or a
+scale would look entirely plausible and put every car on the wrong part of the track.
+`trackMapPath` throws its numbers away after drawing, which is right for a static
+outline and useless for a dot that moves, so the transform is exposed as a class and the
+outline is drawn through it.
+
+Redrawn at 20Hz. 23 dots rewritten every frame is 23 DOM attribute writes per frame for
+something nobody can read at that rate.
+
+### HUD overlap, and a pre-existing collision
+
+The brief for the minimap was "no overlapping UI", which turned out to matter more than
+expected -- checking found the timing tower sitting **on top of the position number** at
+every viewport. It had been a separate absolutely-positioned box separated by
+`calc(var(--pad) + var(--safe-t) + var(--ui-lg))`, and that calc silently evaluated to
+just `--pad`. A stale media query still carried a dead copy of the same `top`.
+
+Fixed structurally rather than numerically: the right-hand HUD is now one grid column, so
+the position, the gap and the timer stack instead of being positioned independently. A
+column cannot overlap itself, at any viewport, and a fourth element does not need a new
+invented offset.
+
+Verified by measuring every visible HUD region's bounding box and intersecting them at
+six viewports from 740x360 to 1600x900 -- including the new gantry, which is floored
+clear of the minimap with `max(11rem, 34%)` rather than placed at a bare percentage.
+
+### Ground, and the cockpit
+
+**There was no ground.** Everything past the 26m run-off was the lower half of the sky
+gradient: a flat green field with no texture, no horizon and no parallax. That is what
+made the circuits read as "literally grass", and why the cockpit looked like the car
+was floating in a void. There is now a large textured quad under everything.
+
+The repeat is the whole trick. The grass texture is applied at one tile per ~12m; at the
+`repeat: [2, 1]` it previously had, a 256px texture covered the entire circuit, so each
+texel spanned tens of metres and the detail averaged out to flat paint.
+
+Deliberately still featureless. Real terrain -- elevation, trees -- would be a lot of
+work for a circuit meant to look flat and fast, and anything tall near the track would
+occlude the barriers and crowds, which are what actually sell a venue.
+
+**The cockpit camera was the chase camera at eye level** -- the same view of the same
+world with the player's own car nowhere in it. It is not a cockpit, it is a floating
+camera, and the absence is felt more than noticed: the view looks wrong without anything
+to explain why the horizon sits where it does.
+
+There is now an interior, parented to the camera so it cannot lag a frame behind the
+view, hidden outside cockpit mode so it costs nothing elsewhere, with the steering wheel
+following the steering input.
+
+Its first version filled the screen, which is the standard failure and worth recording:
+at the default 62 degree vertical FOV on a landscape phone the frame is about 108
+degrees across, so the visible half-width at one metre is ~1.36m. Structure meant to sit
+at the *edge* of the view has to be at x = +/-0.9m. At +/-0.4m -- where it started -- it
+is halfway across the screen and reads as a wall.
+
 ### Motion controls
 
 Gyroscope steering, offered alongside the on-screen stick rather than instead of it.

@@ -65,7 +65,8 @@ import {
 } from '../src/physics/compounds.js';
 import { centrelineFor } from '../src/track/circuitData.js';
 import { driverAvatar, teamBadge } from '../src/ui/avatars.js';
-import { cachedTrackMapPath, trackMapPath } from '../src/ui/trackMap.js';
+import { TrackProjection, cachedTrackMapPath, trackMapPath } from '../src/ui/trackMap.js';
+import { StartSequence } from '../src/race/startSequence.js';
 import { ACTIONS, InputController } from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
 import {
@@ -1026,6 +1027,268 @@ test('a car that stops making progress is recovered, even while still moving', (
     session.update(FIXED_TIMESTEP, { throttle: 0, brake: 0, steer: 0, handbrake: false });
   }
   assert.equal(movingRescues, 0, 'a car making progress must not be rescued');
+});
+
+test('the start lights hold every car until they go out', () => {
+  /*
+   * The sequence itself.
+   *
+   * The order matters more than the timing: nothing may reach "green" before all five
+   * lights have come on, because a race that starts early is worse than one that
+   * starts late.
+   */
+  const start = new StartSequence({ delayBefore: 1.4 });
+
+  assert.equal(start.holding, true, 'a fresh sequence must hold the field');
+  assert.equal(start.state, 'pending');
+
+  const dt = 1 / 60;
+  const seen = [];
+  let lastState = null;
+  let lastLit = -1;
+  let steps = 0;
+  while (start.holding && steps < 60 * 30) {
+    start.update(dt);
+    steps += 1;
+    if (start.state !== lastState || start.lightsOn !== lastLit) {
+      seen.push({ t: steps * dt, state: start.state, lit: start.lightsOn });
+      lastState = start.state;
+      lastLit = start.lightsOn;
+    }
+  }
+
+  assert.equal(start.holding, false, 'the sequence must eventually release the field');
+
+  // Lights come on one at a time, in order, and never skip a step.
+  const litStates = seen.filter((entry) => entry.state === 'lights').map((entry) => entry.lit);
+  assert.deepEqual([...new Set(litStates)], [1, 2, 3, 4, 5], 'lights must come on one at a time, in order');
+
+  // Nothing goes green before every light has been.
+  const firstGreen = seen.findIndex((entry) => entry.state === 'green');
+  const allLit = seen.findIndex((entry) => entry.state === 'lights' && entry.lit === 5);
+  assert.ok(allLit >= 0, 'all five lights must come on');
+  assert.ok(firstGreen > allLit, 'green must not come before the fifth light');
+
+  // And there must be a pause at full lit, which is the moment drivers are reacting.
+  assert.ok(
+    seen.some((entry) => entry.state === 'hold'),
+    'a hold at full lit is the reaction window and must exist'
+  );
+
+  // A disabled sequence must never hold, for qualifying.
+  const instant = new StartSequence({ enabled: false });
+  assert.equal(instant.holding, false, 'a disabled sequence must not hold');
+  assert.equal(instant.state, 'green');
+  assert.equal(instant.remaining, 0);
+
+  /*
+   * End to end, through a real session.
+   *
+   * The invariant that actually matters: input is discarded while the lights are on.
+   * A player holding throttle from the moment the HUD appears must not launch, and the
+   * whole field must be held together.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const entry = { short: 'TEST', team: 'Ferrari', name: 'T', colour: 0xe8002d, isPlayer: true, upgrades: {} };
+  const session = new RaceSession({
+    track,
+    entries: [entry],
+    type: SESSION_TYPE.race,
+    totalLaps: 1,
+    random: () => 0.5
+  });
+
+  const startPosition = { x: session.cars[0].physics.x, z: session.cars[0].physics.z };
+
+  // Full throttle and steering, held down for the entire countdown.
+  const eager = { throttle: 1, brake: 0, steer: 0.5, handbrake: false };
+  let stepsHeld = 0;
+  let peakSpeed = 0;
+  while (session.start.holding && stepsHeld < 60 * 30) {
+    session.update(FIXED_TIMESTEP, eager);
+    stepsHeld += 1;
+    peakSpeed = Math.max(peakSpeed, session.cars[0].physics.speed);
+  }
+
+  /*
+   * The claim is "the car is held", not "the car is frozen".
+   *
+   * The tyre model leaves a few centimetres per second of numerical creep at a
+   * standstill, and demanding exactly zero would be asserting something physics does
+   * not promise. What matters is that the car cannot *build* speed: full throttle held
+   * down for the whole countdown must leave it effectively where it started, rather
+   * than launching it down the road.
+   */
+  assert.ok(
+    peakSpeed < 0.5,
+    `a held car must not build speed under full throttle, peaked at ${peakSpeed}m/s`
+  );
+  const heldDisplacement = Math.hypot(
+    session.cars[0].physics.x - startPosition.x,
+    session.cars[0].physics.z - startPosition.z
+  );
+  assert.ok(heldDisplacement < 1, `a held car must not move, travelled ${heldDisplacement.toFixed(2)}m`);
+
+  /*
+   * After the lights, the same throttle must actually launch the car.
+   *
+   * Straight-line throttle only. Holding half lock at the same time spins the car off at
+   * the first corner, which would make this assert that the car is *stuck* -- the
+   * opposite of the claim. The claim being tested is that the input reaches the car at
+   * all, which throttle alone establishes.
+   */
+  const straight = { throttle: 1, brake: 0, steer: 0, handbrake: false };
+  for (let i = 0; i < 60 * 4; i += 1) session.update(FIXED_TIMESTEP, straight);
+  assert.ok(
+    session.cars[0].physics.speed > 10,
+    `the car must be released at lights out, got ${session.cars[0].physics.speed.toFixed(2)}m/s`
+  );
+
+  // And the AI must be held too, or the field pulls away on its own.
+  const field = new RaceSession({
+    track,
+    entries: [{ ...entry, short: 'A' }, { ...entry, short: 'B' }],
+    type: SESSION_TYPE.race,
+    totalLaps: 1,
+    random: () => 0.5
+  });
+  for (const car of field.cars) {
+    car.isPlayer = false;
+    car.ai = { trackIndex: 0, reset() {}, rescue() {}, update: () => ({ throttle: 1, brake: 0, steer: 0 }) };
+  }
+  const idle = { throttle: 0, brake: 0, steer: 0, handbrake: false };
+  let aiSteps = 0;
+  const aiPeak = new Map();
+  while (field.start.holding && aiSteps < 60 * 30) {
+    // No player input at all: the AI drives itself, so anything they do during the
+    // countdown came from the AI and not from us failing to hold them.
+    field.update(FIXED_TIMESTEP, idle);
+    aiSteps += 1;
+    for (const car of field.cars) {
+      aiPeak.set(car.entry.short, Math.max(aiPeak.get(car.entry.short) ?? 0, car.physics.speed));
+    }
+  }
+  for (const car of field.cars) {
+    assert.ok(
+      (aiPeak.get(car.entry.short) ?? 0) < 0.5,
+      `${car.entry.short} moved while the lights were on: ${aiPeak.get(car.entry.short)}m/s`
+    );
+  }
+});
+
+test('the minimap projection agrees with the outline it sits on', () => {
+  /*
+   * The whole point of `TrackProjection`.
+   *
+   * The minimap draws the circuit as an outline and the cars as dots, from the same
+   * centreline. If those two projections disagree by a rotation or a scale, every dot
+   * sits somewhere plausible on the map and nowhere near its car on track -- which
+   * looks fine until you compare it with where you actually are.
+   */
+  for (const circuit of CIRCUITS.slice(0, 5)) {
+    const points = centrelineFor(circuit.id);
+    const projection = new TrackProjection(points);
+    const path = trackMapPath(points, circuit.length * 1000);
+
+    // The start of the outline and the projected start line must be the same point.
+    const [headX, headY] = path.replace('M', '').split(' ').slice(0, 2).map(Number);
+    const projected = projection.project(points[0].x, points[0].z);
+    assert.ok(
+      Math.abs(headX - projected.x) < 0.05 && Math.abs(headY - projected.y) < 0.05,
+      `${circuit.id}: the projection disagrees with the outline (${headX},${headY} vs ${projected.x},${projected.y})`
+    );
+
+    // Every projected centreline point must land on the drawn path's own extent.
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const sample of points) {
+      const p = projection.project(sample.x, sample.z);
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    }
+    const numbers = path.match(/-?\d+\.\d+/g).map(Number);
+    const xs = numbers.filter((_, i) => i % 2 === 0);
+    const ys = numbers.filter((_, i) => i % 2 === 1);
+    assert.ok(Math.min(...xs) - 0.1 <= minX && maxX <= Math.max(...xs) + 0.1, `${circuit.id}: projected x escapes the outline`);
+    assert.ok(Math.min(...ys) - 0.1 <= minY && maxY <= Math.max(...ys) + 0.1, `${circuit.id}: projected y escapes the outline`);
+
+    // Nothing may land outside the viewBox, or the map is clipped.
+    for (const sample of points) {
+      const p = projection.project(sample.x, sample.z);
+      assert.ok(p.x >= -1 && p.x <= 101 && p.y >= -1 && p.y <= 101, `${circuit.id}: projected point outside the viewBox`);
+    }
+  }
+
+  // Translation invariance, or the projection would depend on where a circuit happens
+  // to sit in its source data.
+  const circle = Array.from({ length: 64 }, (_, i) => {
+    const angle = (i / 64) * Math.PI * 2;
+    return { x: Math.cos(angle) * 500, z: Math.sin(angle) * 500 };
+  });
+  const moved = circle.map((point) => ({ x: point.x + 900, z: point.z - 400 }));
+  const a = new TrackProjection(circle);
+  const b = new TrackProjection(moved);
+  for (const index of [0, 17, 40]) {
+    const pa = a.project(circle[index].x, circle[index].z);
+    const pb = b.project(moved[index].x, moved[index].z);
+    assert.ok(Math.abs(pa.x - pb.x) < 1e-6 && Math.abs(pa.y - pb.y) < 1e-6, 'projection must not depend on position');
+  }
+});
+
+test('no two HUD regions can overlap, at any viewport', () => {
+  /*
+   * A structural check rather than a screenshot.
+   *
+   * The right-hand HUD used to position the position counter and the timing tower as
+   * two independent absolute boxes separated by a computed offset, and
+   * `calc(var(--pad) + var(--safe-t) + var(--ui-lg))` silently evaluated to just
+   * `--pad` -- which put the timer panel directly on top of the position number.
+   * Nothing caught it because bounding boxes are not asserted anywhere.
+   *
+   * This does not measure pixels; it asserts the structural property that makes overlap
+   * impossible: the stacked elements are children of one grid column, so the browser
+   * places them and no hand-computed offset is involved.
+   */
+  const uiSource = readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
+
+  // Position, gap and timer are inside one column.
+  const column = /<div class="hud-right"[^>]*>[\s\S]*?hud-topright[\s\S]*?hud-timer[\s\S]*?<\/div>\s*<\/div>/;
+  assert.match(uiSource, column, 'the right-hand HUD must be a single containing column');
+  assert.match(uiSource, /data-hud-right/, 'and must be identifiable');
+
+  const cssSource = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+
+  // No computed offsets between the stacked elements: a column cannot overlap itself.
+  assert.match(cssSource, /\.hud-right\s*\{[^}]*display:\s*grid/, 'the column must be a grid');
+  assert.match(
+    cssSource,
+    /\.hud-right \.hud-topright,\s*\.hud-right \.hud-timer\s*\{[^}]*position:\s*static/,
+    'its children must not be independently positioned'
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /\.hud-timer\s*\{[^}]*\btop:/,
+    'the timer must not carry a hand-computed top offset'
+  );
+
+  /*
+   * The two new regions must not be positioned by magic fractions that could put them
+   * on top of each other either. The gantry uses a rem floor for exactly that reason.
+   */
+  assert.match(
+    cssSource,
+    /\.hud-lights\s*\{[^}]*top:\s*max\(/,
+    'the start gantry must be floored clear of the minimap'
+  );
+  assert.match(
+    cssSource,
+    /\.hud-minimap\s*\{[^}]*width:\s*clamp\(/,
+    'the minimap box must hug the map rather than shrink-to-fit its label'
+  );
 });
 
 test('the portrait block actually shows the rotate hint', () => {
