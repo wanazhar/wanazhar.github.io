@@ -858,11 +858,29 @@ test('tilt steers, and steers the way the player tilts', async () => {
   motion.calibrate();
   assert.ok(Math.abs(steerSettledAt(1.5)) < 0.02, 'a small tilt must not move the steering');
 
-  // Squared response: a small input must produce a much smaller output, or the first
-  // degree of tilt is already full steering and nothing finer exists.
+  /*
+   * The response curve must be weighted towards small inputs *and* still have a usable
+   * gradient through the middle.
+   *
+   * A squared curve gives lovely fine control at the centre but leaves nothing between
+   * 3 and 10 degrees, so the car sits dead straight and then goes to full lock with no
+   * warning -- which is exactly what "janky and hard to control" felt like. Asserted as
+   * both properties, because either one alone is satisfiable by a bad curve.
+   */
   const gentle = Math.abs(steerSettledAt(8));
   const hard = Math.abs(steerSettledAt(20));
-  assert.ok(gentle < hard * 0.5, `small tilt should be much finer than large: ${gentle} vs ${hard}`);
+  assert.ok(gentle < hard * 0.6, `small tilt should still be finer than large: ${gentle} vs ${hard}`);
+
+  const quarter = Math.abs(steerSettledAt(8.5));
+  const threeQuarter = Math.abs(steerSettledAt(23));
+  assert.ok(
+    quarter > 0.08 && quarter < 0.3,
+    `a quarter of the tilt range should give a usable amount of lock, got ${quarter}`
+  );
+  assert.ok(
+    threeQuarter - quarter > 0.3,
+    `the middle of the range must not be dead: ${quarter} -> ${threeQuarter}`
+  );
 
   // Calibration resets the centre, so a phone held at an angle still starts centred.
   motion.target.emit(20, 12);

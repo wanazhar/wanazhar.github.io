@@ -579,6 +579,30 @@ body {
   display: block;
 }
 
+/*
+ * What survives a hidden HUD.
+ *
+ * The restore button, the start gantry and the minimap all live inside `.hud`, and the
+ * hiding rule at the top of this block is `.hud-hidden .hud > *:not(...)`. The button
+ * was invisible-but-clickable, so hiding the interface looked like it had no way back;
+ * and the gantry that says *go* and the map that says where you are are needed *during*
+ * a race, not decoration, so hiding them to watch a corner is the wrong trade.
+ *
+ * Written as `.hud-hidden .hud > .element` deliberately. Each `:not()` argument counts
+ * towards specificity, so the hiding rule resolves to (0,3,0); a plain
+ * `.hud-hidden .hud-restore` is only (0,2,0) and loses. The first attempt at this fix
+ * did exactly that and appeared to do nothing.
+ */
+.hud-hidden .hud > .hud-restore,
+.hud-hidden .hud > .hud-minimap,
+.hud-hidden .hud > .hud-lights {
+  opacity: 1;
+}
+
+.hud-hidden .hud > .hud-restore {
+  z-index: 7;
+}
+
 .hud-hidden .hud-controls-toggle {
   display: none;
 }
