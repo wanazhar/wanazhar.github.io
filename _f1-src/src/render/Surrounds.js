@@ -294,17 +294,44 @@ export function buildSurrounds(track, theme, circuitId) {
    * diorama on a table; with one it has a middle distance and the eye has somewhere to
    * put the far side of the lap. It is the cheapest available depth cue.
    */
+  /*
+   * Centred on the circuit's actual middle, not on its first sample.
+   *
+   * It used to be centred on `samples[0]` -- the start/finish line -- which makes the
+   * clearance between the ring and the track depend on where the lap happens to begin.
+   * At Monaco that left the treeline barely 50m beyond the furthest corner, with 20m-tall
+   * cones on it, which is exactly how you get trees standing in the road.
+   */
+  let centreX = 0;
+  let centreZ = 0;
+  for (const sample of samples) {
+    centreX += sample.x;
+    centreZ += sample.z;
+  }
+  centreX /= count;
+  centreZ /= count;
+
+  // The ring must clear the furthest *point* of the circuit by a wide margin, since the
+  // trees are up to 20m tall and 21m across.
+  let extent = 0;
+  for (const sample of samples) {
+    const distance = Math.hypot(sample.x - centreX, sample.z - centreZ);
+    if (distance > extent) extent = distance;
+  }
+  const rimRadius = Math.max(700, extent + 260);
+
   const rimPlacements = [];
-  const rimRadius = Math.max(900, (track.circuit?.radius ?? 700) * 2.6);
   for (let i = 0; i < 900; i += 1) {
     const angle = random() * Math.PI * 2;
-    // Band the radius so the treeline is a ring and not a disc of trees round the car.
-    const radius = rimRadius * (0.92 + random() * 0.24);
+    // Banded so the treeline reads as a ring rather than a disc of trees round the car.
+    // The band only ever goes *outward* from `rimRadius`, so it can never creep inside
+    // the clearance computed above.
+    const radius = rimRadius * (1 + random() * 0.3);
     rimPlacements.push(
       place(
-        Math.cos(angle) * radius + samples[0].x,
+        Math.cos(angle) * radius + centreX,
         0,
-        Math.sin(angle) * radius + samples[0].z,
+        Math.sin(angle) * radius + centreZ,
         random() * 6.28,
         1.4 + random() * 1.6,
         1.4 + random() * 1.6
