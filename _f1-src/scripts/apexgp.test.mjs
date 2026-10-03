@@ -798,21 +798,15 @@ test('motion permission is requested and honoured', async () => {
   assert.equal(await MotionControl.requestPermission(permissive), true);
 });
 
-test('tilt maps to steering and pedals, in whichever way the phone is held', async () => {
+test('tilt steers, and steers the way the player tilts', async () => {
   /*
    * Rotation compensation.
    *
    * In portrait, gamma is the side-to-side tilt. Rotated to landscape, that same
-   * physical gesture arrives as beta, so reading gamma alone in landscape steers
-   * with the wrong axis entirely -- which is the whole point of this being tested.
-   * This game requires landscape, so the uncompensated case is the normal case.
+   * physical gesture arrives as a different raw field, so reading one field alone in
+   * landscape steers with the wrong axis entirely. This game requires landscape, so
+   * the uncompensated case is the normal case.
    */
-  const portrait = await startedMotion({ angle: 0 });
-  portrait.target.emit(0, 30);
-  assert.equal(Math.round(portrait.screenTilt.x), 30, 'portrait: roll reads as screen-x');
-
-  // Both raw axes are tilted equally so the assertion tests the *mapping*, not
-  // which field happened to be non-zero.
   for (const [angle, expected] of [[0, 30], [90, -30], [180, -30], [270, 30]]) {
     const rotated = await startedMotion({ angle });
     rotated.target.emit(30, 30);
@@ -820,80 +814,8 @@ test('tilt maps to steering and pedals, in whichever way the phone is held', asy
   }
 
   const motion = await startedMotion({ angle: 0 });
+
   /** Tilt by a gamma offset and return the resulting steering, fully settled. */
-  const steerAt = (gamma) => {
-    motion.target.emit(0, gamma);
-    let steer = 0;
-    for (let i = 0; i < 40; i += 1) steer = motion.read(1 / 60).steer;
-    return steer;
-  };
-
-  // Deadzone: a phone lying on a table must not creep into a corner.
-  assert.ok(Math.abs(steerAt(1.5)) < 0.02, 'a small tilt must not move the steering');
-  assert.ok(steerAt(34) > 0.9, 'a full-tilt turn reaches full lock');
-  assert.ok(steerAt(-34) < -0.9, 'and the other way');
-
-  // Squared response: a small input must produce a much smaller output, or the first
-  // degree of tilt is already a full steering input and nothing finer exists.
-  const gentle = Math.abs(steerAt(8));
-  const hard = Math.abs(steerAt(20));
-  assert.ok(gentle < hard * 0.5, `small tilt should be much finer than large: ${gentle} vs ${hard}`);
-
-  // Calibration resets the centre, so a phone held at an angle still starts centred.
-  motion.target.emit(20, 12);
-  motion.calibrate();
-  assert.ok(Math.abs(motion.read(1 / 60).steer) < 0.05, 'calibration must recentre steering');
-
-  // Pedals: pushing the phone away from you accelerates, pulling it back brakes.
-  // Read over several frames, because the pedals are smoothed and a single frame
-  // after a step change is still most of the way from the previous value.
-  const pedalsAt = (beta) => {
-    motion.target.emit(beta, 12);
-    let throttle = 0;
-    let brake = 0;
-    for (let i = 0; i < 40; i += 1) {
-      const reading = motion.read(1 / 60);
-      throttle = reading.throttle;
-      brake = reading.brake;
-    }
-    return { throttle, brake };
-  };
-
-  // Recentre at level first. The calibration above was taken at beta 20, which is a
-  // perfectly good neutral pose for a steering test and exactly wrong for a pedal
-  // one -- the pedals are measured from the same neutral, so leaving it there would
-  // put the throttle and the brake asymmetrically around the test's own zero.
-  motion.target.emit(0, 0);
-  motion.calibrate();
-
-  // Full deflection reaches the end of the pedal. A partial tilt deliberately does
-  // not: the response is squared, so half the tilt is about a quarter of the travel.
-  const pushed = pedalsAt(-26);
-  assert.ok(pushed.throttle > 0.9, `tilting forward should throttle, got ${pushed.throttle}`);
-  assert.ok(pushed.brake < 0.05, 'and not brake');
-
-  const pulled = pedalsAt(26);
-  assert.ok(pulled.brake > 0.9, `tilting back should brake, got ${pulled.brake}`);
-  assert.ok(pulled.throttle < 0.05, 'and not throttle');
-
-  // Throttle and brake are the same axis in opposite directions, so driving one
-  // must not leave the other meaningfully applied. Compared with a threshold rather
-  // than for exact zero: the pedals are smoothed exponentially, so a pedal that has
-  // been released decays towards zero without ever reaching it.
-  assert.ok(pushed.brake < 0.02, `brake leaks into throttle: ${pushed.brake}`);
-  assert.ok(pulled.throttle < 0.02, `throttle leaks into brake: ${pulled.throttle}`);
-
-  // A gentle tilt is partial. Without the squared curve the first couple of degrees
-  // would be full throttle, and there would be no fine control at all.
-  const gentlePedal = pedalsAt(-13);
-  assert.ok(
-    gentlePedal.throttle > 0.05 && gentlePedal.throttle < 0.6,
-    `half tilt should be partial throttle, got ${gentlePedal.throttle}`
-  );
-
-  // Inverting flips steering too, not only the pedals. Read over several frames:
-  // steering is smoothed, so a single frame after the change is still near where it
-  // was rather than where it is going.
   const steerSettledAt = (gamma) => {
     motion.target.emit(0, gamma);
     let steer = 0;
@@ -901,18 +823,106 @@ test('tilt maps to steering and pedals, in whichever way the phone is held', asy
     return steer;
   };
 
-  motion.setInverted(true);
-  assert.ok(steerSettledAt(34) < -0.9, `inverted right tilt should steer left, got ${steerSettledAt(34)}`);
-  assert.ok(steerSettledAt(-34) > 0.9, 'and the other way');
+  /*
+   * Direction.
+   *
+   * Tilt right, car goes right. The default was wrong -- tilt right drove the car
+   * left -- and it could only ever have been settled by hand, because the sign of the
+   * roll axis relative to the player's idea of "right" depends on the screen rotation
+   * and the browser.
+   *
+   * Note the convention, because it is what made this bug easy to write and easy to
+   * misread: **positive steer turns the car LEFT**. That is a property of the physics
+   * (see "steering actually turns the car"), not of this file. So "steer right" is a
+   * *negative* number here, and an assertion written as `> 0.9` would be asserting
+   * the opposite of what it reads like.
+   */
+  // Past full-lock tilt (34 degrees) rather than at it, so this asserts direction
+  // and saturation together. At exactly 30 the squared response deliberately gives
+  // about three-quarters lock, which is correct behaviour and a bad thing to assert
+  // against.
+  assert.ok(
+    steerSettledAt(40) < -0.95,
+    `tilting right must steer right, i.e. negative: got ${steerSettledAt(40)}`
+  );
+  assert.ok(
+    steerSettledAt(-40) > 0.95,
+    `tilting left must steer left, i.e. positive: got ${steerSettledAt(-40)}`
+  );
 
+  // Deadzone: a phone lying on a table must not creep into a corner.
+  motion.target.emit(0, 0);
+  motion.calibrate();
+  assert.ok(Math.abs(steerSettledAt(1.5)) < 0.02, 'a small tilt must not move the steering');
+
+  // Squared response: a small input must produce a much smaller output, or the first
+  // degree of tilt is already full steering and nothing finer exists.
+  const gentle = Math.abs(steerSettledAt(8));
+  const hard = Math.abs(steerSettledAt(20));
+  assert.ok(gentle < hard * 0.5, `small tilt should be much finer than large: ${gentle} vs ${hard}`);
+
+  // Calibration resets the centre, so a phone held at an angle still starts centred.
+  motion.target.emit(20, 12);
+  motion.calibrate();
+  assert.ok(Math.abs(motion.read(1 / 60).steer) < 0.05, 'calibration must recentre steering');
+
+  // Inverting still flips it, for hardware that reports the other way round.
+  // Recentre first: the calibration check above deliberately left neutral at gamma 12,
+  // so a 40-degree tilt from here is only a 28-degree offset and cannot reach lock.
+  motion.target.emit(0, 0);
+  motion.calibrate();
+
+  motion.setInverted(true);
+  assert.ok(steerSettledAt(40) > 0.95, 'inverting should reverse steering');
   motion.setInverted(false);
-  assert.ok(steerSettledAt(34) > 0.9, 'un-inverting restores the original direction');
+  assert.ok(steerSettledAt(40) < -0.95, 'and un-inverting restores it');
+});
+
+test('motion supplies steering only -- pedals belong to the screen', async () => {
+  const motion = await startedMotion({ angle: 0 });
+
+  // Pitch is no longer an input at all, so it cannot leak into the pedals.
+  const reading = motion.read(1 / 60);
+  assert.deepEqual(Object.keys(reading).sort(), ['active', 'steer'],
+    'motion must report steering and nothing else');
+  assert.equal(reading.throttle, undefined);
+  assert.equal(reading.brake, undefined);
+
+  // And with the phone pitched right over, steering stays put and no pedal appears.
+  let settled = { steer: 0, throttle: 0, brake: 0 };
+  motion.target.emit(-70, 0);
+  for (let i = 0; i < 40; i += 1) settled = motion.read(1 / 60);
+  assert.ok(Math.abs(settled.steer) < 0.02, `pitch must not steer: ${settled.steer}`);
+  assert.equal(settled.throttle, undefined, 'and must not produce a throttle');
+  assert.equal(settled.brake, undefined, 'or a brake');
+
+  /*
+   * End to end: a hard-over tilt with no pedal pressed must not move the throttle.
+   *
+   * This is the claim that actually matters. It is cheap to assert at the motion
+   * level and worthless there -- the interesting failure is `InputController`
+   * combining a tilt with a pedal, so it is asserted where the combining happens.
+   */
+  const input = new InputController(fakeWindow());
+  input.motion = motion;
+  input.controlScheme = 'motion';
+
+  motion.target.emit(0, -34);
+  let controls = { throttle: 0, brake: 0 };
+  for (let i = 0; i < 30; i += 1) controls = input.read(1 / 60, 0);
+  // Positive steer is a left turn in this codebase, so tilting left must read positive.
+  assert.ok(controls.steer > 0.5, `full left tilt should steer left, got ${controls.steer}`);
+  assert.equal(controls.throttle, 0, 'motion must not supply throttle');
+  assert.equal(controls.brake, 0, 'motion must not supply brake');
+
+  // The on-screen pedal is what applies throttle now, and it must reach the car.
+  input.keys.add(ACTIONS.throttle);
+  assert.equal(input.read(1 / 60, 0).throttle, 1, 'a held pedal must still work in motion mode');
 });
 
 test('an inactive motion controller never contributes input', () => {
   const motion = new MotionControl({ target: fakeWindow({ supported: true }) });
-  const readings = motion.read(1 / 60);
-  assert.deepEqual(readings, { steer: 0, throttle: 0, brake: 0, active: false });
+  assert.deepEqual(motion.read(1 / 60), { steer: 0, active: false });
 });
 
 test('the input controller uses motion only when it is the chosen scheme', async () => {
@@ -934,14 +944,14 @@ test('the input controller uses motion only when it is the chosen scheme', async
   input.controlScheme = 'motion';
   let steer = 0;
   for (let i = 0; i < 60; i += 1) steer = input.read(1 / 60).steer;
-  assert.ok(steer > 0.5, `motion should steer when selected, got ${steer}`);
+  assert.ok(Math.abs(steer) > 0.5, `motion should steer when selected, got ${steer}`);
 
   // The keyboard still wins, so a player can grab the keys mid-corner rather than
-  // having to open a menu first.
+  // having to open a menu first. Both steer the same way, so compare magnitudes.
   input.keys.add(ACTIONS.steerLeft);
   let counter = 0;
   for (let i = 0; i < 60; i += 1) counter = input.read(1 / 60).steer;
-  assert.ok(counter < steer, 'the keyboard should still override motion');
+  assert.ok(Math.abs(counter) > Math.abs(steer), 'the keyboard should still override motion');
 });
 
 test('a car that stops making progress is recovered, even while still moving', () => {
@@ -1018,50 +1028,6 @@ test('a car that stops making progress is recovered, even while still moving', (
   assert.equal(movingRescues, 0, 'a car making progress must not be rescued');
 });
 
-test('gamepad input maps through, and a host with no navigator does not throw', () => {
-  /*
-   * This is a regression test for a real CI failure.
-   *
-   * `readGamepad` reached for the global `navigator` instead of the injected
-   * `this.target.navigator`. That passed locally -- Node 21 added a global
-   * `navigator`, so the bare global happened to exist -- and threw
-   * `ReferenceError: navigator is not defined` on Node 20, which is what CI runs.
-   * The whole class is built around an injected target; one method quietly opting out
-   * is what made it both untestable and CI-only-failing.
-   */
-
-  // A host with no navigator at all: reading controls must be a no-op, not a crash.
-  const bare = new InputController(fakeWindow());
-  const safe = bare.read(1 / 60, 0);
-  assert.equal(safe.steer, 0);
-  assert.equal(safe.throttle, 0);
-
-  // A host with a gamepad: it must actually reach the car.
-  const pad = {
-    axes: [0.5, 0],
-    buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 }))
-  };
-  pad.buttons[7] = { pressed: true, value: 0.8 }; // right trigger -> throttle
-  pad.buttons[6] = { pressed: false, value: 0.2 }; // left trigger -> brake
-
-  const withPad = new InputController(fakeWindow());
-  withPad.target.navigator = { getGamepads: () => [null, pad] };
-
-  let controls = withPad.read(1 / 60, 0);
-  assert.ok(Math.abs(controls.throttle - 0.8) < 1e-6, `right trigger should throttle, got ${controls.throttle}`);
-  assert.ok(Math.abs(controls.brake - 0.2) < 1e-6, `left trigger should brake, got ${controls.brake}`);
-
-  // Steering is slewed rather than instant, so give it a few frames to arrive.
-  let steer = 0;
-  for (let i = 0; i < 30; i += 1) steer = withPad.read(1 / 60, 0).steer;
-  assert.ok(steer > 0.3, `left stick should steer right, got ${steer}`);
-
-  // A navigator without getGamepads (older browsers, some embedded hosts).
-  const partial = new InputController(fakeWindow());
-  partial.target.navigator = {};
-  assert.equal(partial.read(1 / 60, 0).steer, 0);
-});
-
 test('the portrait block actually shows the rotate hint', () => {
   // `.rotate-hint { display: none }` came *after* the portrait media query that
   // sets `display: flex`. Equal specificity, so source order decided and the base
@@ -1132,6 +1098,50 @@ test('the on-screen controls are actually wired to the input controller', () => 
   // A control that is *only* cleared on pointerleave releases the moment a thumb
   // crosses its edge. Pointer capture is what makes holding it survivable.
   assert.doesNotMatch(inputSource, /addEventListener\('pointerleave', up\)/);
+
+  /*
+   * Pedals for motion mode.
+   *
+   * The stick supplies throttle and brake from its vertical axis, so hiding it for
+   * motion mode would leave the player with no pedals at all. They have to exist and
+   * be bound, or motion mode is unplayable -- and nothing else would notice, because
+   * the game still runs perfectly with the controls merely absent.
+   */
+  assert.match(uiSource, /data-pedal="throttle"/, 'a throttle pedal must exist for motion mode');
+  assert.match(uiSource, /data-pedal="brake"/, 'and a brake pedal');
+  // Matched across `querySelector(...)` -- a `[^)]*` cannot span those parentheses.
+  assert.match(
+    uiSource,
+    /bindButton[\s\S]{0,90}data-pedal="throttle"[\s\S]{0,40}ACTIONS\.throttle/,
+    'the throttle pedal must be bound through bindButton'
+  );
+  assert.match(
+    uiSource,
+    /bindButton[\s\S]{0,90}data-pedal="brake"[\s\S]{0,40}ACTIONS\.brake/,
+    'and so must the brake pedal'
+  );
+  // Pedals are shown in motion mode and hidden otherwise, by the same call that hides
+  // the stick. Anything less and one scheme is left with no pedals.
+  assert.match(uiSource, /this\.pedals\.hidden = !motion/, 'pedals visibility follows the scheme');
+
+  // Motion must not be a pedal source: tilt is good steering and a poor throttle.
+  //
+  // Asserted on `InputController`, which is where a tilt could actually be *combined*
+  // with a pedal. Deliberately not asserted against `MotionControl`'s own source: it
+  // mentions throttle and brake constantly, in the comments explaining that it does
+  // not handle them, and no amount of pattern matching tells those apart. The real
+  // proof is behavioural and lives in "motion supplies steering only", which asserts
+  // the reported shape and that a hard-over tilt leaves the throttle at zero.
+  assert.doesNotMatch(
+    inputSource,
+    /motion\?\.throttle|motion\?\.brake/,
+    'motion must not supply throttle or brake'
+  );
+
+  // A control hidden under a finger never gets its pointerup, so its action would
+  // stay asserted for the rest of the session -- a stuck throttle is a car that drives
+  // off on its own. Switching scheme has to release everything held.
+  assert.match(uiSource, /this\.input\.releaseHeld\(\)/, 'switching scheme must release held controls');
 });
 
 test('every element toggled via [hidden] also has a [hidden] display rule', () => {

@@ -205,7 +205,9 @@ function showControls() {
     if (failure) status = `<div class="setup-warning" data-tone="warn">${failure}</div>`;
     else if (motion.active) {
       const calibrated = motion.neutral.x === 0 && motion.neutral.y === 0 && motion.beta === null;
-      status = `<div class="setup-note">Motion is live. ${calibrated ? 'Hold the phone as you would to drive and press Calibrate.' : 'Press Calibrate whenever you change how you are holding it.'}</div>`;
+      status = `<div class="setup-note">Motion is live. Tilt the phone to steer; throttle and brake are the two buttons at the bottom of the screen. ${
+        calibrated ? 'Hold the phone the way you will drive, then press Calibrate.' : 'Press Calibrate whenever you change how you are holding it.'
+      }</div>`;
     }
   } else if (needsPermission) {
     status = '<div class="setup-note">Choosing motion will ask for access to the motion sensor. On iPhone this also needs Settings &gt; Safari &gt; Motion &amp; Orientation Access switched on.</div>';
@@ -220,7 +222,7 @@ function showControls() {
 
       <div class="setup">
         <section class="setup-block">
-          <h2 class="setup-label">Steering</h2>
+          <h2 class="setup-label">Scheme</h2>
           <div class="chips">
             <button type="button" class="chip${current === 'touch' ? ' is-selected' : ''}" data-scheme="touch">
               <span><strong>On-screen stick</strong><em>Drag to steer · up is throttle</em></span>
