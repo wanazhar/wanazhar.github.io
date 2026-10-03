@@ -193,10 +193,14 @@ export class SkySystem {
 
     this._sunDir = new THREE.Vector3();
 
-    // Published so other systems (the sea, mainly) can stay in step with the
-    // sky instead of guessing at the hour.
+    // Published so other systems (the sea, and the anime materials) can stay in
+    // step with the sky instead of guessing at the hour.
     this.sunDirection = new THREE.Vector3(0, 1, 0);
-    this.horizonColor = 0xBFE0F5;
+    this.horizonColor = 0xBFE6F5;
+    this.sunLightColor = new THREE.Color(0xFFF6E5);
+    // Rim strength rises at night and drops in flat daylight, where a strong rim
+    // would just wash the surfaces out.
+    this.rimStrength = 0.55;
   }
 
   update(clock, camera, weather = 'clear') {
@@ -210,9 +214,12 @@ export class SkySystem {
     // a cool blue-grey: Ghibli rain is green-blue, never neutral grey.
     const fogHex = sampleStops(FOG_STOPS, hour, ['c']).c;
     const washed = weather === 'rain' || weather === 'overcast' || weather === 'storm';
-    this.fog.color.setHex(washed ? 0x8FA0A8 : fogHex);
-    this.fog.near = RENDER.fogNear * (weather === 'rain' ? 0.5 : washed ? 0.75 : 1);
-    this.fog.far = RENDER.fogFar * (weather === 'rain' ? 0.55 : washed ? 0.78 : 1);
+    this.fog.color.setHex(washed ? 0x9FB0BC : fogHex);
+    // The distance has to stay generous even in rain. Pulling fog in tight
+    // hides the whole world behind a flat grey wall, which reads as a bug
+    // rather than as weather.
+    this.fog.near = RENDER.fogNear * (weather === 'rain' ? 0.85 : washed ? 0.9 : 1);
+    this.fog.far = RENDER.fogFar * (weather === 'rain' ? 0.8 : washed ? 0.85 : 1);
 
     const angle = ((hour - 6) / 12) * Math.PI;
     const elevation = Math.sin(angle);
@@ -225,6 +232,9 @@ export class SkySystem {
     this.sun.position.copy(sunDir).multiplyScalar(300);
     this.sun.target.position.set(0, 0, 0);
     this.sun.color.setHex(s.sun);
+    // The anime materials light themselves from these values rather than from
+    // the Three.js lights, so keep both describing the same light.
+    this.sunLightColor.setHex(s.sun);
     // At night the key light is nearly gone and the fill carries the scene.
     this.sun.intensity = Math.max(0, elevation) * 1.55 * dim;
 
@@ -236,6 +246,9 @@ export class SkySystem {
 
     this.rim.color.setHex(s.sky);
     this.rim.intensity = lerp(0.18, 0.4, daylight) * dim;
+    // Rim is strongest when the key light is weak, which is exactly when a
+    // silhouette needs lifting off the background.
+    this.rimStrength = lerp(0.75, 0.3, daylight) * dim;
 
     if (camera) {
       this.dome.position.copy(camera.position);

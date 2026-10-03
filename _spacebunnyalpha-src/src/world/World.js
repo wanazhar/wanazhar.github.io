@@ -42,6 +42,7 @@ import {
   COAST_VILLAGE
 } from './regions/CoastRegion.js';
 import { createBlockGeometry, createPaletteMaterials, getMaterial } from './Palette.js';
+import { SHAPE, shapeGeometry } from './RoundedGeometry.js';
 import { VoxelBatch } from './Palette.js';
 import { buildCollisionGrid } from './Collision.js';
 
@@ -316,22 +317,43 @@ export class WorldPlan {
   }
 }
 
-// Turns a VoxelBatch into one InstancedMesh per material and adds them to the
-// scene. Used for the whole-island static set, which is built once and never
-// streamed.
-export function instantiateStatics(batch, geometry, materials, scene) {
+// Turns a VoxelBatch into one InstancedMesh per (material, shape) and adds them
+// to the scene. Used for the whole-island static set, which is built once and
+// never streamed.
+//
+// Shape matters: a building wants crisp blocks so its structure still reads,
+// foliage wants soft blobs. Bucketing by both means each pair gets exactly one
+// draw call with the right geometry.
+export function instantiateStatics(batch, geometry, materials, scene, shapeGeometries = null) {
   const dummy = new THREE.Object3D();
   const meshes = [];
 
+  const groups = new Map();
   for (const [materialName, list] of batch.entries) {
-    if (list.length === 0) continue;
-    const material = getMaterial(materials, materialName);
-    const mesh = new THREE.InstancedMesh(geometry, material, list.length);
+    for (const box of list) {
+      const shape = box.shape ?? 'rounded';
+      const key = `${materialName}|${shape}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = { materialName, shape, list: [] };
+        groups.set(key, group);
+      }
+      group.list.push(box);
+    }
+  }
+
+  for (const group of groups.values()) {
+    if (group.list.length === 0) continue;
+    const material = getMaterial(materials, group.materialName);
+    const geo =
+      shapeGeometries && shapeGeometries[group.shape] ? shapeGeometries[group.shape] : geometry;
+
+    const mesh = new THREE.InstancedMesh(geo, material, group.list.length);
     mesh.castShadow = false;
     mesh.receiveShadow = true;
 
-    for (let i = 0; i < list.length; i += 1) {
-      const b = list[i];
+    for (let i = 0; i < group.list.length; i += 1) {
+      const b = group.list[i];
       dummy.position.set(b.x, b.y, b.z);
       dummy.scale.set(b.sx, b.sy, b.sz);
       dummy.rotation.set(b.rx ?? 0, b.ry ?? 0, b.rz ?? 0);
@@ -350,7 +372,9 @@ export function instantiateStatics(batch, geometry, materials, scene) {
     dispose() {
       for (const mesh of meshes) {
         scene.remove(mesh);
-        mesh.geometry.dispose();
+        // Geometry is shared across meshes and cached, so it must not be
+        // disposed here; only the InstancedMesh wrapper is per-call.
+        mesh.dispose();
       }
       meshes.length = 0;
     }
@@ -360,10 +384,11 @@ export function instantiateStatics(batch, geometry, materials, scene) {
 // Builds and unloads terrain chunks around the player, under a time budget so
 // walking the island never causes a visible hitch.
 export class WorldStreamer {
-  constructor(scene, { materials, geometry }) {
+  constructor(scene, { materials, geometry, shapeGeometries = null }) {
     this.scene = scene;
     this.materials = materials;
     this.geometry = geometry;
+    this.shapeGeometries = shapeGeometries;
     this.chunks = new Map();
     this.pending = [];
     this.enabled = true;
@@ -452,12 +477,26 @@ export class WorldStreamer {
   }
 }
 
-export function createMaterials() {
-  return createPaletteMaterials();
+export function createMaterials(factory = null) {
+  return createPaletteMaterials(factory);
 }
 
 export function createGeometry() {
   return createBlockGeometry();
+}
+
+// The rounding levels the builders select from, as ready-to-use geometries.
+// Built lazily and cached, so there is exactly one buffer per shape level no
+// matter how many thousand blocks reference it.
+let shapeSet = null;
+export function createShapeGeometries() {
+  if (!shapeSet) {
+    shapeSet = {};
+    for (const name of Object.keys(SHAPE)) {
+      shapeSet[name] = shapeGeometry(name);
+    }
+  }
+  return shapeSet;
 }
 
 export function regionNameAt(x, z) {
