@@ -142,7 +142,17 @@ export class InputController {
       // this, dragging a thumb slightly -- entirely normal on a phone -- drops
       // the input, and a car that cuts throttle when you shift your grip feels
       // broken rather than unresponsive.
-      element.setPointerCapture?.(event.pointerId);
+      //
+      // Guarded with try/catch as well as optional chaining, because it can *throw*:
+      // setPointerCapture rejects a pointer id that is not currently active, and the
+      // exception aborts this handler before the action is registered -- leaving a
+      // pedal that highlights and does nothing. Capture is a convenience; losing it
+      // is survivable, losing the throttle is not.
+      try {
+        element.setPointerCapture?.(event.pointerId);
+      } catch {
+        // No active pointer to capture. The press still registers below.
+      }
       element.classList.add('is-pressed');
       if (mode === 'toggle') {
         this.pressed.add(action);
@@ -152,7 +162,14 @@ export class InputController {
     };
     const up = (event) => {
       event.preventDefault();
-      element.releasePointerCapture?.(event.pointerId);
+      // Releasing a capture that was never taken throws for the same reason taking
+      // one can, and the release has to happen regardless -- otherwise the action
+      // stays asserted for the rest of the session.
+      try {
+        element.releasePointerCapture?.(event.pointerId);
+      } catch {
+        // Nothing to release.
+      }
       element.classList.remove('is-pressed');
       if (mode === 'hold') this.touchButtons.delete(action);
     };
@@ -344,17 +361,18 @@ export class InputController {
     const digitalThrottle = this.isDown(ACTIONS.throttle) ? 1 : 0;
     const digitalBrake = this.isDown(ACTIONS.brake) ? 1 : 0;
 
+    /*
+     * Pedals are deliberately *not* taken from motion.
+     *
+     * Motion supplies steering only. In motion mode the pedals are on-screen, which
+     * is both what was asked for and the better control: holding a phone at a fixed
+     * angle to keep the throttle down is uncomfortable, it stops the phone lying flat
+     * on a table, and it makes a standing start something you have to achieve rather
+     * than press.
+     */
     return {
-      throttle: clamp(
-        Math.max(digitalThrottle, touchThrottle, gamepad.throttle, motion?.throttle ?? 0),
-        0,
-        1
-      ),
-      brake: clamp(
-        Math.max(digitalBrake, touchBrake, gamepad.brake, motion?.brake ?? 0),
-        0,
-        1
-      ),
+      throttle: clamp(Math.max(digitalThrottle, touchThrottle, gamepad.throttle), 0, 1),
+      brake: clamp(Math.max(digitalBrake, touchBrake, gamepad.brake), 0, 1),
       steer: clamp(this.steerValue + gamepad.steer, -1, 1),
       handbrake: gamepad.handbrake,
       drs:
@@ -412,14 +430,29 @@ export class InputController {
   /** Clear the digital state, used when the game is paused. */
   clear() {
     this.keys.clear();
-    this.touchButtons.clear();
+    this.releaseHeld();
     this.touch.throttle = 0;
     this.touch.brake = 0;
     this.touch.steer = 0;
     this.steerValue = 0;
-    // A phone that gets put down mid-corner must not come back with the throttle
-    // still wound on from whatever tilt was holding it.
-    if (this.motion?.active) this.motion.read(1);
+  }
+
+  /**
+   * Release every on-screen control that is currently held down.
+   *
+   * Needed whenever the controls themselves are about to change or disappear. A
+   * control that is hidden or removed while a finger is still on it never gets its
+   * `pointerup`, so its action stays asserted for the rest of the session -- and a
+   * stuck throttle is a car that drives away by itself.
+   *
+   * Deliberately does not touch the keyboard: a key does not stop being held because
+   * an on-screen button vanished.
+   */
+  releaseHeld() {
+    this.touchButtons.clear();
+    for (const [element] of this.boundElements) {
+      element.classList.remove('is-pressed');
+    }
   }
 
   destroy() {

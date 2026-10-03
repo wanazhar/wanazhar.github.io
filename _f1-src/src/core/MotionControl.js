@@ -1,11 +1,13 @@
 /**
- * Gyroscope steering and pedals.
+ * Gyroscope steering.
  *
- * Lets the phone be held like the thing it is imitating: roll to steer, pitch to
- * go faster or slower. It is offered alongside the on-screen stick rather than
- * instead of it, because a thumbstick is more precise and motion is more
- * immersive, and which one you want depends on whether you are holding the phone in
- * two hands or one.
+ * Lets the phone be held like the thing it is imitating: roll to steer. It is
+ * offered alongside the on-screen stick rather than instead of it, because a
+ * thumbstick is more precise and motion is more immersive, and which one you want
+ * depends on whether you are holding the phone in two hands or one.
+ *
+ * Throttle and brake are *not* here. They stay on the on-screen pedals even in motion
+ * mode -- see `read()` for why.
  *
  * ## Why this is more than a listener
  *
@@ -41,9 +43,6 @@
 /** How far the phone must be tilted, in degrees, for full lock. */
 const STEER_RANGE = 34;
 
-/** Pitch beyond neutral for full throttle or full brake, degrees. */
-const PEDAL_RANGE = 26;
-
 /**
  * Tilt ignored as hand tremor, degrees.
  *
@@ -52,9 +51,6 @@ const PEDAL_RANGE = 26;
  * steering on.
  */
 const STEER_DEADZONE = 2.2;
-
-/** Pitch inside this angle of neutral is treated as no pedal input. */
-const PEDAL_DEADZONE = 2.5;
 
 /**
  * Smoothing, per frame at 60fps.
@@ -65,18 +61,20 @@ const PEDAL_DEADZONE = 2.5;
  * little delay.
  */
 const STEER_SMOOTHING = 0.45;
-const PEDAL_SMOOTHING = 0.35;
 
 /**
- * Which way is "faster".
+ * Which way is right.
  *
- * Beta is positive when the top of the device leans back toward the player, so
- * pushing the phone away from you -- the natural "more speed" gesture -- is
- * negative. Isolated as a constant because it is exactly the kind of thing that
- * differs between how a device is held and which way the player is facing, and it
- * has to be flippable from the settings screen without touching the mapping code.
+ * Taken from an observed iPhone in landscape, not derived. The sign of the roll axis
+ * relative to the player's idea of "right" cannot be reasoned out from the spec once
+ * a screen rotation is in the picture, and the only way to settle it is to hold the
+ * phone down and see which way the car goes. Tilt right, the car went left; hence
+ * -1.
+ *
+ * `setInverted` still flips this, because browsers and hardware differ and one
+ * device's answer is not everyone's.
  */
-const PITCH_TO_THROTTLE = -1;
+const STEER_TO_RIGHT = -1;
 
 /**
  * How long to wait for a permission answer, milliseconds.
@@ -124,10 +122,8 @@ export class MotionControl {
      */
     this.neutral = { x: 0, y: 0 };
 
-    /** Smoothed outputs, -1..1. */
+    /** Smoothed steering output, -1..1. */
     this.steer = 0;
-    this.throttle = 0;
-    this.brake = 0;
 
     /** True once real readings have arrived and the listener is attached. */
     this.active = false;
@@ -250,8 +246,6 @@ export class MotionControl {
     this.target.removeEventListener('deviceorientation', this.#handleOrientation);
     this.active = false;
     this.steer = 0;
-    this.throttle = 0;
-    this.brake = 0;
     if (this.status === 'active') this.status = 'idle';
 
     /*
@@ -278,35 +272,41 @@ export class MotionControl {
     if (this.screenTilt.x === 0 && this.screenTilt.y === 0 && this.beta === null) return false;
     this.neutral = { ...this.screenTilt };
     this.steer = 0;
-    this.throttle = 0;
-    this.brake = 0;
     return true;
   }
 
   /**
-   * Read the controls for this frame.
+   * Read the steering for this frame.
    * @param {number} dt seconds
-   * @returns {{steer: number, throttle: number, brake: number, active: boolean}}
+   * @returns {{steer: number, active: boolean}}
+   */
+  /**
+   * Read the steering for this frame.
+   *
+   * Steering only. Throttle and brake are deliberately not here -- they stay on the
+   * on-screen pedals.
+   *
+   * That split is a usability decision, not a limitation. Tilt is a good steering
+   * input because it is continuous, proportional and needs no thumb on the glass,
+   * but it is a poor pedal: holding the phone at a fixed angle to keep the throttle
+   * down is uncomfortable within a minute, it means the phone cannot lie flat on a
+   * table, and it turns a standing start -- where you want full throttle
+   * immediately -- into something you have to *achieve* rather than press. A pedal
+   * you press is better at being a pedal.
+   *
+   * @param {number} dt seconds
+   * @returns {{steer: number, active: boolean}}
    */
   read(dt) {
-    if (!this.active) return { steer: 0, throttle: 0, brake: 0, active: false };
+    if (!this.active) return { steer: 0, active: false };
 
-    const steerOffset = (this.screenTilt.x - this.neutral.x) * (this.inverted ? -1 : 1);
-    const pitchOffset = (this.screenTilt.y - this.neutral.y) * PITCH_TO_THROTTLE * (this.inverted ? -1 : 1);
-
+    const direction = STEER_TO_RIGHT * (this.inverted ? -1 : 1);
+    const steerOffset = (this.screenTilt.x - this.neutral.x) * direction;
     const steerTarget = this.#axis(steerOffset, STEER_RANGE, STEER_DEADZONE);
-    const pitchTarget = this.#axis(pitchOffset, PEDAL_RANGE, PEDAL_DEADZONE);
 
     this.steer += (steerTarget - this.steer) * (1 - Math.exp(-STEER_SMOOTHING * 60 * dt));
-    this.throttle += (Math.max(pitchTarget, 0) - this.throttle) * (1 - Math.exp(-PEDAL_SMOOTHING * 60 * dt));
-    this.brake += (Math.max(-pitchTarget, 0) - this.brake) * (1 - Math.exp(-PEDAL_SMOOTHING * 60 * dt));
 
-    return {
-      steer: clamp(this.steer, -1, 1),
-      throttle: clamp(this.throttle, 0, 1),
-      brake: clamp(this.brake, 0, 1),
-      active: true
-    };
+    return { steer: clamp(this.steer, -1, 1), active: true };
   }
 
   /**

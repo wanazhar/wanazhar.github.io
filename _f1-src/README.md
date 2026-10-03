@@ -303,32 +303,51 @@ not a pace problem, and it is not fixed.
 
 ### Motion controls
 
-Gyroscope steering and pedals, offered alongside the on-screen stick rather than
-instead of it. Roll steers, pitch drives.
+Gyroscope steering, offered alongside the on-screen stick rather than instead of it.
+Roll steers.
 
-Three things make device orientation controls fail silently, and all three are
-handled rather than left for the player to discover:
+**Steering only.** Throttle and brake stay on the on-screen pedals even in motion mode.
+That is a usability decision, not a limitation: tilt is a good steering input because it
+is continuous, proportional and needs no thumb on the glass, but it is a poor pedal.
+Holding a phone at a fixed angle to keep the throttle down is uncomfortable within a
+minute, the phone cannot lie flat on a table, and it turns a standing start -- where you
+want full throttle immediately -- into something you have to *achieve* rather than
+press.
+
+The stick normally supplies throttle and brake from its vertical axis, so hiding it for
+motion mode would leave the player with no pedals at all. Hence the two large buttons
+at the bottom of the screen, bound through the same `bindButton` path as every other
+on-screen control.
+
+**The steering sign was wrong, and only hardware could have said so.** Tilt right, the
+car went left. Positive `steer` means *left* in this physics model, so the mapping
+needed the opposite sign to what the spec implied. The tests assert it in the player's
+terms -- tilt right, car goes right -- rather than in terms of which raw axis moves,
+because the raw axis is the part that differs between devices. `setInverted` still
+exists for hardware that reports the other way.
+
+Three things make device orientation controls fail silently, and all three are handled
+rather than left for the player to discover:
 
 - **Permission.** iOS 13+ requires `requestPermission()` from inside a user gesture.
   Called anywhere else it returns `denied` with no error. The request is also raced
   against a timeout, because some builds expose the method and return a promise that
-  never settles -- which would otherwise leave the settings screen awaiting forever
-  and a button that appears to do nothing.
+  never settles -- which would otherwise leave the settings screen awaiting forever and
+  a button that appears to do nothing.
 - **Null readings.** Plenty of hardware fires `deviceorientation` perfectly happily
-  with `beta` and `gamma` set to `null`, forever. Naive handlers get `NaN`, and NaN
-  steering is a car that responds to nothing. The first *real* reading is awaited, and
-  its absence is reported instead of ignored.
-- **Screen rotation.** The raw axes are relative to the device, not to what the
-  player sees. This game requires landscape, so the uncompensated case is the normal
-  one: tilting the phone left arrives as beta, and without compensation the car
-  accelerates instead of turning.
+  with `beta` and `gamma` set to `null`, forever. Naive handlers get `NaN`. The first
+  *real* reading is awaited, and its absence is reported instead of ignored.
+- **Secure context.** `DeviceOrientationEvent` is HTTPS-only. Over plain `http://` the
+  API is still present, nothing throws, and no prompt appears -- the events just never
+  fire. Without a specific check that is indistinguishable from hardware with no
+  gyroscope, and the advice given ("check your sensors are enabled") is wrong.
 
 Also: `stop()` discards the cached reading, because `start()` trusts a stored reading
-as proof the sensor is live -- so a controller switched off and on would report
-success without the sensor ever having spoken. A refused switch restores the on-screen
-controls, because a scheme that was declined must not also take away the one that
-works. Calibration captures the pose the player is actually holding. The keyboard
-still overrides steering, so anyone can pick up the keys mid-corner.
+as proof the sensor is live -- so a controller switched off and on would report success
+without the sensor ever having spoken. A refused switch restores the on-screen controls,
+because a scheme that was declined must not also take away the one that works.
+Switching scheme releases anything held, since a control hidden under a finger never
+receives its `pointerup` and a stuck throttle is a car that drives off on its own.
 
 ### Setup: driver, tyres, weather
 
