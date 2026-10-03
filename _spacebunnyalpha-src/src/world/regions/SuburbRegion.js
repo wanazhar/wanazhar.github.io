@@ -1,7 +1,7 @@
 import { WORLD, SEED, REGIONS } from '../../config.js';
 import { heightAt, biomeAt, BIOMES, onBridge, riverCenterX, RIVER } from '../Terrain.js';
 import { mulberry32 } from '../../util/rng.js';
-import { addTree } from './CityRegion.js';
+import { addTree } from './Trees.js';
 
 // Suburban lots: a detached house with a small garden and a driveway.
 export function planSuburbLots() {

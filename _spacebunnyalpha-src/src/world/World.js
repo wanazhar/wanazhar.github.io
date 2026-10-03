@@ -2,7 +2,13 @@ import * as THREE from 'three';
 import { STREAMING, WORLD, REGIONS, REGION_ORDER } from '../config.js';
 import { heightAt, biomeAt, regionAt } from './Terrain.js';
 import { buildChunk } from './ChunkMeshes.js';
-import { buildRoadNetwork, planCityLots, buildLot, buildLotusBlock, describeLot } from './regions/CityRegion.js';
+import {
+  buildRoadNetwork,
+  planCityLots,
+  buildMachiya,
+  isRoadColumn,
+  distanceToRoad
+} from './regions/Machiya.js';
 import {
   planSuburbLots,
   buildHouse,
@@ -63,6 +69,13 @@ const LANDMARK_BOXES = [
   { x: 222, z: 152, w: 7, d: 6, height: 5 }
 ];
 
+// Machiya carry their height on the lot itself, so collision can read it
+// without knowing about building types.
+function machiyaHeight(lot) {
+  const spec = lot.typeSpec;
+  return { height: spec ? spec.ridge : 8 };
+}
+
 // The world plan. Everything static is computed once here: the lot layouts the
 // visuals use, and the same layouts fed into collision so the two agree.
 export class WorldPlan {
@@ -76,7 +89,7 @@ export class WorldPlan {
       lots: this.cityLots,
       houses: this.suburbLots,
       coastHouses: this.coastHouses,
-      describeCityLot: describeLot,
+      describeCityLot: machiyaHeight,
       describeHouse,
       // Landmark buildings are solid geometry the player can walk into, and the
       // camera must stay outside them. Without this the camera happily sits
@@ -91,13 +104,9 @@ export class WorldPlan {
   buildAllStatics() {
     const batch = new VoxelBatch();
 
-    // City.
-    for (const lot of this.cityLots) {
-      if (lot.kind === 'lotus') buildLotusBlock(batch, lot);
-      else buildLot(batch, lot);
-    }
+    // City: continuous rows of narrow machiya, party wall to party wall.
+    for (const lot of this.cityLots) buildMachiya(batch, lot);
     this.buildCityStreets(batch);
-    this.buildStreetDetail(batch);
     this.addRoofClutter(batch);
     this.buildJapaneseLayer(batch);
 
@@ -127,28 +136,27 @@ export class WorldPlan {
     return batch;
   }
 
-  // Roofscape furniture. Water tanks and kawara ridge caps are what stop a
-    // Japanese roofscape reading as a row of flat rectangles.
-    addRoofClutter(batch) {
-      let added = 0;
-      for (const lot of this.cityLots) {
-        if (lot.kind === 'lotus') continue;
-        const spec = describeLot(lot);
-        if (spec.height < 6) continue;
+  // Roofscape furniture: water tanks, which are what stops a Japanese
+  // roofscape reading as a row of flat rectangles.
+  addRoofClutter(batch) {
+    let added = 0;
+    for (const lot of this.cityLots) {
+      const spec = lot.typeSpec;
+      if (!spec || spec.id === 'tsushinikai') continue;
 
-        const cx = lot.x + lot.w / 2;
-        const cz = lot.z + lot.d / 2;
-        const topY = heightAt(Math.floor(cx), Math.floor(cz)) + spec.height;
+      const cx = lot.x + lot.w / 2;
+      const cz = lot.z + lot.d / 2;
+      const topY = heightAt(Math.floor(cx), Math.floor(cz)) + spec.ridge;
 
-        // Tanks on roughly a third of the roofs.
-        if (added % 3 === 0 && lot.w >= 10 && lot.d >= 10) {
-          buildRoofTank(batch, cx - 2, topY + 0.3, cz - 2);
-        }
-        added += 1;
+      // A tank on roughly a third of the roofs.
+      if (added % 3 === 0) {
+        buildRoofTank(batch, cx - 1.2, topY - 0.2, cz - 1.5);
       }
+      added += 1;
     }
+  }
 
-    // The Japanese layer: utility poles with sagging wires, vending machines,
+  // The Japanese layer: utility poles with sagging wires, vending machines,
     // roadside shrines. These carry more of the "this is Japan" read than any
     // amount of architecture detail.
     buildJapaneseLayer(batch) {
@@ -177,138 +185,102 @@ export class WorldPlan {
       for (const [x, z] of shrines) buildRoadsideShrine(batch, x, z);
     }
 
-  // Street surfacing. A city street that is one flat slab of asphalt reads as
-    // unfinished, so every road gets a centre line, kerbs, pavement banding and
-    // a manhole or two. Cheap boxes, and they give the eye something to read.
-    dressStreet(batch, axis, pos, from, to, width) {
-      const centre = (from + to) / 2;
-      const length = to - from;
-      const half = width / 2;
-
-      for (let t = from; t < to; t += 1) {
-        const x = axis === 'v' ? pos : t + 0.5;
-        const z = axis === 'v' ? t + 0.5 : pos;
-        const ground = heightAt(Math.floor(x), Math.floor(z));
-        if (ground <= WORLD.seaLevel) continue;
-
-        // Pavement either side, raised a little above the road.
-        for (const side of [-1, 1]) {
-          const px = axis === 'v' ? pos + side * (half + 1) : x;
-          const pz = axis === 'v' ? z : pos + side * (half + 1);
-          const pg = heightAt(Math.floor(px), Math.floor(pz));
-          if (pg <= WORLD.seaLevel) continue;
-          batch.add('sidewalk', px, pg + 0.18, pz, axis === 'v' ? 2 : 1, 0.24, axis === 'v' ? 1 : 2);
-          // Kerb edge, slightly darker.
-          batch.add(
-            'curb',
-            axis === 'v' ? pos + side * (half + 0.1) : x,
-            pg + 0.22,
-            axis === 'v' ? z : pos + side * (half + 0.1),
-            axis === 'v' ? 0.25 : 1,
-            0.2,
-            axis === 'v' ? 1 : 0.25
-          );
-        }
-      }
-    }
-
-    // Pavements and markings, built after the carriageway so they sit on top.
-    buildStreetDetail(batch) {
-      const rect = REGIONS.city.rect;
-      for (const road of this.cityNetwork.roads) {
-        const axis = road.axis;
-        const from = axis === 'v' ? rect.z0 : rect.x0;
-        const to = axis === 'v' ? rect.z1 : rect.x1;
-        this.dressStreet(batch, axis, road.pos, from + 4, to - 4, road.width);
-
-        // Centre line: dashed on wide roads, omitted on narrow ones.
-        if (road.width >= 5) {
-          for (let t = from + 6; t < to - 6; t += 6) {
-            const x = axis === 'v' ? road.pos : t;
-            const z = axis === 'v' ? t : road.pos;
-            const g = heightAt(Math.floor(x), Math.floor(z));
-            if (g <= WORLD.seaLevel) continue;
-            batch.add('laneYellow', x + 0.5, g + 0.16, z + 0.5, axis === 'v' ? 0.22 : 2.6, 0.08, axis === 'v' ? 2.6 : 0.22);
-          }
-        }
-
-        // Scattered manhole covers and drain grates break the repetition.
-        const rngSeed = road.pos * 31 + (axis === 'v' ? 7 : 13);
-        const rng = ((n) => ((Math.sin(n * 12.9898 + rngSeed) * 43758.5453) % 1 + 1) % 1);
-        for (let t = from + 9; t < to - 9; t += 11) {
-          const x = axis === 'v' ? road.pos + (rng(t) - 0.5) * 1.2 : t;
-          const z = axis === 'v' ? t : road.pos + (rng(t) - 0.5) * 1.2;
-          const g = heightAt(Math.floor(x), Math.floor(z));
-          if (g <= WORLD.seaLevel) continue;
-          batch.add('metalDark', x + 0.5, g + 0.15, z + 0.5, 0.7, 0.1, 0.7);
-        }
-      }
-    }
-
-  // Roads, pavements, crossings and lamps for the city grid.
+  // Streets, paved narrow.
+  //
+  // The earlier version was written for 20-unit arterial roads and laid wide
+  // pavements, kerbs and centre lines down both sides. With machiya now sitting
+  // flush against the road boundary, a pavement would be inside the buildings,
+  // so a narrow street is just carriageway with a thin gutter and nothing else.
+  // The eave above closes the space; that is what makes it a street.
   buildCityStreets(batch) {
-    const roads = this.cityNetwork.roads;
     const rect = REGIONS.city.rect;
 
-    for (const road of roads) {
-      const horizontal = road.axis === 'h';
-      const half = road.width / 2;
+    for (const road of this.cityNetwork.roads) {
+      const vertical = road.axis === 'v';
+      const from = (vertical ? rect.z0 : rect.x0) + 4;
+      const to = (vertical ? rect.z1 : rect.x1) - 4;
+      const len = to - from;
+      const mid = (from + to) / 2;
+      const collector = road.width >= 9;
 
-      if (horizontal) {
-        const cx = (rect.x0 + rect.x1) / 2;
-        const len = rect.x1 - rect.x0 - 8;
-        batch.add(road.width >= 5 ? 'asphalt' : 'asphaltLight', cx, heightAt(Math.floor(cx), road.pos) + 0.07, road.pos, len, 0.14, road.width);
-        // Pavements.
+      for (let t = from; t < to; t += 1) {
+        const x = vertical ? road.pos + 0.5 : t + 0.5;
+        const z = vertical ? t + 0.5 : road.pos + 0.5;
+        const g = heightAt(Math.floor(x), Math.floor(z));
+        if (g <= WORLD.seaLevel) continue;
+
+        // Carriageway, laid as a run so there is no per-tile seam.
+        batch.add(collector ? 'asphalt' : 'asphaltLight', x, g + 0.08, z,
+          vertical ? road.width : 1, 0.16, vertical ? 1 : road.width);
+
+        // A shallow gutter line at each edge, which is where the wall drains.
         for (const side of [-1, 1]) {
-          const pz = road.pos + side * (half + 1);
-          batch.add('sidewalk', cx, heightAt(Math.floor(cx), Math.round(pz)) + 0.14, pz, len, 0.2, 2);
-          batch.add('curb', cx, heightAt(Math.floor(cx), Math.round(pz)) + 0.2, pz + side * 1, len, 0.16, 0.2);
+          const gx = vertical ? road.pos + side * (road.width / 2 - 0.3) + 0.5 : x;
+          const gz = vertical ? z : road.pos + side * (road.width / 2 - 0.3) + 0.5;
+          batch.add('stoneDark', gx, g + 0.1, gz,
+            vertical ? 0.5 : 1, 0.14, vertical ? 1 : 0.5);
         }
-        // Centre line.
-        if (road.width >= 5) {
-          for (let x = rect.x0 + 8; x < rect.x1 - 8; x += 6) {
-            batch.add('laneYellow', x, heightAt(Math.floor(x), road.pos) + 0.15, road.pos, 2.6, 0.08, 0.22);
-          }
-        }
-        // Street lamps on the pavement.
-        for (let x = rect.x0 + 12; x < rect.x1 - 12; x += 24) {
-          const side = Math.floor((x - rect.x0) / 24) % 2 === 0 ? -1 : 1;
-          const lz = road.pos + side * (half + 1);
-          const ly = heightAt(Math.floor(x), Math.round(lz));
-          batch.add('lampPost', x, ly + 2.6, lz, 0.24, 5.2, 0.24);
-          batch.add('lampGlass', x, ly + 5.3, lz, 0.6, 0.35, 0.6);
-        }
-        // A crossing at every intersection.
-        for (const v of roads.filter((r) => r.axis === 'v')) {
-          for (let i = -2; i <= 2; i += 1) {
-            batch.add('crossingWhite', v.pos + i * 0.9, heightAt(Math.floor(v.pos), road.pos) + 0.16, road.pos, 0.5, 0.08, road.width);
-          }
-        }
-      } else {
-        const cz = (rect.z0 + rect.z1) / 2;
-        const len = rect.z1 - rect.z0 - 8;
-        batch.add(road.width >= 5 ? 'asphalt' : 'asphaltLight', road.pos, heightAt(road.pos, Math.floor(cz)) + 0.07, cz, road.width, 0.14, len);
-        for (const side of [-1, 1]) {
-          const px = road.pos + side * (half + 1);
-          batch.add('sidewalk', px, heightAt(Math.round(px), Math.floor(cz)) + 0.14, cz, 2, 0.2, len);
-          batch.add('curb', px + side * 1, heightAt(Math.round(px), Math.floor(cz)) + 0.2, cz, 0.2, 0.16, len);
-        }
-        if (road.width >= 5) {
-          for (let z = rect.z0 + 8; z < rect.z1 - 8; z += 6) {
-            batch.add('laneYellow', road.pos, heightAt(road.pos, Math.floor(z)) + 0.15, z, 0.22, 0.08, 2.6);
-          }
+      }
+
+      // Centre line only on the two collectors. A narrow residential street
+      // has no markings at all, which is most of why it reads as a lane.
+      if (collector) {
+        for (let t = from + 6; t < to - 6; t += 6) {
+          const x = vertical ? road.pos : t;
+          const z = vertical ? t : road.pos;
+          const g = heightAt(Math.floor(x), Math.floor(z));
+          if (g <= WORLD.seaLevel) continue;
+          batch.add('laneYellow', x + 0.5, g + 0.17, z + 0.5,
+            vertical ? 0.22 : 2.6, 0.08, vertical ? 2.6 : 0.22);
         }
       }
     }
 
-    // Traffic lights at the busier intersections.
-    for (const v of roads.filter((r) => r.axis === 'v')) {
-      for (const h of roads.filter((r) => r.axis === 'h')) {
-        if ((v.pos + h.pos) % 3 !== 0) continue;
-        const y = heightAt(v.pos, h.pos);
+    // Alleys: paving rather than tarmac, and a drain grate at each mouth.
+    for (const alley of this.cityNetwork.alleys ?? []) {
+      const vertical = alley.axis === 'v';
+      for (let t = alley.from; t < alley.to; t += 1) {
+        const x = vertical ? alley.pos + 0.5 : t + 0.5;
+        const z = vertical ? t + 0.5 : alley.pos + 0.5;
+        const g = heightAt(Math.floor(x), Math.floor(z));
+        if (g <= WORLD.seaLevel) continue;
+        batch.add('stone', x, g + 0.08, z,
+          vertical ? alley.width : 1, 0.14, vertical ? 1 : alley.width);
+      }
+    }
+
+    // Street lamps, wall-mounted low on the machiya rather than on posts. A
+    // pole in a 5-wide street would be in the way; these are at 3m on the wall.
+    for (const road of this.cityNetwork.roads) {
+      const vertical = road.axis === 'v';
+      const from = (vertical ? REGIONS.city.rect.z0 : REGIONS.city.rect.x0) + 10;
+      const to = (vertical ? REGIONS.city.rect.z1 : REGIONS.city.rect.x1) - 10;
+      for (let t = from; t < to; t += 26) {
+        for (const side of [-1, 1]) {
+          const x = vertical ? road.pos + side * (road.width / 2 + 0.4) + 0.5 : t;
+          const z = vertical ? t : road.pos + side * (road.width / 2 + 0.4) + 0.5;
+          const g = heightAt(Math.floor(x), Math.floor(z));
+          if (g <= WORLD.seaLevel) continue;
+          batch.add('lampGlass', x, g + 3.0, z, 0.5, 0.3, 0.5);
+          batch.add('lampPost', x, g + 3.25, z, 0.18, 0.3, 0.18);
+        }
+      }
+    }
+
+    // Traffic lights only where a collector crosses another road. A narrow
+    // residential street has no signals at all, and adding them everywhere is
+    // what made the old grid read as a modern arterial.
+    const collectors = this.cityNetwork.roads.filter((r) => r.width >= 9);
+    for (const v of collectors) {
+      for (const h of this.cityNetwork.roads) {
+        if (v === h || (v.axis === h.axis && Math.abs(v.pos - h.pos) < 1)) continue;
+        const gx = v.axis === 'v' ? v.pos : h.pos;
+        const gz = v.axis === 'v' ? h.pos : v.pos;
+        const y = heightAt(Math.floor(gx), Math.floor(gz));
+        if (y <= WORLD.seaLevel) continue;
         for (const [dx, dz] of [[-1.6, -1.6], [1.6, -1.6], [-1.6, 1.6], [1.6, 1.6]]) {
-          batch.add('metalDark', v.pos + dx, y + 1.7, h.pos + dz, 0.24, 3.4, 0.24);
-          batch.add('neonRed', v.pos + dx, y + 3.4, h.pos + dz, 0.4, 0.4, 0.4);
+          batch.add('metalDark', gx + dx, y + 1.7, gz + dz, 0.24, 3.4, 0.24);
+          batch.add('neonRed', gx + dx, y + 3.4, gz + dz, 0.4, 0.4, 0.4);
         }
       }
     }

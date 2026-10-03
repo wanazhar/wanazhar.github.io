@@ -303,6 +303,9 @@ export class PlayerController {
     this.exhausted = false;
     this.distanceWalked = 0;
     this.speedScalar = 0;
+    // Lean into the direction of travel, ramped in and out by the same
+    // acceleration constant so it never snaps.
+    this.lean = 0;
 
     this.onGround = null;
   }
@@ -362,15 +365,29 @@ export class PlayerController {
     const dirX = axis.x * rightX + axis.z * lookX;
     const dirZ = axis.x * rightZ + axis.z * lookZ;
 
+    // Turning is smoothed rather than instant. Snapping to face the input
+    // direction makes a character feel like a cursor; easing the heading gives
+    // the sense of a body swinging around.
     if (axis.magnitude > 0.05) {
-      this.yaw = Math.atan2(dirX, dirZ);
+      const targetYaw = Math.atan2(dirX, dirZ);
+      this.yaw += angleDelta(this.yaw, targetYaw) * Math.min(1, deltaSeconds * PLAYER.turnRate);
       if (this.running) this.spendStamina(PLAYER.staminaDrainRun * deltaSeconds);
     } else {
       this.restoreStamina(PLAYER.staminaRegen * deltaSeconds);
     }
 
-    this.velocity.x = damp(this.velocity.x, dirX * targetSpeed, 0.0001, deltaSeconds);
-    this.velocity.z = damp(this.velocity.z, dirZ * targetSpeed, 0.0001, deltaSeconds);
+    // Acceleration and braking are deliberately different, and separate from
+    // the damp factor. Starting and stopping use different time constants so a
+    // character settles into a walk and coasts to a stop, rather than snapping
+    // between the two. That difference is most of what "weight" is.
+    const accel = axis.magnitude > 0.05 ? PLAYER.accel : PLAYER.decel;
+    this.velocity.x = damp(this.velocity.x, dirX * targetSpeed, accel, deltaSeconds);
+    this.velocity.z = damp(this.velocity.z, dirZ * targetSpeed, accel, deltaSeconds);
+
+    // A small lean into the direction of travel, scaled by speed. Ramping it in
+    // and out with the same acceleration constant keeps it from snapping.
+    const leanTarget = Math.min(0.09, Math.hypot(this.velocity.x, this.velocity.z) * 0.022);
+    this.lean = damp(this.lean, leanTarget, 0.004, deltaSeconds);
 
     // Jump and gravity.
     if (this.grounded && this.input.jumpRequested) {
@@ -421,7 +438,11 @@ export class PlayerController {
   applyToRig(rig, deltaSeconds) {
     rig.root.position.set(this.position.x, this.position.y, this.position.z);
     const current = rig.root.rotation.y;
-    rig.root.rotation.y += angleDelta(current, this.yaw) * Math.min(1, deltaSeconds * 14);
+    rig.root.rotation.y += angleDelta(current, this.yaw) * Math.min(1, deltaSeconds * PLAYER.turnRate);
+    // Lean into the direction of travel, around the axis perpendicular to
+    // the heading. Applied on the torso so the legs stay planted.
+    rig.root.rotation.z = -this.lean * Math.cos(this.yaw);
+    rig.root.rotation.x = this.lean * Math.sin(this.yaw);
   }
 
   get inWater() {

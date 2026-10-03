@@ -55,10 +55,25 @@ export const REGIONS = {
 export const REGION_ORDER = ['city', 'suburbs', 'rural', 'coast'];
 
 export const PLAYER = {
-  height: 1.7,
+  height: 1.75,
   radius: 0.34,
   walkSpeed: 3.6,
   runSpeed: 6.4,
+  // Acceleration and braking are separate time constants for damp(), where the
+  // value is a per-frame retention factor: SMALLER means FASTER. A single
+  // shared value makes a character snap between stopped and moving, which
+  // reads as weightless.
+  //
+  // Measured behaviour at 60fps: accel reaches 85% of walk speed in about a
+  // quarter second; braking is deliberately slower, retaining roughly half its
+  // speed after a fifth of a second so the character coasts rather than
+  // stopping the instant the input is released.
+  accel: 0.0006,
+  decel: 0.02,
+  // How quickly the character swings its heading to face the input, per
+  // second. Instant turning makes a character feel like a cursor; this lands a
+  // quarter turn in about a fifth of a second.
+  turnRate: 9,
   staminaMax: 100,
   staminaDrainRun: 9,
   staminaRegen: 7,

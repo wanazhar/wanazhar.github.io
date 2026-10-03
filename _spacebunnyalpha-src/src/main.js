@@ -695,6 +695,12 @@ window.__sba = {
   // camera clearance in front, behind and above. Hand-picked coordinates kept
   // landing inside a tree canopy, a barn or a hillside.
   spots: {
+    // Standing mid-block on a narrow street, looking down the row of machiya.
+    // This is the view the whole street layout exists to produce: narrow
+    // frontages butted party wall to party wall, deep eaves closing the sky
+    // overhead, signage layered up the facade.
+    machiyaStreet: { x: 100, z: 90 },
+    machAlley: { x: 45, z: 70 },
     cityStreet: { x: 30, z: 90 },
     cityAlt: { x: 54, z: 90 },
     cityNorth: { x: 34, z: 114 },
