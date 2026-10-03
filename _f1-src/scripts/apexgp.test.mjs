@@ -67,6 +67,7 @@ import { centrelineFor } from '../src/track/circuitData.js';
 import { driverAvatar, teamBadge } from '../src/ui/avatars.js';
 import { TrackProjection, cachedTrackMapPath, trackMapPath } from '../src/ui/trackMap.js';
 import { StartSequence } from '../src/race/startSequence.js';
+import { SETTING, environmentFor, isStreet } from '../src/track/environments.js';
 import { ACTIONS, InputController } from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
 import {
@@ -1288,6 +1289,97 @@ test('no two HUD regions can overlap, at any viewport', () => {
     cssSource,
     /\.hud-minimap\s*\{[^}]*width:\s*clamp\(/,
     'the minimap box must hug the map rather than shrink-to-fit its label'
+  );
+});
+
+test('every circuit has a place, and the place is a real claim', () => {
+  /*
+   * The world is built from a per-circuit profile, so a missing profile is a circuit
+   * that renders as a generic -- and therefore wrong -- place. It must not be silent.
+   */
+  for (const circuit of CIRCUITS) {
+    const profile = environmentFor(circuit.id);
+    assert.ok(profile, `${circuit.id} has no environment profile`);
+    assert.ok(
+      Object.values(SETTING).includes(profile.setting),
+      `${circuit.id}: unknown setting "${profile.setting}"`
+    );
+    for (const key of ['treeDensity', 'buildingDensity', 'dust']) {
+      const value = profile[key];
+      assert.ok(
+        Number.isFinite(value) && value >= 0 && value <= 1,
+        `${circuit.id}: ${key} should be a 0..1 relative density, got ${value}`
+      );
+    }
+    assert.ok(
+      Number.isFinite(profile.groundTint),
+      `${circuit.id}: groundTint must be a colour`
+    );
+  }
+
+  /*
+   * The profiles must actually differ.
+   *
+   * A table where every circuit has the same numbers is a table that has done nothing,
+   * and it would pass every other assertion in this test.
+   */
+  const signatures = new Set(
+    CIRCUITS.map((circuit) => {
+      const profile = environmentFor(circuit.id);
+      return `${profile.setting}:${profile.treeDensity}:${profile.buildingDensity}`;
+    })
+  );
+  assert.ok(
+    signatures.size >= 6,
+    `the profiles should distinguish circuits; only ${signatures.size} distinct signatures across ${CIRCUITS.length}`
+  );
+
+  // And the extremes must be where they actually are, not scattered.
+  const spacy = environmentFor('spa');
+  const bahraini = environmentFor('bahrain');
+  const monaco = environmentFor('monaco');
+  const melbourne = environmentFor('melbourne');
+
+  assert.ok(spacy.treeDensity > 0.8, 'Spa is forested');
+  assert.ok(bahraini.treeDensity < 0.2, 'Bahrain is bare');
+  assert.equal(monaco.setting, SETTING.street, 'Monaco is a street circuit');
+  assert.ok(monaco.buildingDensity > 0.8, 'and has buildings hard against the barrier');
+  assert.ok(melbourne.treeDensity > 0.7, 'Albert Park is leafy');
+
+  // Street circuits are the ones with no run-off, which is the difference that changes
+  // how a circuit drives rather than how it looks.
+  assert.equal(isStreet(monaco.setting), true);
+  assert.equal(isStreet(spacy.setting), false);
+
+  // An unknown circuit must still build a world.
+  const fallback = environmentFor('not-a-circuit');
+  assert.equal(fallback.setting, SETTING.permanent);
+  assert.ok(fallback.treeDensity > 0);
+});
+
+test('no profile claims to model elevation', () => {
+  /*
+   * A deliberate guard.
+   *
+   * Elevation is the most recognisable thing about Spa and Monaco and it is not
+   * modelled: every centre is at y = 0. It would be easy to add plausible-looking
+   * height numbers to make a circuit "feel" right, and that would be worse than leaving
+   * it flat -- a wrong hill changes the driving as well as the view, so it would be
+   * making the player lose time on terrain that does not exist.
+   *
+   * This asserts the absence stays deliberate and visible, so adding invented elevation
+   * has to be a decision someone makes and documents rather than a quiet default.
+   */
+  const source = readFileSync(new URL('../src/track/environments.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(
+    source,
+    /elevation\s*[:=]\s*[0-9]/i,
+    'environments.js must not carry elevation numbers without real survey data'
+  );
+  assert.match(
+    source,
+    /\*\*Elevation\.\*\*/,
+    'the absence of elevation must stay documented where the data lives'
   );
 });
 
