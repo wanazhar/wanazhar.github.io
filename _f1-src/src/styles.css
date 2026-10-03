@@ -106,13 +106,40 @@ body {
 
 .hud-topleft,
 .hud-topright,
-.hud-timer,
 .hud-standings,
 .hud-bottomright,
 .hud-badges,
 .hud-tyres {
   position: absolute;
   transition: opacity 160ms ease;
+}
+
+/*
+ * The right-hand HUD is a column, not two independent absolute boxes.
+ *
+ * Position, gap and the timing tower used to be positioned separately with a computed
+ * offset between them -- and `calc(var(--pad) + var(--safe-t) + var(--ui-lg))` silently
+ * evaluated to just `--pad`, which put the timer panel directly on top of the position
+ * number. Whatever the cause, a hand-computed offset between two absolutely-positioned
+ * elements is a coincidence waiting to break again.
+ *
+ * A grid column makes the stacking structural: they cannot overlap, at any viewport,
+ * and adding a fourth element does not require inventing a new offset for it.
+ */
+.hud-right {
+  position: absolute;
+  top: calc(var(--pad) + var(--safe-t));
+  right: calc(var(--pad) + var(--safe-r));
+  display: grid;
+  justify-items: end;
+  gap: calc(var(--gap) * 0.7);
+  z-index: 3;
+  transition: opacity 160ms ease;
+}
+
+.hud-right .hud-topright,
+.hud-right .hud-timer {
+  position: static;
 }
 
 .hud-topleft {
@@ -186,8 +213,6 @@ body {
 
 /* Timing tower */
 .hud-timer {
-  top: calc(var(--pad) + var(--safe-t) + var(--ui-lg));
-  right: calc(var(--pad) + var(--safe-r));
   min-width: clamp(140px, 22vw, 220px);
   background: var(--panel);
   border: 1px solid var(--line);
@@ -952,6 +977,180 @@ kbd {
   font-weight: 700;
 }
 
+/* --------------------------------------------------- start lights, minimap -- */
+
+/*
+ * Start lights.
+ *
+ * Centred and above the action, because the one moment the player must not miss is
+ * lights out. Five pairs in a row like a real gantry, lit left to right, all dark at
+ * once for the start.
+ *
+ * Each "lamp" is a pair of circles rather than one, because a Formula 1 light is a pair
+ * and the shape is most of what makes it read as a gantry rather than as five dots.
+ */
+/*
+ * Positioned below the minimap rather than at a fixed fraction of the screen.
+ *
+ * `top: 18%` put the gantry straight through the minimap on a landscape phone -- the
+ * case this game is built for. `max()` against a floor in rems is what guarantees a
+ * gap: the floor keeps the gantry clear of the minimap on short landscape screens, and
+ * the percentage carries it down the screen on tall ones instead of parking it in the
+ * middle of the road.
+ */
+.hud-lights {
+  position: absolute;
+  top: max(11rem, 34%);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: calc(var(--gap) * 0.6);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.hud-lights[hidden] {
+  display: none;
+}
+
+.light-gantry {
+  display: flex;
+  gap: clamp(0.5rem, 1.6vw, 1.1rem);
+  padding: clamp(0.4rem, 1vw, 0.7rem) clamp(0.6rem, 1.4vw, 1rem);
+  border-radius: 999px;
+  background: rgba(8, 10, 16, 0.72);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+
+/*
+ * A lamp is two circles stacked vertically, drawn with a radial gradient so an unlit
+ * one still reads as a lens rather than as nothing at all. An unlit light you cannot
+ * see is a light you cannot count, and counting them is the entire task.
+ */
+.light-lamp {
+  width: clamp(0.85rem, 2.4vw, 1.5rem);
+  aspect-ratio: 2 / 3;
+  border-radius: 46% / 38%;
+  background: radial-gradient(circle at 50% 32%, #3a1116, #1a0709 70%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  transition: background 90ms linear, box-shadow 90ms linear;
+}
+
+.light-lamp.is-lit {
+  background: radial-gradient(circle at 50% 32%, #ff8a8a, #e01b1b 68%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 0 14px rgba(224, 27, 27, 0.85);
+}
+
+.light-caption {
+  font-size: var(--ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--ink-dim);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+
+/*
+ * Green is the only moment the caption changes colour. Bright green on black over the
+ * start line is unmistakable, which is the requirement -- it should be impossible to
+ * miss and impossible to mistake for a warning.
+ */
+.light-caption.is-go {
+  color: #4ade80;
+  font-size: var(--ui-lg);
+  letter-spacing: 0.42em;
+  text-shadow: 0 0 18px rgba(74, 222, 128, 0.9);
+}
+
+/*
+ * Minimap.
+ *
+ * Top centre, which is the one region of the HUD no other element occupies: the corners
+ * are taken and the right side already carries the timing tower and the standings.
+ * Centre-top also happens to be where a real broadcast puts the track map, so it reads
+ * correctly rather than merely without overlapping.
+ */
+.hud-minimap {
+  position: absolute;
+  top: calc(var(--pad) + var(--safe-t));
+  left: 50%;
+  transform: translateX(-50%);
+  /*
+   * Explicitly the map's own width, so the box hugs the map.
+   *
+   * Without it this is shrink-to-fit inside the space left of `left: 50%`, and the
+   * circuit name -- which is the longest string in the HUD -- widens the box to fit
+   * it. The box is then far wider than anything drawn inside it, which is invisible on
+   * its own and a reliable source of false overlap with whatever sits beside it.
+   */
+  width: clamp(5.5rem, 13vw, 8rem);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.hud-minimap[hidden] {
+  display: none;
+}
+
+.minimap-svg {
+  width: clamp(5.5rem, 13vw, 8.5rem);
+  height: clamp(5.5rem, 13vw, 8.5rem);
+  color: var(--ink-faint);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.75));
+}
+
+.minimap-start {
+  fill: var(--ink);
+  opacity: 0.9;
+}
+
+.minimap-label {
+  /*
+   * Truncated rather than allowed to widen the map, and never on two lines: a
+   * two-line label pushes the map's own bottom edge down and eats the gap the start
+   * lights rely on.
+   */
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+/*
+ * Narrow screens, where top centre is the first place to become contested: the lap
+ * counter and the position can grow into it. Shrinking the map is cheaper than moving
+ * it, because moving it would put it back on top of something.
+ */
+@media (max-width: 520px) {
+  .minimap-svg {
+    width: 4.6rem;
+    height: 4.6rem;
+  }
+
+  .minimap-label {
+    display: none;
+  }
+}
+
+@media (max-height: 380px) {
+  .minimap-svg {
+    width: 4.2rem;
+    height: 4.2rem;
+  }
+}
+
 /* ---------------------------------------------------- quick race setup -- */
 
 /*
@@ -1461,8 +1660,10 @@ kbd {
     display: none;
   }
 
+  /* No `top`: the timer is a static child of the `.hud-right` column now, and a
+     `top` on a static box does nothing. It used to live here, which is where the
+     offset silently broke in the first place. */
   .hud-timer {
-    top: calc(var(--pad) + var(--safe-t));
     min-width: 130px;
   }
 }

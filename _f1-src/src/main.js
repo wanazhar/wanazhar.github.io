@@ -113,7 +113,14 @@ const game = new Game(container, {
   onImpact: (strength) => {
     ui.flashImpact(strength / 12);
     game.rig?.addShake(Math.min(1, strength / 9));
-  }
+  },
+  // Start lights and the minimap. Both are fed from the session and the track rather
+  // than timed in the UI, so the gantry and the hold can never disagree.
+  onStartLights: (start) => ui.setStartLights(start),
+  onGreenFlag: () => ui.showGreenFlag(),
+  onMinimap: (circuit) => ui.setMinimapCircuit(circuit),
+  onMinimapFrame: (dt, project, cars) =>
+    ui.updateMinimap(dt, project, cars.map((car) => ({ x: car.physics.x, z: car.physics.z })))
 });
 
 // Built after the game, because the game owns the input controller. Constructing
