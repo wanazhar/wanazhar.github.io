@@ -191,20 +191,29 @@ export class FollowCamera {
     const step = 0.35;
     const samples = Math.max(1, Math.ceil(desired / step));
 
+    // The minimum the camera will pull in to. It has to be far enough back that
+    // the character is in frame and the near plane is not inside their head:
+    // below roughly two character-heights, the camera ends up inside the skull.
+    const minDistance = this.minDistance ?? 2.6;
+
     for (let i = 1; i <= samples; i += 1) {
       const d = i * step;
       const x = focusX + dirX * d;
       const z = focusZ + dirZ * d;
       const y = focusY + dirY * d;
 
-      if (this.isBlocked(x, z)) return Math.max(1.4, d - 0.5);
+      if (this.isBlocked(x, z)) return Math.max(minDistance, d - 0.5);
 
       // 3D occupancy: a camera inside a roof or an upper floor is just as
       // broken as one inside a wall, and the footprint grid cannot see it.
-      if (this.roofHeightAt && this.roofHeightAt(x, y, z)) return Math.max(1.4, d - 0.5);
+      if (this.roofHeightAt && this.roofHeightAt(x, y, z)) return Math.max(minDistance, d - 0.5);
 
-      const ground = this.groundHeightAt(Math.floor(x), Math.floor(z)) + 1.3;
-      if (y < ground) return Math.max(1.4, d - 0.5);
+      // Terrain. Measured from the player's own ground height rather than the
+      // focus point: the focus sits above the player, so testing against it
+      // reported "underground" whenever the aim was raised, which yanked the
+      // camera all the way in regardless of how open the view was.
+      const ground = this.groundHeightAt(Math.floor(x), Math.floor(z)) + 1.1;
+      if (y < ground) return Math.max(minDistance, d - 0.5);
     }
     return desired;
   }
@@ -238,7 +247,15 @@ export class FollowCamera {
   update(deltaSeconds, playerPos, playerHeight) {
     this.distance = damp(this.distance, this.targetDistance, CAMERA.damping, deltaSeconds);
 
-    this.focus.set(playerPos.x, playerPos.y + CAMERA.height * 0.62 + playerHeight * 0.4, playerPos.z);
+    // Where the camera looks. At a normal walking distance the aim sits above
+    // the character so the environment stays dominant; zoomed in close it drops
+    // to the character's chest so they fill the frame.
+    //
+    // A fixed focus height cannot do both: at 3 units away a point 3.3 units
+    // above the feet pushes the character clean off the bottom of the screen.
+    const t = clamp01((this.currentDistance - 4) / 8);
+    const aimAbove = lerp(0.55 * playerHeight, CAMERA.height * 0.62 + playerHeight * 0.4, t);
+    this.focus.set(playerPos.x, playerPos.y + aimAbove, playerPos.z);
 
     let allowed = this.resolveDistance(this.focus.x, this.focus.y, this.focus.z, this.distance);
 

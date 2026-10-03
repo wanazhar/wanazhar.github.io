@@ -804,6 +804,42 @@ window.__sba = {
     player.applyToRig(playerRig, 0.016);
     return { ok: true, x: spot.x, z: spot.z, h };
   },
+  // Puts the camera where a character reads best, for the visual tooling, so
+  // character work is judged from a consistent angle instead of whatever the
+  // scene happened to offer.
+  //
+  // The camera sits at focus + (sin(yaw), cos(yaw)) * distance. A character
+  // faces +z at yaw 0, so to face the camera its yaw must be exactly camYaw --
+  // adding PI turns it to face away, which is exactly what it did.
+  portrait(distance = 4.6, yaw = 0.5) {
+    const p = player.position;
+
+    followCamera.yaw = yaw;
+    // Steep enough to clear a ridge between the camera and the feet.
+    followCamera.pitch = 0.44;
+
+    // Stay above CAMERA.minDistance; anything nearer puts the near plane
+    // inside the character's head, which is nearly half the body width here.
+    const dist = Math.max(distance, CAMERA.minDistance + 1.1);
+    followCamera.distance = dist;
+    followCamera.targetDistance = dist;
+    followCamera.currentDistance = dist;
+    followCamera.minDistance = dist;
+
+    // Face the camera. Same bearing, no offset.
+    player.yaw = yaw;
+    playerRig.root.rotation.y = yaw;
+
+    followCamera.update(0.016, p, player.eyeHeight);
+    hud.setVisible(false);
+    return `portrait: yaw=${yaw.toFixed(2)} pitch=0.44 dist=${dist.toFixed(1)}`;
+  },
+
+  hud(show = true) {
+    hud.setVisible(show);
+    return `hud ${show ? 'on' : 'off'}`;
+  },
+
   camera(yaw, pitch, distance) {
     if (typeof yaw === 'number') followCamera.yaw = yaw;
     if (typeof pitch === 'number') followCamera.pitch = pitch;
