@@ -633,7 +633,8 @@ function frame(now) {
     lightDir: sky.sunDirection,
     lightColor: sky.sunLightColor,
     ambientColor: sky.horizonColor,
-    rimStrength: sky.rimStrength
+    rimStrength: sky.rimStrength,
+    groundY: player.position.y
   });
   // Keep the sea in step with the sky: same sun direction, same horizon hue.
   ocean.setSunDirection(sky.sunDirection.x, sky.sunDirection.y, sky.sunDirection.z);
