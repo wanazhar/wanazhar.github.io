@@ -9,6 +9,7 @@
  */
 
 import { clamp, wrapAngle } from '../util/math.js';
+import { ELEVATION, elevationAt } from './elevationData.js';
 
 /** Distance in metres between centreline samples. */
 export const SAMPLE_SPACING = 4;
@@ -539,6 +540,41 @@ function estimateLapTime(speeds, step) {
  * Build the complete track model for a circuit.
  * @param {object} circuit entry from CIRCUITS
  */
+/**
+ * Steepest road gradient allowed, as a fraction.
+ *
+ * Real circuits stay within about 10% on the road. A DEM sampled every few metres
+ * produces local gradients far steeper than that, and a car obeying one gets launched
+ * off the crest -- which looks spectacular and is wrong.
+ */
+const MAX_ROAD_GRADE = 0.1;
+
+/**
+ * Limit the gradient of an elevation profile, in place.
+ *
+ * A forward pass then a backward pass, which flattens a spike from whichever side it
+ * was approached rather than only from the one it was scanned in. A single pass would
+ * fix a peak but leave the dip behind it, and a dip is exactly what launches a car.
+ *
+ * @param {Float64Array} elevation metres, one per sample
+ * @param {number} step sample spacing in metres
+ * @param {number} limit maximum gradient as a fraction
+ */
+function clampGradient(elevation, step, limit) {
+  const maxRise = limit * step;
+  for (let pass = 0; pass < 2; pass += 1) {
+    const forward = pass === 0;
+    const count = elevation.length;
+    for (let n = 1; n < count; n += 1) {
+      const i = forward ? n : count - n;
+      const previous = elevation[forward ? i - 1 : i + 1];
+      const delta = elevation[i] - previous;
+      if (delta > maxRise) elevation[i] = previous + maxRise;
+      else if (delta < -maxRise) elevation[i] = previous - maxRise;
+    }
+  }
+}
+
 export function buildTrack(circuit) {
   // DSL -> open polyline -> closed spline -> uniform arc-length samples.
   const controlPoints = circuit.controlPoints ?? integrateSegments(circuit.segments).points;
@@ -558,6 +594,33 @@ export function buildTrack(circuit) {
   // satisfy, and the AI spends the lap unable to make them.
   const widthCurvature = smoothCircular(curvature, 41);
 
+  /*
+   * Elevation.
+   *
+   * Keyed by lap fraction rather than by sample index, because the profile was built by
+   * projecting OSM nodes onto the centreline and the two start in different places.
+   * Interpolated here, once, onto the sample grid.
+   *
+   * Two properties are deliberate. It is **absolute**, so a circuit keeps its real
+   * height -- Spa really is 400m above sea level -- which means the world has to be lit
+   * and fogged consistently with it. And the **gradient is kept under a plausible limit**,
+   * because a DEM sampled every few metres can produce a gradient the tyres cannot obey,
+   * which would show up as cars being launched off crests.
+   */
+  const profile = ELEVATION[circuit.id]?.profile ?? null;
+  const elevation = new Float64Array(count);
+  if (profile) {
+    let low = Infinity;
+    let high = -Infinity;
+    for (let i = 0; i < count; i += 1) {
+      const value = elevationAt(profile, i / count);
+      elevation[i] = value;
+      if (value < low) low = value;
+      if (value > high) high = value;
+    }
+    clampGradient(elevation, step, MAX_ROAD_GRADE);
+  }
+
   const samples = [];
   for (let i = 0; i < count; i += 1) {
     const kappa = curvature[i];
@@ -566,6 +629,8 @@ export function buildTrack(circuit) {
       index: i,
       x: xs[i],
       z: zs[i],
+      /** Metres above sea level. Zero for a circuit with no elevation data. */
+      y: elevation[i],
       s: i * step,
       sector: Math.floor((i / count) * 3),
       heading: headings[i],
@@ -577,6 +642,8 @@ export function buildTrack(circuit) {
       lineOffset: 0,
       lineX: xs[i],
       lineZ: zs[i],
+      /** The racing line sits on the road surface, so it carries the road's height. */
+      lineY: elevation[i],
       lineHeading: headings[i],
       lineCurvature: 0,
       targetSpeed: PROFILE_TOP_SPEED
