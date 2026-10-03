@@ -325,11 +325,25 @@ export class PlayerController {
     this.speedScalar = targetSpeed;
 
     // Move relative to where the camera is looking.
+    //
+    // FollowCamera places the camera at focus + (sin(yaw), cos(yaw)) * dist,
+    // so it looks along -(sin(yaw), cos(yaw)). "Forward" must therefore be
+    // that negated bearing:
+    //
+    //   lookX = -sin(yaw)   lookZ = -cos(yaw)
+    //   right  = (lookZ, -lookX)   -- 90 degrees clockwise from look
+    //
+    // The previous version rotated the stick vector by +yaw instead, which is
+    // 180 degrees out: pushing the joystick or W moved the player directly
+    // away from the camera, so the character walked backwards.
     const camYaw = this.cameraYaw ?? 0;
-    const sin = Math.sin(camYaw);
-    const cos = Math.cos(camYaw);
-    const dirX = axis.x * cos + axis.z * sin;
-    const dirZ = -axis.x * sin + axis.z * cos;
+    const lookX = -Math.sin(camYaw);
+    const lookZ = -Math.cos(camYaw);
+    const rightX = lookZ;
+    const rightZ = -lookX;
+
+    const dirX = axis.x * rightX + axis.z * lookX;
+    const dirZ = axis.x * rightZ + axis.z * lookZ;
 
     if (axis.magnitude > 0.05) {
       this.yaw = Math.atan2(dirX, dirZ);

@@ -59,8 +59,11 @@ export class TouchControls {
       const nx = dist > 0 ? (dx / dist) * clamped : 0;
       const ny = dist > 0 ? (dy / dist) * clamped : 0;
       this.knob.style.transform = `translate(${nx}px, ${ny}px)`;
-      // Normalised so the stick is camera-relative but speed-scaled by distance.
-      this.input.setStick(nx / this.radius, -ny / this.radius, true);
+      // Screen-space: y grows downward, so pushing the stick up gives a
+      // negative dy. InputController already reads `forward = -stick.y`, which
+      // turns that back into forward movement. Negating here as well made the
+      // two cancel, and the character walked backwards.
+      this.input.setStick(nx / this.radius, ny / this.radius, true);
     };
 
     const end = (e) => {
