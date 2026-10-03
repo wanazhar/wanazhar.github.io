@@ -68,6 +68,7 @@ import { driverAvatar, teamBadge } from '../src/ui/avatars.js';
 import { TrackProjection, cachedTrackMapPath, trackMapPath } from '../src/ui/trackMap.js';
 import { StartSequence } from '../src/race/startSequence.js';
 import { SETTING, environmentFor, isStreet } from '../src/track/environments.js';
+import { ELEVATION, PROFILE_POINTS, elevationAt } from '../src/track/elevationData.js';
 import { ACTIONS, InputController } from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
 import {
@@ -1355,6 +1356,109 @@ test('every circuit has a place, and the place is a real claim', () => {
   const fallback = environmentFor('not-a-circuit');
   assert.equal(fallback.setting, SETTING.permanent);
   assert.ok(fallback.treeDensity > 0);
+});
+
+test('elevation is real data, and the gradient stays driveable', () => {
+  /*
+   * The fetch pipeline exists because two obvious sources come up empty:
+   *
+   * - OSM `ele` tags. Queried: Monza's raceway is 216 nodes and *none* carry elevation.
+   * - The published centrelines. The CSV mirrors have no elevation column at all.
+   *
+   * So elevation comes from OSM for *where* the circuit goes and a DEM for *how high*
+   * it is. These assertions are about the result being real and usable, not present.
+   */
+  const withData = Object.entries(ELEVATION);
+  assert.ok(withData.length > 0, 'at least some circuits should have real elevation');
+
+  for (const [id, entry] of withData) {
+    assert.equal(entry.profile.length, PROFILE_POINTS, `${id}: profile should have ${PROFILE_POINTS} points`);
+    for (const value of entry.profile) {
+      assert.ok(Number.isFinite(value), `${id}: profile contains a non-finite elevation`);
+    }
+    // Elevations are heights above sea level, so they are positive and plausible.
+    const min = Math.min(...entry.profile);
+    const max = Math.max(...entry.profile);
+    assert.ok(min >= -420 && max < 4500, `${id}: elevations should be plausible, got ${min}..${max}`);
+  }
+
+  /*
+   * The profiles must agree with reality.
+   *
+   * These are the checks that would catch a broken pipeline: if the projection were
+   * mis-keyed, or the nodes belonged to a different circuit, or the profile were
+   * inverted, the *shape* of the data would still look fine and the numbers would not.
+   */
+  const rangeOf = id => {
+    const profile = ELEVATION[id]?.profile;
+    return profile ? Math.max(...profile) - Math.min(...profile) : null;
+  };
+
+  // Monza sits at roughly 190m and gains about 15m across the lap.
+  if (ELEVATION.monza) {
+    const monza = ELEVATION.monza.profile;
+    assert.ok(
+      monza.every((v) => v > 150 && v < 230),
+      `Monza should be around 180-200m, got ${Math.min(...monza)}-${Math.max(...monza)}`
+    );
+    assert.ok(rangeOf('monza') > 5, `Monza has real elevation change, got ${rangeOf('monza')}m`);
+  }
+
+  // Monaco starts at the harbour and climbs to La Turbie. Nothing about it is flat,
+  // and nothing about it is alpine -- it is the circuit most defined by its gradient.
+  if (ELEVATION.monaco) {
+    assert.ok(rangeOf('monaco') > 20, `Monaco should climb substantially, got ${rangeOf('monaco')}m`);
+    assert.ok(
+      ELEVATION.monaco.profile.every((v) => v >= -10 && v < 200),
+      'Monaco should be low-lying, not mountainous'
+    );
+  }
+
+  /*
+   * On the track, the gradient must be driveable.
+   *
+   * A DEM sampled every few metres produces local gradients far steeper than any real
+   * road. A car obeying one gets launched off the crest, which looks spectacular and is
+   * wrong -- so the profile is clamped on the way in, and this asserts the clamp bites.
+   */
+  for (const id of ['monza', 'monaco', 'sepang', 'bahrain', 'montreal', 'miami', 'jeddah']) {
+    const track = buildTrack(getCircuit(id));
+    let maxGrade = 0;
+    for (let i = 1; i < track.samples.length; i += 1) {
+      maxGrade = Math.max(maxGrade, Math.abs(track.samples[i].y - track.samples[i - 1].y) / track.step);
+    }
+    assert.ok(maxGrade < 0.11, `${id}: gradient ${(maxGrade * 100).toFixed(1)}% exceeds what a car can hold`);
+
+    // Every sample must sit on the profile, including the racing line.
+    for (const sample of track.samples) {
+      assert.ok(Number.isFinite(sample.y), `${id}: sample height is not finite`);
+      assert.equal(sample.lineY, sample.y, `${id}: the racing line must sit on the road surface`);
+    }
+
+    /*
+     * No seam at the start/finish line.
+     *
+     * The profile is circular, so the last point joins the first. A step here is
+     * invisible in the data and very visible in the world: a car crossing the line
+     * would drop or jump.
+     */
+    const samples = track.samples;
+    const seam = Math.abs(samples[0].y - samples[samples.length - 1].y);
+    assert.ok(seam < 0.5, `${id}: ${seam.toFixed(2)}m step across the start/finish line`);
+  }
+
+  // A circuit with no data must be flat, not broken.
+  const flat = buildTrack(getCircuit('spa'));
+  assert.ok(
+    flat.samples.every((sample) => sample.y === 0),
+    'a circuit with no elevation data must be flat'
+  );
+
+  // And the interpolator must wrap rather than clamp.
+  const profile = ELEVATION.monza.profile;
+  assert.equal(elevationAt(profile, 0), profile[0]);
+  assert.equal(elevationAt(profile, 1), profile[0], 'fraction 1 is the same point as 0');
+  assert.ok(elevationAt(profile, -0.25) > 0, 'negative fractions must wrap, not clamp to zero');
 });
 
 test('no profile claims to model elevation', () => {
