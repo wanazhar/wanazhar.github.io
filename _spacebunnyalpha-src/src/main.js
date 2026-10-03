@@ -188,12 +188,16 @@ function openestViewYaw(x, z) {
 followCamera.yaw = openestViewYaw(player.position.x, player.position.z);
 player.yaw = followCamera.yaw;
 
-// Camera-relative movement needs to know where the camera is facing. This is a
-// getter with no setter: the camera owns `yaw`, and reading it on demand keeps
-// the two in sync without ever writing back into the controller.
+// Camera-relative movement needs to know where the camera is facing.
+//
+// This returns followCamera.yaw unchanged. FollowCamera already positions
+// itself at focus + (sin, cos) * distance and therefore looks along
+// -(sin, cos), which is exactly the bearing the controller wants. Adding PI
+// here -- as an earlier version did -- negates it a second time, which is what
+// made forward input move the player backwards.
 Object.defineProperty(player, 'cameraYaw', {
   get() {
-    return followCamera.yaw + Math.PI;
+    return followCamera.yaw;
   }
 });
 

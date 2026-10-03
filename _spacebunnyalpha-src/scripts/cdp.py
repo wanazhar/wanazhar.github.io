@@ -17,9 +17,18 @@ evaluate, and screenshot.
 import asyncio
 import base64
 import json
+import os
 import urllib.request
 
-DEBUG = "http://127.0.0.1:9222"
+# The debug browser on 9222 is shared with other work on this machine, and a
+# long session there picks up dozens of tabs and eventually drops the socket.
+# Point SBA_CDP at a dedicated instance when one is available:
+#
+#   chromium-browser --headless=new --remote-debugging-port=9333 \
+#     --user-data-dir=/tmp/sba-chrome about:blank &
+#   SBA_CDP=9333 python3 scripts/tour.py ...
+#
+DEBUG = "http://127.0.0.1:" + os.environ.get("SBA_CDP", "9222")
 
 
 class Browser:
@@ -99,16 +108,41 @@ class Browser:
     # slow call rather than a cascade of fake "Uncaught" errors, which look
     # exactly like application bugs and are not.
     async def try_evaluate(self, expr, attempts=3, timeout=60):
+        # A short per-call timeout: a wedged socket must not eat the whole run.
+        last = None
         for attempt in range(attempts):
             try:
-                value = await self.evaluate(expr, timeout=timeout)
+                value = await asyncio.wait_for(self.evaluate(expr), timeout=min(timeout, 25))
                 if value is not None and not (isinstance(value, dict) and value.get("__error__")):
                     return value
+                last = value
             except Exception as exc:
-                if attempt == attempts - 1:
-                    return {"__error__": f"cdp dropped: {type(exc).__name__}"}
-                await asyncio.sleep(1.5)
-        return value
+                last = {"__error__": f"cdp dropped: {type(exc).__name__}"}
+                # A dropped websocket is unrecoverable, so reconnecting beats
+                # retrying a dead socket until the script times out.
+                await self._reconnect()
+            await asyncio.sleep(0.8)
+        return last
+
+    async def _reconnect(self):
+        try:
+            if self.ws:
+                await self.ws.close()
+        except Exception:
+            pass
+        if not self.proc:
+            return
+        try:
+            import websockets
+
+            self.ws = await websockets.connect(
+                self.proc["webSocketDebuggerUrl"], max_size=64 * 1024 * 1024, ping_interval=None
+            )
+            self._pending = {}
+            self._pump = asyncio.create_task(self._read_loop())
+            await self.call("Runtime.enable", timeout=15)
+        except Exception:
+            self.ws = None
 
     async def screenshot(self, path):
         msg = await self.call("Page.captureScreenshot", {"format": "png"}, timeout=90)
