@@ -1,0 +1,1488 @@
+/* Apex GP — interface styling.
+ *
+ * Mobile-first: the base rules target a phone in landscape, and a media query
+ * scales everything up for desktop. All sizing uses clamp() against the viewport
+ * so the HUD stays legible from a 5" phone to a 32" monitor without breakpoints
+ * scattered through the rules.
+ */
+
+:root {
+  --font-ui: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  /* Metric type scale, all viewport-relative. */
+  --ui-xs: clamp(9px, 1.5vh, 13px);
+  --ui-sm: clamp(11px, 1.9vh, 16px);
+  --ui-md: clamp(14px, 2.4vh, 20px);
+  --ui-lg: clamp(20px, 3.6vh, 32px);
+  --ui-xl: clamp(30px, 6vh, 58px);
+
+  --ink: #f4f6fb;
+  --ink-dim: #a9b2c3;
+  --ink-faint: #6b7488;
+  --panel: rgba(10, 13, 20, 0.86);
+  --panel-solid: #0b0e14;
+  --line: rgba(255, 255, 255, 0.1);
+  --accent: #e10600;
+  --accent-bright: #ff2a1f;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+
+  /* Device safe areas, so the HUD clears notches and home indicators. */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+
+  --gap: clamp(6px, 1.2vh, 14px);
+  --pad: clamp(8px, 1.6vh, 18px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #05070c;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Stop iOS turning a double-tap into a zoom. */
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+#app canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* The UI layer sits over the canvas but must not swallow pointer events meant
+ * for the game, so it is transparent and only its children opt back in. */
+.ui-root {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.ui-root > * {
+  pointer-events: auto;
+}
+
+/* ---------------------------------------------------------------- HUD ---- */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  padding: calc(var(--pad) + var(--safe-t)) calc(var(--pad) + var(--safe-r))
+    calc(var(--pad) + var(--safe-b)) calc(var(--pad) + var(--safe-l));
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-hidden .hud > *:not(.hud-controls-toggle) {
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.hud-topleft,
+.hud-topright,
+.hud-timer,
+.hud-standings,
+.hud-bottomright,
+.hud-badges,
+.hud-tyres {
+  position: absolute;
+  transition: opacity 160ms ease;
+}
+
+.hud-topleft {
+  top: calc(var(--pad) + var(--safe-t));
+  left: calc(var(--pad) + var(--safe-l));
+}
+
+.hud-session {
+  font-size: var(--ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--accent-bright);
+}
+
+.hud-circuit {
+  font-size: var(--ui-xs);
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+}
+
+.hud-lap {
+  font-family: var(--font-mono);
+  font-size: var(--ui-lg);
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.hud-lap-total {
+  font-size: var(--ui-sm);
+  color: var(--ink-faint);
+}
+
+.hud-topright {
+  top: calc(var(--pad) + var(--safe-t));
+  right: calc(var(--pad) + var(--safe-r));
+  text-align: right;
+}
+
+.hud-position {
+  font-family: var(--font-mono);
+  font-size: var(--ui-xl);
+  font-weight: 800;
+  line-height: 0.9;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+
+.hud-position[data-tone='lead'] {
+  color: var(--warn);
+}
+.hud-position[data-tone='podium'] {
+  color: var(--good);
+}
+
+.hud-position sup {
+  font-size: var(--ui-sm);
+  color: var(--ink-faint);
+  top: -0.9em;
+}
+
+.hud-gap {
+  font-family: var(--font-mono);
+  font-size: var(--ui-sm);
+  color: var(--ink-dim);
+}
+
+.hud-gap[data-tone='podium'] {
+  color: var(--good);
+}
+
+/* Timing tower */
+.hud-timer {
+  top: calc(var(--pad) + var(--safe-t) + var(--ui-lg));
+  right: calc(var(--pad) + var(--safe-r));
+  min-width: clamp(140px, 22vw, 220px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--gap);
+  padding: calc(var(--gap) * 0.8);
+  backdrop-filter: blur(6px);
+}
+
+.hud-time-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gap);
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--ui-sm);
+  line-height: 1.5;
+}
+
+.hud-time-label {
+  font-family: var(--font-ui);
+  font-size: var(--ui-xs);
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+
+.hud-time-best .hud-time {
+  color: #c084fc;
+}
+
+.hud-sectors {
+  display: flex;
+  gap: 3px;
+  margin-top: calc(var(--gap) * 0.6);
+}
+
+.hud-sector {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--ui-xs);
+  padding: 2px 0;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink-faint);
+}
+
+.hud-sector[data-tone='good'] {
+  background: rgba(52, 211, 153, 0.22);
+  color: var(--good);
+}
+.hud-sector[data-tone='ok'] {
+  background: rgba(251, 191, 36, 0.2);
+  color: var(--warn);
+}
+.hud-sector[data-tone='bad'] {
+  background: rgba(248, 113, 113, 0.22);
+  color: var(--bad);
+}
+
+/* Live order */
+.hud-standings {
+  top: 50%;
+  right: calc(var(--pad) + var(--safe-r));
+  transform: translateY(-50%);
+  min-width: clamp(120px, 18vw, 190px);
+  font-size: var(--ui-xs);
+}
+
+.hud-standing {
+  display: grid;
+  grid-template-columns: 1.4em 1fr auto;
+  gap: var(--gap);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+}
+
+.hud-standing.is-player {
+  background: rgba(225, 6, 0, 0.28);
+  color: #fff;
+}
+
+.hud-standing-pos {
+  color: var(--ink-faint);
+}
+
+.hud-standing-gap {
+  color: var(--ink-dim);
+}
+
+/* Speed cluster */
+.hud-bottomright {
+  bottom: calc(var(--pad) + var(--safe-b));
+  right: calc(var(--pad) + var(--safe-r));
+  text-align: right;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-areas:
+    'ers speed'
+    'ers gear'
+    'ers revbar';
+  align-items: end;
+  gap: 0 var(--gap);
+}
+
+.hud-ers {
+  grid-area: ers;
+  width: clamp(8px, 1.4vw, 14px);
+  height: clamp(52px, 14vh, 110px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.hud-ers-label {
+  font-size: var(--ui-xs);
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  writing-mode: vertical-rl;
+}
+
+.hud-ers-track {
+  flex: 1;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 99px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.hud-ers-fill {
+  width: 100%;
+  height: 0;
+  background: linear-gradient(180deg, #22d3ee, #0ea5e9);
+  transition: height 90ms linear;
+}
+
+.hud-speed {
+  grid-area: speed;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.hud-speed-value {
+  font-family: var(--font-mono);
+  font-size: var(--ui-xl);
+  font-weight: 800;
+  line-height: 0.9;
+}
+
+.hud-speed-unit {
+  font-size: var(--ui-xs);
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+}
+
+.hud-gear {
+  grid-area: gear;
+  font-family: var(--font-mono);
+  font-size: var(--ui-lg);
+  font-weight: 700;
+  color: var(--ink-dim);
+  line-height: 1;
+  text-align: right;
+}
+
+.hud-revbar {
+  grid-area: revbar;
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+  margin-top: 3px;
+}
+
+.hud-rev {
+  width: clamp(4px, 0.8vw, 8px);
+  height: clamp(6px, 1.2vh, 11px);
+  background: rgba(255, 255, 255, 0.11);
+  border-radius: 1px;
+}
+
+.hud-rev.is-lit {
+  background: var(--good);
+}
+.hud-rev.is-lit.is-shift {
+  background: var(--accent-bright);
+}
+
+/* DRS / ERS badges */
+.hud-badges {
+  bottom: calc(var(--pad) + var(--safe-b));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--gap);
+}
+
+.hud-badge {
+  font-size: var(--ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--ink-faint);
+  border: 1px solid transparent;
+}
+
+.hud-badge.is-available {
+  color: var(--good);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.hud-badge.is-open,
+.hud-badge.is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent-bright);
+}
+
+/* Tyre wear */
+.hud-tyres {
+  bottom: calc(var(--pad) + var(--safe-b));
+  left: calc(var(--pad) + var(--safe-l));
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--ui-xs);
+  font-family: var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.hud-tyre {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hud-tyre-track {
+  width: clamp(34px, 7vw, 68px);
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Heat fills the bar; wear is marked at the end as a notch. */
+.hud-tyre-track::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--heat, 0%);
+  background: var(--good);
+}
+
+.hud-tyre-track[data-tone='hot']::before {
+  background: var(--bad);
+}
+.hud-tyre-track[data-tone='cold']::before {
+  background: #38bdf8;
+}
+
+.hud-tyre-track::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  left: var(--wear, 0%);
+  width: 2px;
+  background: var(--warn);
+}
+
+/* Transient messages */
+.hud-alert {
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: var(--ui-lg);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  opacity: 0;
+  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.8);
+}
+
+.hud-alert[data-tone='bad'] {
+  color: var(--bad);
+}
+.hud-alert[data-tone='good'] {
+  color: var(--good);
+}
+
+.hud-alert.is-visible {
+  animation: alert-pop 1500ms ease forwards;
+}
+
+@keyframes alert-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.86);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -58%) scale(1);
+  }
+}
+
+/*
+ * Top-left. This used to be top-centre, which is where the touch mode buttons
+ * want to be -- two controls in the same corner, both claiming the taps. It is
+ * also the only pause affordance a desktop player has, so it stays reachable.
+ */
+.hud-controls-toggle {
+  /* `position: absolute` was missing here, so `top`/`left` did nothing and this
+   * laid out as a full-width flex item across the top of the HUD -- transparent,
+   * but sitting over the timing panel and the touch mode row and eating taps
+   * meant for them.
+   *
+   * Bottom-centre, because every other corner is taken: session label and lap
+   * top-left, timing top-right, speed and ERS bottom-right, tyres bottom-left,
+   * and the touch mode row across the top. The floating stick may draw over it,
+   * but the stick is `pointer-events: none`, so the button still takes taps. */
+  position: absolute;
+  bottom: calc(var(--pad) + var(--safe-b));
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.hud-controls-toggle button,
+.hud-restore {
+  pointer-events: auto;
+  background: var(--panel);
+  color: var(--ink-dim);
+  border: 1px solid var(--line);
+  border-radius: var(--gap);
+  font-size: var(--ui-sm);
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+/* The restore button only exists while the HUD is hidden. */
+.hud-restore {
+  position: absolute;
+  top: calc(var(--pad) + var(--safe-t));
+  right: calc(var(--pad) + var(--safe-r));
+  display: none;
+}
+
+.hud-hidden .hud-restore {
+  display: block;
+}
+
+.hud-hidden .hud-controls-toggle {
+  display: none;
+}
+
+/* ------------------------------------------------------- touch controls -- */
+
+/*
+ * One floating thumbstick, not a stick plus two pedals.
+ *
+ * The previous layout put a horizontal steering bar in the bottom-left and gas
+ * and brake as circles in the bottom-right. That needs two thumbs working
+ * independently, and on a phone the reachable area is whichever corner your
+ * hands happen to hold -- so the controls sat on top of each other, and the
+ * pedal row overlapped the ERS/DRS row above it at small heights.
+ *
+ * A single stick is easier because both axes come from one contact: sideways is
+ * steering, up is throttle, down is brake. It works from any thumb position, and
+ * there is nothing to overlap with. The stick is drawn where the finger lands
+ * rather than in a fixed corner, so it is always under the thumb.
+ *
+ * `.touch` is display:none on fine pointers, so the stick is never visible on a
+ * desktop with a mouse. The zones below are invisible either way; they exist to
+ * receive the pointer, not to be looked at.
+ */
+.touch {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.touch[hidden] {
+  display: none;
+}
+
+.touch > * {
+  pointer-events: auto;
+}
+
+@media not (any-pointer: coarse) {
+  .touch {
+    display: none;
+  }
+}
+
+/*
+ * Zones. The stick claims the whole screen, so a thumb never has to find it.
+ * `.touch-controls-visible` is added while racing: before that the overlay
+ * menus own the screen and a stray touch should not grab a joystick.
+ */
+.touch-zone {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+
+.is-racing .touch-zone {
+  display: block;
+}
+
+/* The stick itself: a ring with a knob, positioned by JS at the touch point. */
+.touch-steer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Purely a readout: all input is handled on the zone underneath, so the stick
+   * must never intercept a tap meant for a mode button it happens to overlap. */
+  pointer-events: none;
+  width: clamp(132px, 34vmin, 190px);
+  height: clamp(132px, 34vmin, 190px);
+  margin-left: calc(clamp(132px, 34vmin, 190px) / -2);
+  margin-top: calc(clamp(132px, 34vmin, 190px) / -2);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background:
+    radial-gradient(circle, rgba(10, 13, 20, 0.34) 0%, rgba(10, 13, 20, 0.62) 72%, rgba(10, 13, 20, 0.16) 100%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 34px rgba(0, 0, 0, 0.4);
+  display: none;
+  place-items: center;
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+
+.is-racing .touch-steer.is-active {
+  display: grid;
+  opacity: 1;
+}
+
+/* Axis hints: right = steer, up = throttle, down = brake. */
+.touch-steer::before,
+.touch-steer::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.touch-steer::before {
+  left: 12%;
+  right: 12%;
+  height: 2px;
+}
+
+.touch-steer::after {
+  top: 12%;
+  bottom: 12%;
+  width: 2px;
+}
+
+.touch-steer-knob {
+  position: relative;
+  width: clamp(52px, 14vmin, 78px);
+  height: clamp(52px, 14vmin, 78px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  will-change: transform;
+  transition: background 120ms ease;
+}
+
+/* Green above centre (throttle), red below (brake), grey on the neutral line. */
+.touch-steer-knob.is-throttle {
+  background: rgba(74, 222, 128, 0.95);
+  border-color: rgba(134, 239, 172, 1);
+}
+
+.touch-steer-knob.is-brake {
+  background: rgba(248, 113, 113, 0.95);
+  border-color: rgba(252, 165, 165, 1);
+}
+
+.touch-steer-label {
+  position: absolute;
+  bottom: -1.9em;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+/*
+ * Mode buttons. Top-centre, because that is the only band of a landscape phone
+ * screen that nothing else wants: the session label and lap sit top-left, the
+ * timing panel top-right, the speed and ERS bottom-right, the tyres bottom-left.
+ * They were top-right before and sat directly on top of the timing panel.
+ *
+ * The stick is drawn wherever the thumb lands and is `pointer-events: none`, so
+ * it can never intercept a tap on these.
+ */
+.touch-modes {
+  position: absolute;
+  top: calc(var(--pad) + var(--safe-t));
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  gap: calc(var(--gap) / 2);
+}
+
+.is-racing .touch-modes {
+  display: flex;
+}
+
+.touch-mode {
+  min-width: clamp(46px, 12vmin, 64px);
+  height: clamp(32px, 8vmin, 42px);
+  padding: 0 10px;
+  border-radius: var(--gap);
+  background: rgba(10, 13, 20, 0.62);
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-size: var(--ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.touch-mode.is-pressed {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* ----------------------------------------------------------- overlays --- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--pad) + var(--safe-t)) calc(var(--pad) + var(--safe-r))
+    calc(var(--pad) + var(--safe-b)) calc(var(--pad) + var(--safe-l));
+  background: rgba(4, 6, 11, 0.82);
+  backdrop-filter: blur(8px);
+  overflow-y: auto;
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.overlay-panel {
+  width: min(760px, 100%);
+  margin: auto;
+}
+
+.panel {
+  background: var(--panel-solid);
+  border: 1px solid var(--line);
+  border-radius: clamp(10px, 2vh, 18px);
+  padding: clamp(14px, 3vh, 30px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: var(--ui-lg);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.panel-sub {
+  margin: 2px 0 var(--gap);
+  font-size: var(--ui-sm);
+  letter-spacing: 0.2em;
+  color: var(--accent-bright);
+  text-transform: uppercase;
+}
+
+.panel-note {
+  margin: var(--gap) 0 0;
+  font-size: var(--ui-xs);
+  color: var(--ink-faint);
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--gap);
+  margin: var(--gap) 0;
+}
+
+.panel-grid > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ui-sm);
+  color: var(--ink-dim);
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: var(--ui-xs);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  color: var(--ink);
+}
+
+.panel-button {
+  margin-top: var(--gap);
+  padding: calc(var(--gap) * 0.9) var(--gap);
+  min-height: 44px;
+  border: none;
+  border-radius: var(--gap);
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: var(--ui-sm);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.panel-button:hover {
+  background: var(--accent-bright);
+}
+
+.panel-button-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
+.panel-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin-top: var(--gap);
+}
+
+/* Calendar */
+.calendar {
+  display: grid;
+  gap: calc(var(--gap) * 0.6);
+}
+
+/* ---------------------------------------------------------- quick race -- */
+
+/*
+ * Two-column grids on a phone in landscape leave the list unreadably short, so
+ * these drop to one column below 700px wide. `auto-fill` with a minimum means the
+ * columns reflow on width alone, with no breakpoint to keep in sync elsewhere.
+ */
+.venues,
+.teams {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: calc(var(--gap) * 0.6);
+  margin-bottom: var(--gap);
+  text-align: left;
+}
+
+.venue,
+.team {
+  display: grid;
+  gap: 2px;
+  padding: calc(var(--gap) * 0.7);
+  border-radius: var(--gap);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.venue:hover,
+.team:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.venue.is-selected,
+.team.is-selected {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.venue-round {
+  font-size: var(--ui-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.venue-name {
+  font-size: var(--ui-sm);
+  font-weight: 700;
+}
+
+.venue-meta,
+.team-drivers {
+  font-size: var(--ui-xs);
+  color: var(--ink-dim);
+}
+
+.venue-tag {
+  font-size: var(--ui-xs);
+  color: var(--accent);
+}
+
+/* Team rows are a swatch plus a text block, so they stay on one row rather than
+   stacking the way the venue cards do. */
+.team {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--gap);
+}
+
+.team-swatch {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 4px;
+  background: var(--team, #888);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.team-body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.team-name {
+  font-size: var(--ui-sm);
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------- quick race setup -- */
+
+/*
+ * Venue cards now carry a map of the real circuit, drawn to scale from the same
+ * centreline the track is built from. The map leads and the text sits beside it:
+ * the shape of the circuit is the thing being chosen, and it reads faster than a
+ * sentence describing it.
+ */
+.venue {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--gap);
+}
+
+.venue-map {
+  width: 4.2rem;
+  height: 4.2rem;
+  flex: none;
+  color: var(--ink-faint);
+}
+
+.venue.is-selected .venue-map {
+  color: var(--ink-dim);
+}
+
+.venue-body {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+
+/* The setup screen: four blocks of chips. */
+
+.setup {
+  display: grid;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+  text-align: left;
+}
+
+.setup-block {
+  display: grid;
+  gap: calc(var(--gap) * 0.5);
+}
+
+.setup-label {
+  margin: 0;
+  font-size: var(--ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.setup-note {
+  margin: 0;
+  font-size: var(--ui-xs);
+  color: var(--ink-faint);
+}
+
+.setup-warning {
+  font-size: var(--ui-xs);
+  padding: calc(var(--gap) * 0.5) calc(var(--gap) * 0.7);
+  border-radius: var(--gap);
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #fde68a;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--gap) * 0.5);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--gap) * 0.5);
+  padding: calc(var(--gap) * 0.45) calc(var(--gap) * 0.7);
+  border-radius: var(--gap);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-dim);
+  font: inherit;
+  font-size: var(--ui-xs);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.chip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--ink);
+}
+
+.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip:disabled:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-dim);
+}
+
+.chip.is-selected {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink);
+}
+
+.chip strong {
+  display: block;
+  font-size: var(--ui-xs);
+}
+
+.chip em {
+  display: block;
+  font-style: normal;
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+
+.chip-avatar,
+.chip .avatar {
+  display: block;
+  flex: none;
+}
+
+.chip .badge {
+  flex: none;
+}
+
+.compound-band {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 2px;
+  flex: none;
+}
+
+.weather-swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/*
+ * Motion controls.
+ *
+ * The steering stick and its dead zone are hidden rather than disabled, because a
+ * visible stick that does nothing is worse than no stick: it invites the player to
+ * grab a control that is not connected. The action buttons stay, because tilting a
+ * phone is a poor way to ask for DRS and there is no gesture for it that is
+ * distinguishable from steering.
+ */
+.uses-motion .touch-zone,
+.uses-motion .touch-steer {
+  display: none;
+}
+
+/* The stick label documents the scheme; in motion mode the scheme is the phone. */
+.motion-mode .touch-modes {
+  justify-content: flex-end;
+}
+
+.calendar-row {
+  display: grid;
+  grid-template-columns: 2.2em 1fr auto;
+  align-items: center;
+  gap: var(--gap);
+  padding: calc(var(--gap) * 0.7);
+  border-radius: var(--gap);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: var(--ui-sm);
+}
+
+.calendar-row[data-state='done'] {
+  opacity: 0.62;
+}
+
+.calendar-row[data-state='next'] {
+  background: rgba(225, 6, 0, 0.2);
+  border: 1px solid rgba(225, 6, 0, 0.5);
+}
+
+.calendar-round {
+  font-family: var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.calendar-name {
+  font-weight: 600;
+}
+
+.calendar-meta {
+  font-size: var(--ui-xs);
+  color: var(--ink-faint);
+  letter-spacing: 0.06em;
+}
+
+/* Standings table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ui-sm);
+}
+
+.table th {
+  text-align: left;
+  font-size: var(--ui-xs);
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--line);
+}
+
+.table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-variant-numeric: tabular-nums;
+}
+
+.table tr.is-player td {
+  background: rgba(225, 6, 0, 0.22);
+  font-weight: 700;
+}
+
+.table .num {
+  text-align: right;
+  font-family: var(--font-mono);
+}
+
+/* Upgrades */
+.upgrades {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--gap);
+}
+
+.upgrade {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: var(--gap);
+  padding: calc(var(--gap) * 0.8);
+  display: grid;
+  gap: 4px;
+}
+
+.upgrade-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--gap);
+}
+
+.upgrade-name {
+  font-size: var(--ui-sm);
+  font-weight: 700;
+}
+
+.upgrade-tier {
+  font-family: var(--font-mono);
+  font-size: var(--ui-xs);
+  color: var(--ink-dim);
+}
+
+.upgrade-desc {
+  font-size: var(--ui-xs);
+  color: var(--ink-faint);
+  line-height: 1.4;
+}
+
+.upgrade-pips {
+  display: flex;
+  gap: 3px;
+}
+
+.upgrade-pip {
+  flex: 1;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.upgrade-pip.is-on {
+  background: var(--good);
+}
+
+.upgrade-buy {
+  min-height: 36px;
+  padding: 6px;
+  font-size: var(--ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--line);
+  border-radius: var(--gap);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.upgrade-buy:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.points-badge {
+  font-family: var(--font-mono);
+  font-size: var(--ui-sm);
+  color: var(--warn);
+}
+
+/* Results */
+.result-row {
+  display: grid;
+  grid-template-columns: 2.4em 1fr auto auto;
+  gap: var(--gap);
+  align-items: center;
+  padding: calc(var(--gap) * 0.55);
+  border-radius: var(--gap);
+  font-size: var(--ui-sm);
+}
+
+.result-row.is-player {
+  background: rgba(225, 6, 0, 0.24);
+  font-weight: 700;
+}
+
+.result-pos {
+  font-family: var(--font-mono);
+  font-weight: 800;
+}
+
+.result-points {
+  font-family: var(--font-mono);
+  color: var(--ink-dim);
+}
+
+.result-move {
+  font-family: var(--font-mono);
+  font-size: var(--ui-xs);
+}
+
+.result-move[data-tone='up'] {
+  color: var(--good);
+}
+.result-move[data-tone='down'] {
+  color: var(--bad);
+}
+
+/* Impact vignette */
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 42%,
+    rgba(225, 6, 0, calc(var(--impact, 1) * 0.5)) 100%
+  );
+}
+
+.vignette.is-active {
+  animation: impact-flash 380ms ease-out forwards;
+}
+
+@keyframes impact-flash {
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Loading */
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap);
+  background: var(--panel-solid);
+}
+
+/*
+ * Required. `.loading` sets `display: flex`, which outranks the user-agent
+ * `[hidden] { display: none }` rule, so setting `.hidden = true` left the loading
+ * screen on top of the running race forever. `.overlay` has the same pairing for
+ * the same reason. The symptom was the game appearing to be stuck on loading
+ * while it was in fact racing underneath.
+ */
+.loading[hidden] {
+  display: none;
+}
+
+.loading-title {
+  font-size: var(--ui-lg);
+  font-weight: 800;
+  letter-spacing: 0.28em;
+}
+
+.loading-note {
+  font-size: var(--ui-xs);
+  letter-spacing: 0.2em;
+  color: var(--ink-dim);
+  min-height: 1.4em;
+  text-align: center;
+}
+
+/* Progress bar. The width steps per phase rather than tracking real work, which
+   would jitter backwards between phases of wildly different lengths. */
+.loading-bar {
+  width: min(280px, 60vw);
+  height: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.loading-bar-fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 260ms ease;
+}
+
+.loading-elapsed {
+  font-family: var(--font-mono);
+  font-size: var(--ui-xs);
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Short landscape screens need tighter spacing or the HUD overflows. */
+@media (orientation: landscape) and (max-height: 480px) {
+  .hud-standings {
+    display: none;
+  }
+
+  .hud-timer {
+    top: calc(var(--pad) + var(--safe-t));
+    min-width: 130px;
+  }
+}
+
+/*
+ * Portrait: the game requires landscape, and this blocks it rather than hinting.
+ *
+ * The previous version showed a "rotate your device" panel but left the game
+ * running underneath it, and the HUD, touch stick and speed readout were all laid
+ * out for a wide viewport squeezed into a tall one. Ignoring the hint gave an
+ * unplayable screen rather than an obviously wrong one.
+ *
+ * `visibility: hidden` on the app below the overlay takes it out of the layout and
+ * stops it receiving pointer events, so there is nothing to interact with while
+ * portrait. The check is `max-width: 900px` rather than a pointer-type query: a
+ * tablet held upright is just as wrong as a phone, and a desktop browser narrowed
+ * to 500px is a legitimate window.
+ */
+/*
+ * Declared before the portrait media query below, deliberately.
+ *
+ * `.rotate-hint { display: none }` used to come *after* the media query that sets
+ * `display: flex`. Equal specificity, so source order decided, and the base rule
+ * won every time: the hint never appeared. Combined with `#app { visibility:
+ * hidden }` in the same query that left a portrait phone looking at a blank page
+ * with nothing explaining why.
+ *
+ * This is the same class of mistake as the `.loading[hidden]` rule -- a display
+ * declaration quietly overriding the one that was supposed to control it.
+ */
+.rotate-hint {
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  #app {
+    visibility: hidden;
+  }
+
+  .rotate-hint {
+    position: fixed;
+    inset: 0;
+    /* Above #app, which this query hides outright. */
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--gap);
+    background: var(--panel-solid);
+    text-align: center;
+    padding: var(--pad);
+  }
+
+  .rotate-icon {
+    font-size: var(--ui-xl);
+    animation: rotate-hint 2.4s ease-in-out infinite;
+  }
+
+  .rotate-text {
+    font-size: var(--ui-sm);
+    letter-spacing: 0.14em;
+    color: var(--ink-dim);
+  }
+
+  .rotate-sub {
+    font-size: var(--ui-xs);
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    max-width: 18em;
+  }
+}
+
+@keyframes rotate-hint {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(90deg);
+  }
+}
