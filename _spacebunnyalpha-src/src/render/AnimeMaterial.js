@@ -39,11 +39,20 @@ const UNIFORMS = {
   uShadowSaturation: { value: 2.1 },
   uShadowValue: { value: 0.94 },
   uRimColor: { value: new THREE.Color(0xffffff) },
-  uRimPower: { value: 2.4 },
+  // A lower exponent gives a wider rim. Wide and soft suits this art
+  // direction: a hard thin rim reads as a cel outline, which is the opposite
+  // of the painted look being aimed for.
+  uRimPower: { value: 1.6 },
   uRimStrength: { value: 0.55 },
   uTerminatorWidth: { value: 0.12 },
   uBleedWarm: { value: 0.22 },
   uBleedCool: { value: 0.16 },
+  // Ambient occlusion strength. Corner darkening grounds objects against the
+  // ground they stand on, which is what stops a low-poly form reading as
+  // pasted on.
+  uAoStrength: { value: 0.35 },
+  // Height of the ground the scene is standing on, used for contact darkening.
+  uGroundY: { value: 0.0 },
   uOpacity: { value: 1.0 }
 };
 
@@ -51,6 +60,7 @@ const VERTEX = /* glsl */ `
   varying vec3 vNormalW;
   varying vec3 vViewDirW;
   varying vec3 vColor;
+  varying float vWorldY;
 
   #include <common>
 
@@ -77,6 +87,7 @@ const VERTEX = /* glsl */ `
     vec4 worldPosition = modelMatrix * vec4(transformed, 1.0);
     vNormalW = normalize(mat3(modelMatrix) * objectNormal);
     vViewDirW = normalize(cameraPosition - worldPosition.xyz);
+    vWorldY = worldPosition.y;
 
     gl_Position = projectionMatrix * viewMatrix * worldPosition;
   }
@@ -86,6 +97,7 @@ const FRAGMENT = /* glsl */ `
   varying vec3 vNormalW;
   varying vec3 vViewDirW;
   varying vec3 vColor;
+  varying float vWorldY;
 
   uniform vec3 uBaseColor;
   uniform vec3 uLightDir;
@@ -100,6 +112,8 @@ const FRAGMENT = /* glsl */ `
   uniform float uTerminatorWidth;
   uniform float uBleedWarm;
   uniform float uBleedCool;
+  uniform float uAoStrength;
+  uniform float uGroundY;
   uniform float uOpacity;
 
   #include <common>
@@ -135,6 +149,15 @@ const FRAGMENT = /* glsl */ `
     vec3 n = normalize(vNormalW);
     vec3 l = normalize(uLightDir);
     vec3 v = normalize(vViewDirW);
+
+    // Contact darkening. A surface sitting just above the ground gets a little
+    // darker, which is what visually plants an object instead of leaving it
+    // looking pasted on. It falls off over roughly a metre and is tinted
+    // towards the ambient rather than towards black, because this art
+    // direction has no true black anywhere.
+    float height = vWorldY - uGroundY;
+    float contact = 1.0 - smoothstep(0.0, 1.6, height);
+    base *= 1.0 - contact * uAoStrength;
 
     float ndl = dot(n, l);
 
@@ -217,7 +240,7 @@ export class AnimeMaterialFactory {
   }
 
   // Called once a frame with the scene's current light setup.
-  syncLighting({ lightDir, lightColor, ambientColor, rimStrength }) {
+  syncLighting({ lightDir, lightColor, ambientColor, rimStrength, groundY }) {
     for (const uniforms of this.uniformSets.values()) {
       if (lightDir) uniforms.uLightDir.value.copy(lightDir);
       if (lightColor) uniforms.uLightColor.value.copy(lightColor);
@@ -226,6 +249,9 @@ export class AnimeMaterialFactory {
       // turned every surface black.
       if (ambientColor) uniforms.uAmbient.value.set(ambientColor);
       if (typeof rimStrength === 'number') uniforms.uRimStrength.value = rimStrength;
+      // Ground height follows the player, so contact darkening always refers to
+      // the surface the player is actually standing on.
+      if (typeof groundY === 'number') uniforms.uGroundY.value = groundY;
     }
   }
 
