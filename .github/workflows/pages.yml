@@ -49,6 +49,20 @@ jobs:
         run: |
           npm run validate:budget
 
+      - name: Build Apex GP
+        working-directory: _f1-src
+        run: |
+          npm ci
+          npm run build
+
+      # Apex GP has no dev-only runtime harness beyond node:test, but the suite is
+      # the only thing standing between a generated-centrelines change and a circuit
+      # that no longer closes, so it gates the deploy rather than running after it.
+      - name: Test Apex GP
+        working-directory: _f1-src
+        run: |
+          npm test
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
