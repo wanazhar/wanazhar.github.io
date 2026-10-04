@@ -44,6 +44,52 @@ jobs:
           npm ci
           npm run build
 
+      - name: Build Apex GP
+        working-directory: _f1-src
+        run: |
+          npm ci
+          npm run build
+
+      # spacebunnyalpha: dev dependencies carry the jsdom-based runtime test,
+      # so install them explicitly rather than relying on the ambient NODE_ENV.
+      - name: Install spacebunnyalpha
+        working-directory: _spacebunnyalpha-src
+        run: npm ci --include=dev
+
+      - name: Build spacebunnyalpha
+        working-directory: _spacebunnyalpha-src
+        run: npm run build
+
+      - name: Test spacebunnyalpha
+        working-directory: _spacebunnyalpha-src
+        run: npm test
+
+      - name: Lint spacebunnyalpha
+        working-directory: _spacebunnyalpha-src
+        run: npm run lint
+
+      - name: Validate spacebunnyalpha world budget
+        working-directory: _spacebunnyalpha-src
+        run: npm run validate:budget
+
+      - name: Check spacebunnyalpha local server
+        working-directory: _spacebunnyalpha-src
+        run: python3 scripts/serve-check.py
+
+      # Drives the built game in real Chrome and checks which way the character
+      # actually walks for each control. Inverted movement shipped twice through
+      # a green build before this existed; the unit tests alone did not catch it
+      # because both errors shared a sign convention the checks had assumed
+      # rather than verified.
+      - name: Check spacebunnyalpha controls in a real browser
+        working-directory: _spacebunnyalpha-src
+        run: python3 scripts/controls-check.py
+
+      - name: Test Apex GP
+        working-directory: _f1-src
+        run: |
+          npm test
+
       - name: Validate Kuala Lumpur world budget
         working-directory: _kualalumpur-src
         run: |

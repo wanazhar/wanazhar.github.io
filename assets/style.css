@@ -902,6 +902,13 @@ img {
     linear-gradient(180deg, #ff8a8a 0%, #b30017 55%, #3d0008 100%);
 }
 
+/* spacebunnyalpha: sky over sea, with a soft sun. */
+.thumb-sba {
+  background:
+    radial-gradient(circle at 74% 26%, rgba(255, 246, 214, 0.95) 0 9%, transparent 10%),
+    linear-gradient(180deg, #bfe0f2 0%, #f6e2c4 52%, #9fd0e8 52%, #5fa8c4 100%);
+}
+
 .product-body {
   display: flex;
   flex-direction: column;
