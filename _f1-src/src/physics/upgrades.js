@@ -133,7 +133,12 @@ export function applyUpgrades(levels, base = {}) {
   return {
     powerScale: basePower * POWER_TIERS.values[power],
     grip: baseGrip * (1 + tyres * 0.012),
-    downforceArea: AERO_TIERS.values[aero],
+    /*
+     * `downforceArea` has to travel inside `geometry`, because that is the only one of
+     * these CarPhysics actually merges. Left at the top level it was computed, returned,
+     * and dropped on the floor.
+     */
+    geometry: { ...(base.geometry ?? {}), downforceArea: AERO_TIERS.values[aero] },
     maxBrakeForce: BRAKE_TIERS.values[brakes],
     peakGrip: tyreGrip,
     optimalBand: tyreBand,

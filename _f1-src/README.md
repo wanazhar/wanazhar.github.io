@@ -404,6 +404,43 @@ look-ahead with speed (three seconds of travel, capped at 320 m). Same scenario 
 **10 contacts from 6 cars**. Better, not solved -- the remainder is cars queueing into
 each other behind the obstacle rather than into it, which is a different problem.
 
+### Four things that were built but not connected
+
+A survey of the simulation found four systems where the data existed, the numbers moved,
+and nothing downstream read them. All four were invisible in normal play because each had
+a plausible-looking surface.
+
+**The grid had ten slots for a 23-car field.** `gridSlot` clamped anything past the end
+back onto the last slot, so grid positions 9-22 -- 14 cars -- spawned at identical
+coordinates. Measured over the first 40 seconds of a race:
+
+| | distinct spawn points | contact car-steps |
+|---|---|---|
+| before | 10 (min separation **0.00m**) | 19133 |
+| after | **23** (min separation **5.6m**) | **15067** |
+
+21-53% fewer contacts depending on circuit, and the no-overlap property is now structural:
+`gridSlot` extends backwards along the centreline rather than clamping, so it cannot run
+out of slots for any field size.
+
+**Four of six purchasable upgrades did nothing.** `applyUpgrades` computed
+`downforceArea`, `maxBrakeForce`, `peakGrip`, `optimalBand` and `drsDragReduction` and
+returned them; `CarPhysics` read the module constants instead, so development points were
+spent on a number nothing looked at. The two upgrade tests asserted on the *returned
+object*, which is precisely why they kept passing -- they now build the car and read its
+fields. Braking distance from 80 m/s goes from 139.8m to 109.6m across the tiers, and
+downforce at speed from 29.0kN to 35.7kN.
+
+**The AI could not deploy ERS.** `deployErs()` had exactly one call site, in the player's
+input path. The entire field had a straight-line tool the player did not. Measured after
+the fix: 324 deployments across 23 cars in 120 seconds; before, zero by construction.
+
+**Still known-inert, deliberately:** `TEAMS[].reliability` and the per-circuit
+`circuit.grip` (0.90 at Miami, 1.06 at Silverstone). Both are read by the tuning scripts
+but not by `src/`, which means the balance tools and the game currently disagree about
+every circuit. Both are listed as load-bearing below rather than quietly wired up, because
+wiring them changes handling everywhere at once and wants its own measurement.
+
 ### Elevation: real data, from two sources
 
 I said earlier this could not be done honestly. That was wrong, and the user was right
