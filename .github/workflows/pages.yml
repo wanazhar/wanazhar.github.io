@@ -81,9 +81,24 @@ jobs:
       # a green build before this existed; the unit tests alone did not catch it
       # because both errors shared a sign convention the checks had assumed
       # rather than verified.
+      #
+      # Starts its own server: the check needs a reachable *build*, and a runner
+      # has no Tailscale. The previous version assumed the dev box's address and
+      # failed with a bare connection error here.
+      #
+      # --dir matters. serve.py defaults to its own directory, which is the
+      # unbuilt source tree; the bundle only exists in the sibling output dir.
       - name: Check spacebunnyalpha controls in a real browser
         working-directory: _spacebunnyalpha-src
-        run: python3 scripts/controls-check.py
+        run: |
+          python3 scripts/serve.py --bind 127.0.0.1 --port 4174 --dir ../spacebunnyalpha &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -sf -o /dev/null http://127.0.0.1:4174/; then break; fi
+            sleep 1
+          done
+          SBA_URL=http://127.0.0.1:4174/ python3 scripts/controls-check.py
 
       - name: Test Apex GP
         working-directory: _f1-src
