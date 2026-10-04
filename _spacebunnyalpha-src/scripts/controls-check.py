@@ -12,6 +12,7 @@ Usage: controls-check.py <url>
 
 import asyncio
 import json
+import math
 import os
 import sys
 
@@ -60,6 +61,33 @@ async def hold(b, code, frames=26):
     await settle(b, 4)
 
 
+# The follow camera slides sideways when it has nowhere to sit (reframeAround),
+# which changes the yaw mid-walk. Movement is camera-relative, so a basis read
+# after the walk does not match the basis the movement was made in: one run put
+# the yaw at 3.00 by the end, and A then looked like an inversion when it was
+# the test that was wrong. Pin the yaw for the duration of each hold so the
+# basis is fixed and the measurement means something.
+PIN_YAW_JS = """(() => {
+  const cam = window.__sba.followCamera;
+  if (!cam.__realUpdate) {
+    cam.__realUpdate = cam.update.bind(cam);
+    cam.update = function (dt, pos, h) {
+      cam.yaw = 0;
+      cam.__realUpdate(dt, pos, h);
+      cam.yaw = 0;
+    };
+  }
+  cam.yaw = 0;
+  return true;
+})()"""
+
+UNPIN_YAW_JS = """(() => {
+  const cam = window.__sba.followCamera;
+  if (cam.__realUpdate) { cam.update = cam.__realUpdate; delete cam.__realUpdate; }
+  return true;
+})()"""
+
+
 async def run(url):
     b = await open_game(url)
     failures = []
@@ -73,22 +101,58 @@ async def run(url):
 
     for label, code, expectation in cases:
         # Start each case from the same spot so the measurement is clean.
+        await b.try_evaluate(UNPIN_YAW_JS, attempts=2)
         await b.try_evaluate("window.__sba.teleport('paddyView', 0, 0.34, 16)", attempts=2)
         await settle(b, 18)
 
+        # A blocked tile stops the player dead, which then reads as "wrong
+        # direction" rather than "nowhere to walk". Report it as its own
+        # problem instead of silently mislabelling it.
+        blocked = json.loads(
+            await b.try_evaluate(
+                "JSON.stringify(window.__sba.player.isBlocked("
+                "window.__sba.player.position.x, window.__sba.player.position.z))",
+                attempts=2,
+            )
+        )
+        if blocked is True:
+            failures.append(f"{label}: the probe spot is inside a collision footprint")
+            print(f"  FAIL  {label:12s} ({expectation:12s}) probe tile is blocked")
+            continue
+
         before = json.loads(await b.try_evaluate(STATE_JS))
+        await b.try_evaluate(PIN_YAW_JS, attempts=2)
         await hold(b, code)
         after = json.loads(await b.try_evaluate(STATE_JS))
+        await b.try_evaluate(UNPIN_YAW_JS, attempts=2)
 
         dx = after["x"] - before["x"]
         dz = after["z"] - before["z"]
         camYaw = after["camYaw"]
 
-        # Camera basis.
-        look_x = -_sin(camYaw)
-        look_z = -_cos(camYaw)
-        right_x = look_z
-        right_z = -look_x
+        # Walking into a wall along the intended axis still shows the right
+        # sign, just a short distance. Walking sideways into one shows the
+        # wrong sign. Only the direction is judged, but a near-zero move is
+        # worth calling out because it usually means the probe is somewhere
+        # enclosed.
+        moved = math.hypot(dx, dz)
+
+        # Camera basis. The yaw is pinned to 0 for the whole hold, so the
+        # camera sits at focus + (0, +dist), i.e. at +z, and looks towards -z.
+        #
+        # FollowCamera places the camera at focus + (sin(yaw), cos(yaw)) * dist,
+        # so the look bearing is the NEGATION, and screen-right is that bearing
+        # rotated the other way: right = (-lookZ, lookX). At yaw 0 that gives
+        # look = (0,-1) and right = (1,0).
+        #
+        # This check used to read right = (lookZ, -lookX), which is the same
+        # sign error the game had. A check that shares the bug's assumption
+        # agrees with the bug and reports PASS on an inverted control, which is
+        # exactly what happened.
+        look_x = -math.sin(camYaw)
+        look_z = -math.cos(camYaw)
+        right_x = -look_z
+        right_z = look_x
 
         along_look = dx * look_x + dz * look_z
         along_right = dx * right_x + dz * right_z
@@ -101,12 +165,71 @@ async def run(url):
         }[expectation]
         value, sign = want
 
-        ok = (value * sign) > 0.6
+        # Only judge the axis the input is meant to move along. Holding A while
+        # drifting into a fence produces a large sideways delta with a near
+        # zero intended-axis component; that is a collision, not an inversion.
+        ok = (value * sign) > 0.6 and abs(value) > 0.15 * max(moved, 0.001)
         status = "PASS" if ok else "FAIL"
+        note = "" if moved > 1.0 else "  (barely moved - likely blocked)"
         print(
             f"  {status}  {label:12s} ({expectation:12s}) "
             f"delta=({dx:+.2f},{dz:+.2f}) alongLook={along_look:+.2f} alongRight={along_right:+.2f} "
-            f"camYaw={camYaw:+.2f}"
+            f"camYaw={camYaw:+.2f}{note}"
+        )
+        if not ok:
+            failures.append(
+                f"{label} moved the wrong way: along-look {along_look:+.2f}, along-right {along_right:+.2f}"
+            )
+
+    # The thumbstick, not just the keyboard. The report that prompted all of
+    # this was about the on-screen joystick, and it takes a different route into
+    # the controller than W/A/S/D does.
+    for label, sx, sy, expectation in [
+        ("stick up", 0, -1, "forward"),
+        ("stick down", 0, 1, "backward"),
+        ("stick right", 1, 0, "strafe right"),
+        ("stick left", -1, 0, "strafe left"),
+    ]:
+        await b.try_evaluate("window.__sba.teleport('paddyView', 0, 0.34, 16)", attempts=2)
+        await settle(b, 16)
+
+        result = json.loads(
+            await b.try_evaluate(
+                f"""(() => {{
+                  const S = window.__sba;
+                  // Pin the camera so the expected basis is known exactly and
+                  // cannot drift between probes.
+                  S.followCamera.yaw = 0;
+                  const r = S.probeMovement({sx}, {sy}, 90);
+                  return JSON.stringify({{ x: r.x, z: r.z, distance: r.distance, camYaw: r.camYaw }});
+                }})()""",
+                attempts=2,
+            )
+        )
+
+        if abs(result["camYaw"]) > 1e-6:
+            failures.append(f"{label}: camera yaw was {result['camYaw']}, expected 0")
+            continue
+
+        dx, dz = result["x"], result["z"]
+        # At yaw 0 the camera sits at +z looking towards -z, so screen-right
+        # is +x.
+        along_look = -dz
+        along_right = dx
+
+        want = {
+            "forward": (along_look, 1),
+            "backward": (along_look, -1),
+            "strafe right": (along_right, 1),
+            "strafe left": (along_right, -1),
+        }[expectation]
+        value, sign = want
+
+        ok = (value * sign) > 0.9
+        status = "PASS" if ok else "FAIL"
+        print(
+            f"  {status}  {label:12s} ({expectation:12s}) "
+            f"delta=({dx:+.2f},{dz:+.2f}) alongLook={along_look:+.2f} alongRight={along_right:+.2f}"
         )
         if not ok:
             failures.append(
@@ -139,17 +262,43 @@ async def run(url):
         failures.append("dragging on the canvas did not rotate the camera")
 
     # And zoom.
-    dist_before = json.loads(await b.try_evaluate(STATE_JS))["camDist"]
+    #
+    # Read targetDistance, and compare it against targetDistance. Two reasons:
+    #   1. The wheel drives targetDistance; currentDistance is the damped value
+    #      easing towards it, and headless Chrome renders at roughly 1 fps, so
+    #      the easing never arrives no matter how many frames are waited for.
+    #   2. state.cameraOrbit.distance reports currentDistance, which camera
+    #      collision has already pulled in from whatever the teleport asked
+    #      for. Comparing a target against a current produces a number that
+    #      means nothing -- the previous version of this check did exactly that
+    #      and reported a correct zoom as a failure.
+    #
+    # The teleport above asks for distance 16, so that is the baseline.
+    target_before = json.loads(
+        await b.try_evaluate("String(window.__sba.followCamera.targetDistance)")
+    )
     await b.try_evaluate(
         "document.querySelector('canvas').dispatchEvent(new WheelEvent('wheel', {deltaY: -400, bubbles: true}))",
         attempts=2,
     )
-    await settle(b, 15)
-    dist_after = json.loads(await b.try_evaluate(STATE_JS))["camDist"]
-    zoomed = dist_after > dist_before
-    print(f"  {'PASS' if zoomed else 'FAIL'}  wheel zoom      dist {dist_before:.1f} -> {dist_after:.1f}")
+    await settle(b, 6)
+    target_after = json.loads(
+        await b.try_evaluate("String(window.__sba.followCamera.targetDistance)")
+    )
+
+    # deltaY -400 at 0.012 per unit pulls the camera 4.8 units closer.
+    expected_target = max(target_before - 400 * 0.012, 3.5)
+    zoomed = abs(target_after - expected_target) < 0.05
+
+    print(
+        f"  {'PASS' if zoomed else 'FAIL'}  wheel zoom      "
+        f"target {target_before:.1f} -> {target_after:.1f} (expected {expected_target:.1f})"
+    )
     if not zoomed:
-        failures.append(f"wheel did not zoom out (dist stayed at {dist_after:.1f})")
+        failures.append(
+            f"wheel zoom did not move the target distance correctly "
+            f"(got {target_after}, expected {expected_target})"
+        )
 
     await b.close()
 
@@ -160,16 +309,6 @@ async def run(url):
             print("  -", f)
         sys.exit(1)
     print("all control checks passed")
-
-
-def _sin(v):
-    import math
-    return math.sin(v)
-
-
-def _cos(v):
-    import math
-    return math.cos(v)
 
 
 if __name__ == "__main__":

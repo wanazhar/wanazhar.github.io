@@ -76,6 +76,15 @@ jobs:
         working-directory: _spacebunnyalpha-src
         run: python3 scripts/serve-check.py
 
+      # Drives the built game in real Chrome and checks which way the character
+      # actually walks for each control. Inverted movement shipped twice through
+      # a green build before this existed; the unit tests alone did not catch it
+      # because both errors shared a sign convention the checks had assumed
+      # rather than verified.
+      - name: Check spacebunnyalpha controls in a real browser
+        working-directory: _spacebunnyalpha-src
+        run: python3 scripts/controls-check.py
+
       - name: Test Apex GP
         working-directory: _f1-src
         run: |
