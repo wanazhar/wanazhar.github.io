@@ -128,6 +128,15 @@ export class RaceSession {
 
     this.cars = startingGrid.map(({ entry, grid }) => {
       const setup = setupForEntry(entry);
+      /*
+       * The compound and the circuit's own lap estimate are what turn the tyre data into
+       * a rate. `lapRecord` is the track's estimate of a clean lap, which is exactly the
+       * unit `wearRate` is documented in -- "fraction of peak per lap" -- so a soft tyre
+       * lasts the same number of laps at Monaco as at Monza instead of the same number
+       * of seconds.
+       */
+      setup.compound = this.conditions.compound;
+      setup.lapSeconds = track.lapRecord;
       const physics = new CarPhysics(setup, { isPlayer: Boolean(entry.isPlayer), name: entry.short });
       const slot = gridSlot(track, grid);
       physics.reset(slot.x, slot.z, slot.heading, 0);
