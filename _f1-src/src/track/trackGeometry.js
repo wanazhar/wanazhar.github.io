@@ -79,6 +79,12 @@ const PROFILE_CURVATURE_WINDOW = 18;
 /** Half the width of the local window a car is searched for when tracking progress. */
 const LOCATE_WINDOW = 44;
 
+/** How far behind the line the first grid row sits, in samples. */
+const GRID_ROWS_BEHIND = 7;
+
+/** Gap between grid rows, in samples. F1 rows are ~8m apart. */
+const GRID_ROW_SPACING_SAMPLES = 3.25;
+
 /**
  * Walk the segment DSL and return the raw polyline plus the total turn angle.
  * Heading convention: 0 = +X, increasing towards +Z, so a positive corner angle
@@ -508,23 +514,44 @@ function buildSpeedProfile(curvatures, step, topSpeed) {
   return speeds;
 }
 
+/**
+ * Cars in a full field: 22 AI plus the player.
+ *
+ * The grid used to be built with a hardcoded ten slots while `gridSlot` clamped anything
+ * past the end back onto the last one, so grid positions 9-22 -- 14 of 23 cars -- all
+ * spawned at identical coordinates. That is a contact storm from the standing start
+ * onwards, and it was the real cause of the pile-ups that looked like AI behaviour.
+ */
+export const MAX_GRID_CARS = 24;
+
+/**
+ * The slot for any grid position, however far back.
+ *
+ * Rows march backwards from the line by `ROW_SPACING_SAMPLES`, so the slot for a large
+ * position is just "further back again" -- which means this cannot run out of slots and
+ * cannot silently hand the same point to two cars.
+ */
+function gridSlotAt(samples, count, position) {
+  const row = Math.floor(position / 2);
+  const side = position % 2 === 0 ? -1 : 1;
+  const backSamples = GRID_ROWS_BEHIND + row * GRID_ROW_SPACING_SAMPLES;
+  const index = ((count - Math.round(backSamples)) % count + count) % count;
+  const sample = samples[index];
+  const lateral = side * (sample.width * 0.2);
+  return {
+    index,
+    x: sample.x + sample.rightX * lateral,
+    z: sample.z + sample.rightZ * lateral,
+    heading: sample.heading,
+    row
+  };
+}
+
 /** Staggered starting grid placed behind the start/finish line. */
 function buildStartingGrid(samples, count) {
   const slots = [];
-  for (let i = 0; i < 10; i += 1) {
-    const row = Math.floor(i / 2);
-    const side = i % 2 === 0 ? -1 : 1;
-    const backSamples = 7 + row * 3.25;
-    const index = ((count - Math.round(backSamples)) % count + count) % count;
-    const sample = samples[index];
-    const lateral = side * (sample.width * 0.2);
-    slots.push({
-      index,
-      x: sample.x + sample.rightX * lateral,
-      z: sample.z + sample.rightZ * lateral,
-      heading: sample.heading,
-      row
-    });
+  for (let i = 0; i < MAX_GRID_CARS; i += 1) {
+    slots.push(gridSlotAt(samples, count, i));
   }
   return slots;
 }
@@ -847,5 +874,16 @@ export function wrapDistance(distance, length) {
 
 /** Grid slot for a starting position (0 = pole). */
 export function gridSlot(track, position) {
-  return track.grid[clamp(position, 0, track.grid.length - 1)];
+  if (position >= 0 && position < track.grid.length) return track.grid[position];
+
+  /*
+   * Defensive, and deliberately not a clamp.
+   *
+   * Clamping was the original bug: it handed the last slot to every position past the
+   * end, so 14 cars spawned on one point. Beyond the built grid we march further back
+   * instead, which keeps the guarantee "no two cars share a spawn point" true for any
+   * field size rather than only the one we happen to pre-build.
+   */
+  const room = track.samples.length;
+  return gridSlotAt(track.samples, room, Math.max(0, position));
 }
