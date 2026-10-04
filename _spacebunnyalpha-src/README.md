@@ -5,6 +5,10 @@
 City → suburbs → rice fields → shrine → coast, all on a single walkable landmass.
 Everything is generated from code: no textures, no image assets, no models.
 
+> Working on this? Read **[AGENTS.md](./AGENTS.md)** first. It covers the
+> invariants, the testing traps, and the known-broken state that a cold read of
+> the source will not tell you.
+
 ## The vibe
 
 There is nothing to lose and no timer running. You walk around an island, you talk to
@@ -199,9 +203,14 @@ node scripts/find-vantage-points.js                           # camera positions
 ## Tests
 
 ```bash
-npm test           # 108 tests
+npm test           # 128 tests
 npm run lint       # node --check every source file
 ```
+
+Test files are discovered by `scripts/run-tests.js`, not a shell glob: it finds
+`*.test.js` under both `scripts/` and `test/` and prints what it runs. A suite
+left outside those directories never executes and looks identical to one that
+passes, which is not a distinction worth having to remember.
 
 Notable suites:
 
@@ -219,9 +228,19 @@ Notable suites:
   test: facade detail must sit on the street-facing face. Placing it on the
   depth axis left every building turned away from the road, presenting a blank
   back, which looked like an empty street rather than a bug.
-- `controls.test.js` / `touch-controls.test.js` — movement direction as a
-  property rather than a snapshot: forward must move along the camera view at
-  *every* camera angle, and the joystick chain is tested end to end.
+- `controls.test.js` / `touch-controls.test.js` / `movement-direction.test.js` —
+  movement direction as a property rather than a snapshot: forward must move
+  along the camera view and right must move screen-right, at *every* camera
+  angle. Two separate sign errors got through a green build before this was
+  pinned. `controls-check.py` then drives the real thumbstick in a real browser.
+- `shader.test.js` — the anime shader is a GLSL template string and nothing
+  else parses it. These fail if JavaScript appears inside the GLSL, if a declared
+  uniform has no value, and if the day-cycle invariants break. A JS object
+  literal in the uniform block once compiled to nothing at all and blanked the
+  entire world while the build stayed green.
+- `palette-clipping.test.js` — keeps non-emissive surfaces below L=0.86, because
+  the shader adds rim and bleed on top of the lit term and a near-white base
+  clips to a featureless blob.
 - `feel.test.js` — acceleration, braking, turning easing, and the lean, all
   measured against the tuned constants.
 - `terrain.test.js` — island shape, biomes, and a flood-fill proof that all four
@@ -370,3 +389,15 @@ adding a character means adding an object to `data/npcs.js`.
 in this build — the invisible player, the inverted movement, the misplaced
 facades, the hair cap swallowing a head — passed the unit suite and was found
 by looking at a screenshot. Each now has a numeric assertion.
+
+## Known issues
+
+**Oversized `concrete` slabs in the suburbs.** Around 29 boxes near the konbini
+are 8 × 0.12 × 6 — thin in Y but 8 × 6 in plan — and read as wide grey plates
+that dominate the view. The emitting call site has not been identified;
+`SuburbRegion.js` lines 105, 133, 155, 163, 219, 229, 264 and 304 are all
+candidates. See [AGENTS.md](./AGENTS.md#8-known-issues) for a reproduction.
+
+Nothing else is known-broken. Treat that as a claim to be tested, not trusted —
+the bug rate in this project has been consistently "looks fine in the data,
+visibly broken on screen".
