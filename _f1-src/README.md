@@ -388,6 +388,22 @@ degrees across, so the visible half-width at one metre is ~1.36m. Structure mean
 at the *edge* of the view has to be at x = +/-0.9m. At +/-0.4m -- where it started -- it
 is halfway across the screen and reads as a wall.
 
+### The AI following, and why it did not
+
+The AI considered the car ahead only **laterally**: it would move out of the way, but
+never matched its speed. And `#neighbour` only looked **90 m** ahead -- less than the
+stopping distance from 200 kph.
+
+Together those mean an AI arrives at full profile pace with no time left to react. With a
+car parked on the racing line at Sepang that produced **26 contacts from 12 different cars
+in one minute**, and the pile-up behind them is what "the AI crashed and then followed me"
+describes.
+
+Fixed by making a car ahead a *speed limit*, not only a line to avoid, and by scaling the
+look-ahead with speed (three seconds of travel, capped at 320 m). Same scenario after:
+**10 contacts from 6 cars**. Better, not solved -- the remainder is cars queueing into
+each other behind the obstacle rather than into it, which is a different problem.
+
 ### Elevation: real data, from two sources
 
 I said earlier this could not be done honestly. That was wrong, and the user was right

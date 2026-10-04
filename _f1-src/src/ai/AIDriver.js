@@ -283,6 +283,30 @@ export class AIDriver {
     if (offTrack) targetSpeed = Math.min(targetSpeed, OFF_TRACK_SPEED);
 
     /*
+     * Follow the car ahead.
+     *
+     * The AI considered the car ahead only *laterally*: it would move out of the way,
+     * but never matched its speed. So it drove at full profile pace into the back of
+     * anything slow in front. With a car parked on the racing line that produced 26
+     * distinct contacts from 12 different cars in a minute, and the pile-up that follows
+     * is exactly what "the AI crashed and then followed me" describes.
+     *
+     * A car ahead is a *speed limit*, not only a line to avoid. The limit is its speed
+     * plus a margin that grows with the gap, so the AI only lifts when it is genuinely
+     * close -- and closing at a standstill is pointless when there is nowhere to pass.
+     *
+     * `overtakeIntent` is excluded deliberately: a committed pass should not be braked
+     * off by the very car being overtaken.
+     */
+    const leader = context.opponentAhead;
+    if (leader && this.overtakeIntent < 0.5) {
+      const margin = 2 + clamp((leader.gap - 6) / 24, 0, 1) * 10;
+      if (leader.gap < 30) {
+        targetSpeed = Math.min(targetSpeed, Math.max(0, leader.car.physics.speed + margin));
+      }
+    }
+
+    /*
      * Backing off when touching a car.
      *
      * Without this the AI keeps its foot in it while another car is alongside, and
