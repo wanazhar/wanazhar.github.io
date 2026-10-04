@@ -71,7 +71,6 @@ import { SETTING, environmentFor, isStreet } from '../src/track/environments.js'
 import { ELEVATION, PROFILE_POINTS, elevationAt } from '../src/track/elevationData.js';
 import { ACTIONS, InputController } from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
-import { createRandom } from '../src/util/math.js';
 import {
   DRIVERS,
   PLAYER_ENTRY,
