@@ -1583,6 +1583,58 @@ test('elevation is real data, and the gradient stays driveable', () => {
   assert.ok(elevationAt(profile, -0.25) > 0, 'negative fractions must wrap, not clamp to zero');
 });
 
+test('real elevation is actually rendered, not just fetched and stored', () => {
+  /*
+   * The single most-repeated "this looks flat" complaint traced to data that was fetched
+   * in PR #17, resampled into every track sample, gradient-clamped, unit-tested for
+   * monotonicity -- and read by nothing. `TrackMesh` hardcoded `0.02` for the road, the
+   * walls started at `0`, the kerbs used one constant `KERB_HEIGHT` for the whole buffer,
+   * `syncCarMesh` pinned every car to `y = 0`, and the chase camera held a fixed altitude.
+   *
+   * So Monza's real 182m-196m was a flat plane, and the test suite passed throughout,
+   * because the tests asserted the *data* was sane and never that the world used it.
+   */
+  for (const id of ['monza', 'monaco', 'sepang', 'bahrain', 'montreal', 'jeddah', 'miami']) {
+    const entry = ELEVATION[id];
+    if (!entry) continue;
+    const track = buildTrack(getCircuit(id));
+    const heights = track.samples.map((sample) => sample.y);
+    const range = Math.max(...heights) - Math.min(...heights);
+    // Compared as a fraction of the real span, not against a round number: the gradient
+    // clamp is allowed to shave a little off, but not the shape of the circuit.
+    const realRange = Math.max(...entry.profile) - Math.min(...entry.profile);
+
+    assert.ok(
+      range >= realRange * 0.9,
+      `${id}: real elevation spans ${realRange.toFixed(1)}m but the track surface only ` +
+      `spans ${range.toFixed(1)}m -- it is being drawn flat`
+    );
+
+    // The road a car drives on, not the centreline, must carry the height too.
+    for (const sample of track.samples) {
+      assert.ok(
+        Math.abs(sample.lineY - sample.y) < 1e-6,
+        `${id}: the racing line must sit on the road surface, not float above it`
+      );
+    }
+  }
+
+  // The renderer has to read it. Source-level, because the alternative is a WebGL context
+  // in a unit test: a hardcoded height in the road ribbon is exactly the bug this guards.
+  const meshSource = readFileSync(new URL('../src/render/TrackMesh.js', import.meta.url), 'utf8');
+  assert.ok(
+    /roadPositions\.push\(\s*leftX,\s*s\.y/.test(meshSource.replace(/\s+/g, ' ')),
+    'the road ribbon must be built from the sample height, not a constant'
+  );
+  assert.ok(
+    !/KERB_HEIGHT, quad\[/.test(meshSource),
+    'kerbs must carry a per-vertex height, not one constant for the whole buffer'
+  );
+
+  const carSource = readFileSync(new URL('../src/physics/CarPhysics.js', import.meta.url), 'utf8');
+  assert.ok(/this\.y = 0/.test(carSource), 'the car must carry a height for the renderer to place it on');
+});
+
 test('no profile claims to model elevation', () => {
   /*
    * A deliberate guard.

@@ -342,6 +342,20 @@ export class RaceSession {
     const located = locateOnTrack(this.track, physics.x, physics.z, car.timer.hintIndex);
     car.lateral = located.lateral;
     const half = located.sample.width * 0.5;
+
+    /*
+     * Height and pitch, from the road surface under the car.
+     *
+     * The height comes off the *centreline* sample rather than the car's own lateral
+     * offset, because the track is not crowned in this model and a car on the kerb is on
+     * the same plane as one on the centreline, only at a different width. Pitch is the
+     * gradient immediately ahead of the car, which is what makes a crest hide a car and
+     * a compression squash its suspension.
+     */
+    const here = located.sample;
+    const ahead = this.track.samples[(Math.round(here.s / this.track.step) + 4) % this.track.count];
+    physics.y = here.y;
+    physics.pitch = Math.atan2(ahead.y - here.y, ahead.s - here.s);
     // Cached for the rescue check, which runs outside this method.
     car.trackHalfWidth = half;
 

@@ -201,6 +201,17 @@ export class CarPhysics {
     this.x = 0;
     this.z = 0;
     this.heading = 0;
+    /**
+     * Height above sea level, and nose-up pitch in radians.
+     *
+     * The car is simulated in plan view -- x, z and heading -- so elevation has to be
+     * supplied from outside by the race session, which already knows where on the
+     * circuit the car is. Real elevation for Monza is 182m-196m across the lap; that
+     * data has been fetched and resampled into every track sample since PR #17 and
+     * nothing read it, so fourteen metres of circuit were rendered as a flat plane.
+     */
+    this.y = 0;
+    this.pitch = 0;
     this.vLong = 0;
     this.vLat = 0;
     this.yawRate = 0;
@@ -606,6 +617,8 @@ export class CarPhysics {
   reset(x, z, heading, speed = 0) {
     this.x = x;
     this.z = z;
+    this.y = 0;
+    this.pitch = 0;
     this.heading = heading;
     this.vLong = speed;
     this.vLat = 0;

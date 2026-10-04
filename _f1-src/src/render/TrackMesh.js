@@ -180,7 +180,9 @@ export function buildCarMesh(colour = 0xe10600, accent = 0xffd400) {
  * rotation. Front wheel pivots yaw, every wheel spins at the road speed.
  */
 export function syncCarMesh(mesh, physics, steerInput = 0) {
-  mesh.position.set(physics.x, 0, physics.z);
+  // On the road surface, not on the plane it was drawn on when the world was flat.
+  mesh.position.set(physics.x, physics.y ?? 0, physics.z);
+  mesh.rotation.x = physics.pitch ?? 0;
   /*
    * The 90-degree offset is the whole fix, and it is not obvious.
    *
@@ -271,7 +273,7 @@ const roadMaterial = new THREE.MeshStandardMaterial({
     const leftZ = s.z + s.rightZ * half;
     const rightX = s.x - s.rightX * half;
     const rightZ = s.z - s.rightZ * half;
-    roadPositions.push(leftX, 0.02, leftZ, rightX, 0.02, rightZ);
+    roadPositions.push(leftX, s.y + 0.02, leftZ, rightX, s.y + 0.02, rightZ);
     const v = (i / count) * track.length * 0.08;
     roadUvs.push(0, v, 1, v);
     if (i < count) {
@@ -297,8 +299,8 @@ const roadMaterial = new THREE.MeshStandardMaterial({
     const s = samples[i % count];
     const half = s.width * 0.5 + APRON;
     apronPositions.push(
-      s.x + s.rightX * half, 0.01, s.z + s.rightZ * half,
-      s.x - s.rightX * half, 0.01, s.z - s.rightZ * half
+      s.x + s.rightX * half, s.y + 0.01, s.z + s.rightZ * half,
+      s.x - s.rightX * half, s.y + 0.01, s.z - s.rightZ * half
     );
     // UVs are mandatory once a material carries a map: without them every
     // vertex samples texel (0,0) and the surface renders as one flat colour --
@@ -326,8 +328,8 @@ const roadMaterial = new THREE.MeshStandardMaterial({
       const s = samples[i % count];
       const half = s.width * 0.5 + APRON + 1.5;
       wallPositions.push(
-        s.x + s.rightX * half, 0, s.z + s.rightZ * half,
-        s.x + s.rightX * half, 1.5, s.z + s.rightZ * half
+        s.x + s.rightX * half, s.y, s.z + s.rightZ * half,
+        s.x + s.rightX * half, s.y + 1.5, s.z + s.rightZ * half
       );
       // One tile every 6m along the barrier, so the panel joints read as a
       // regular structure rather than a smear.
@@ -391,14 +393,20 @@ const roadMaterial = new THREE.MeshStandardMaterial({
       // bounding-sphere error *per frame* for each of them. The console filled up
       // and the frame rate collapsed, which presented as the game hanging on the
       // loading screen.
+      /*
+       * Triples, not pairs.
+       *
+       * This was flat [x0, z0, x1, z1, ...] with a single KERB_HEIGHT for the whole
+       * buffer, so a kerb could not follow the road it sits on. Now each vertex carries
+       * its own height, sampled from the road surface at that point.
+       */
       const quad = [
-        s.x + s.rightX * inner * sign, s.z + s.rightZ * inner * sign,
-        s.x + s.rightX * outer * sign, s.z + s.rightZ * outer * sign,
-        next.x + next.rightX * nextOuter * nextSign, next.z + next.rightZ * nextOuter * nextSign,
-        next.x + next.rightX * nextInner * nextSign, next.z + next.rightZ * nextInner * nextSign
+        s.x + s.rightX * inner * sign, s.y + KERB_HEIGHT, s.z + s.rightZ * inner * sign,
+        s.x + s.rightX * outer * sign, s.y + KERB_HEIGHT, s.z + s.rightZ * outer * sign,
+        next.x + next.rightX * nextOuter * nextSign, next.y + KERB_HEIGHT, next.z + next.rightZ * nextOuter * nextSign,
+        next.x + next.rightX * nextInner * nextSign, next.y + KERB_HEIGHT, next.z + next.rightZ * nextInner * nextSign
       ];
-      // `quad` is flat [x0, z0, x1, z1, x2, z2, x3, z3].
-      for (let v = 0; v < quad.length; v += 2) positions.push(quad[v], KERB_HEIGHT, quad[v + 1]);
+      for (const component of quad) positions.push(component);
       for (const channel of tint) colors.push(channel);
       indices.push(base + 0, base + 2, base + 1, base + 1, base + 2, base + 3);
       base += 4;

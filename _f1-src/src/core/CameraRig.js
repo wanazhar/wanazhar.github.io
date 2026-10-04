@@ -104,7 +104,10 @@ export class CameraRig {
     const behind = this.distance;
     let x = car.x - Math.cos(this.yaw) * behind;
     let z = car.z - Math.sin(this.yaw) * behind;
-    const y = this.height;
+    // Ride the road: the car's own height, not a fixed altitude. On a circuit with
+    // fourteen metres of elevation a fixed-height chase camera spends half the lap
+    // underground and half of it looking down at the roof.
+    const y = this.height + (car.y ?? 0);
 
     // Keep the camera above the track surface and out of the barrier.
     const located = locateOnTrack(this.track, x, z, null);
@@ -124,7 +127,7 @@ export class CameraRig {
     const lead = clamp(car.speed * 0.16, 0, 9);
     this.lookAt.set(
       car.x + Math.cos(car.heading) * lead,
-      1.1,
+      (car.y ?? 0) + 1.1,
       car.z + Math.sin(car.heading) * lead
     );
     this.camera.lookAt(this.lookAt);
@@ -136,13 +139,13 @@ export class CameraRig {
     // Body axes: local +X is right, local +Z is forward in this world layout.
     this.camera.position.set(
       car.x + cos * COCKPIT_OFFSET.z + sin * COCKPIT_OFFSET.x,
-      COCKPIT_OFFSET.y,
+      (car.y ?? 0) + COCKPIT_OFFSET.y,
       car.z + sin * COCKPIT_OFFSET.z - cos * COCKPIT_OFFSET.x
     );
     const lead = clamp(car.speed * 0.2, 1, 12);
     this.lookAt.set(
       car.x + cos * lead,
-      1.0,
+      (car.y ?? 0) + 1.0,
       car.z + sin * lead
     );
     this.camera.lookAt(this.lookAt);
