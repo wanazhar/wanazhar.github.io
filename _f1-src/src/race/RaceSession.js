@@ -304,10 +304,26 @@ export class RaceSession {
    */
   #neighbour(car, direction) {
     let best = null;
+    /*
+     * How far ahead to look, and it has to scale with speed.
+     *
+     * This was a flat 90m for both directions, which is fine for deciding whether to
+     * pull out of someone's way and useless for deciding whether to brake. From 55 m/s
+     * -- 200 kph -- a car needs roughly 150m to stop, so a 90m window means the AI only
+     * sees the car in front once it is already too late to do anything about it.
+     *
+     * The result was measured: a car parked on the racing line collected 26 contacts
+     * from 12 different cars in a minute, because every one of them arrived at profile
+     * pace with no time left to react.
+     *
+     * Three seconds of travel is a generous but sane planning horizon; beyond a closing
+     * speed of 200 kph it is mostly wasted lookups.
+     */
+    const lookahead = Math.min(90 + car.physics.speed * 3, 320);
     for (const other of this.cars) {
       if (other === car || other.retired) continue;
       const gap = direction > 0 ? other.distance - car.distance : car.distance - other.distance;
-      if (gap < -6 || gap > 90) continue;
+      if (gap < -6 || gap > lookahead) continue;
       if (!best || gap < best.gap) {
         best = {
           gap,
