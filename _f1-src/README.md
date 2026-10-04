@@ -404,6 +404,34 @@ look-ahead with speed (three seconds of travel, capped at 320 m). Same scenario 
 **10 contacts from 6 cars**. Better, not solved -- the remainder is cars queueing into
 each other behind the obstacle rather than into it, which is a different problem.
 
+### Elevation: fetched, tested, and never drawn
+
+Real DEM elevation had been in the data since PR #17 -- resampled into every track sample,
+gradient-clamped to a driveable 10%, and unit-tested for monotonicity. Nothing read it.
+
+The road ribbon hardcoded `0.02` for its height. The barriers started at `0`. The kerbs
+used a single `KERB_HEIGHT` constant for the entire buffer, in a vertex format that only
+carried x and z. `syncCarMesh` pinned every car to `y = 0`. The chase camera held a fixed
+altitude and looked at a fixed height. So Monza's real 182m-196m was drawn as a flat
+plane, and the tests passed the whole time, because they asserted the *data* was sane and
+never that the world used it.
+
+Rendered span against the real span:
+
+| circuit | real | rendered |
+|---|---|---|
+| monaco | 38m | 37.6m |
+| monza | 14m | 14.0m |
+| bahrain | 14m | 13.6m |
+| sepang | 9m | 9.5m |
+| montreal | 6m | 6.1m |
+
+`CarPhysics` now carries `y` and `pitch`; the race session supplies both from the located
+sample, so the gradient is measured off the road the car is actually on. Trackside
+furniture (barriers, buildings, trees, hoardings) follows the road, and the horizon treeline
+-- a ring, with no per-sample height -- is pinned to the circuit's mean ground level so a
+circuit at 190m does not float above a forest growing out of the plane.
+
 ### Four things that were built but not connected
 
 A survey of the simulation found four systems where the data existed, the numbers moved,

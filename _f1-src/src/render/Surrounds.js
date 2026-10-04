@@ -126,7 +126,7 @@ export function buildSurrounds(track, theme, circuitId) {
     for (const side of [1, -1]) {
       const offset = s.width * 0.5 + runOff * 0.5;
       runOffPlacements.push(
-        place(s.x + s.rightX * offset * side, 0.01, s.z + s.rightZ * offset * side, -s.heading)
+        place(s.x + s.rightX * offset * side, s.y + 0.01, s.z + s.rightZ * offset * side, -s.heading)
       );
     }
   }
@@ -168,7 +168,7 @@ export function buildSurrounds(track, theme, circuitId) {
     for (const side of [1, -1]) {
       const offset = barrierOffset(s);
       const yaw = -s.heading + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
-      barrierPlacements.push(place(s.x + s.rightX * offset * side, 0.65, s.z + s.rightZ * offset * side, yaw));
+      barrierPlacements.push(place(s.x + s.rightX * offset * side, s.y + 0.65, s.z + s.rightZ * offset * side, yaw));
     }
   }
   if (street) {
@@ -207,11 +207,11 @@ export function buildSurrounds(track, theme, circuitId) {
         const height = 8 + random() * (street ? 26 : 14);
         const yaw = -s.heading + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
         buildingPlacements.push(
-          place(s.x + s.rightX * distance * side, height * 0.5, s.z + s.rightZ * distance * side, yaw)
+          place(s.x + s.rightX * distance * side, s.y + height * 0.5, s.z + s.rightZ * distance * side, yaw)
         );
         // A band of windows, so the facade is not a blank slab.
         windowPlacements.push(
-          place(s.x + s.rightX * (distance - 0.6) * side, height * 0.55, s.z + s.rightZ * (distance - 0.6) * side, yaw)
+          place(s.x + s.rightX * (distance - 0.6) * side, s.y + height * 0.55, s.z + s.rightZ * (distance - 0.6) * side, yaw)
         );
       }
     }
@@ -258,10 +258,10 @@ export function buildSurrounds(track, theme, circuitId) {
         const distance = barrierOffset(s) + 6 + random() * 70;
         const scale = 0.8 + random() * 1.5;
         treePlacements.push(
-          place(s.x + s.rightX * distance * side, 0, s.z + s.rightZ * distance * side, random() * 6.28, scale, scale)
+          place(s.x + s.rightX * distance * side, s.y, s.z + s.rightZ * distance * side, random() * 6.28, scale, scale)
         );
         trunkPlacements.push(
-          place(s.x + s.rightX * distance * side, 0, s.z + s.rightZ * distance * side, 0, scale)
+          place(s.x + s.rightX * distance * side, s.y, s.z + s.rightZ * distance * side, 0, scale)
         );
       }
     }
@@ -304,12 +304,15 @@ export function buildSurrounds(track, theme, circuitId) {
    */
   let centreX = 0;
   let centreZ = 0;
+  let groundLevel = 0;
   for (const sample of samples) {
     centreX += sample.x;
     centreZ += sample.z;
+    groundLevel += sample.y ?? 0;
   }
   centreX /= count;
   centreZ /= count;
+  groundLevel /= count;
 
   // The ring must clear the furthest *point* of the circuit by a wide margin, since the
   // trees are up to 20m tall and 21m across.
@@ -330,7 +333,10 @@ export function buildSurrounds(track, theme, circuitId) {
     rimPlacements.push(
       place(
         Math.cos(angle) * radius + centreX,
-        0,
+        // The rim is a ring, not a follow-the-road ribbon: it is placed against the
+        // circuit's own ground level, so a circuit at 190m does not appear to float
+        // above a forest growing out of the plane.
+        groundLevel,
         Math.sin(angle) * radius + centreZ,
         random() * 6.28,
         1.4 + random() * 1.6,
@@ -364,7 +370,7 @@ export function buildSurrounds(track, theme, circuitId) {
       if (random() < 0.35) continue;
       const offset = barrierOffset(s) + 0.9;
       boardPlacements.push(
-        place(s.x + s.rightX * offset * side, 1.5, s.z + s.rightZ * offset * side, -s.heading + Math.PI / 2)
+        place(s.x + s.rightX * offset * side, s.y + 1.5, s.z + s.rightZ * offset * side, -s.heading + Math.PI / 2)
       );
     }
   }
