@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "lint": "find src scripts -name '*.js' -print0 | xargs -0 -n1 node --check",
-    "test": "node --test scripts/*.test.js",
+    "test": "node scripts/run-tests.js",
     "smoke:browser": "python3 scripts/browser-smoke.py",
     "measure:world": "node scripts/measure-world.js",
     "validate:budget": "node scripts/validate-budget.js"

@@ -380,6 +380,44 @@ export function buildMachiya(batch, lot) {
     onFacade('shrineWoodDark', alongCentre, base + t.eave - 1.1, 0.1, 0.6, 0.7, 0.1);
   }
 
+  // ---- lit windows. This is the single most important thing about a Japanese
+  // street after dark: a row of warm glowing paper screens. Without them the
+  // town goes almost black at night, because the ambient deliberately never
+  // lifts a surface very far and nothing else is lit.
+  //
+  // They sit BELOW the eave line but in front of the wall face by more than the
+  // eave projects, otherwise they are hidden in the overhang's shadow and
+  // invisible from the street. Placing them at the eave depth was exactly that
+  // mistake.
+  //
+  // About two thirds are lit, which is what real windows do -- you never see
+  // every window in a row switched on.
+  const litChance = t.shop ? 0.95 : 0.66;
+  for (let i = -1; i <= 1; i += 1) {
+    const along = alongCentre + i * (w * 0.27);
+    // Clear of the eave, which projects 0.8.
+    const proud = 0.95;
+    if (rng() < litChance) {
+      onFacade('windowLit', along, base + t.eave - 1.2, proud, 0.7, 0.88, 0.1);
+      // A paper screen slightly proud of the dark window behind it.
+      onFacade('lampGlass', along, base + t.eave - 1.2, proud + 0.07, 0.54, 0.7, 0.05);
+    } else {
+      onFacade('window', along, base + t.eave - 1.2, proud, 0.7, 0.88, 0.1);
+    }
+  }
+
+  // A hanging paper lantern at the ground floor, below the eave entirely.
+  if (rng() < 0.45) {
+    const along = alongCentre + (rng() - 0.5) * w * 0.4;
+    onFacade('lampGlass', along, base + 2.3, 1.15, 0.34, 0.44, 0.34);
+    onFacade('woodPost', along, base + 2.75, 1.15, 0.08, 0.34, 0.08);
+  }
+
+  // Light spilling out of a shop onto the pavement.
+  if (t.shop || rng() < 0.3) {
+    onFacade('lampGlass', alongCentre, base + 1.3, 0.9, w - 0.9, 1.5, 0.08);
+  }
+
   // ---- the eave. This is the defining geometric cue: a perfectly straight,
   // unadorned horizontal line, projecting about 0.8, running the whole
   // frontage. Neighbours overlap slightly, which is deliberate.

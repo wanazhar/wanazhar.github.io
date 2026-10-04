@@ -351,16 +351,25 @@ export class PlayerController {
     // that negated bearing:
     //
     //   lookX = -sin(yaw)   lookZ = -cos(yaw)
-    //   right  = (lookZ, -lookX)   -- 90 degrees clockwise from look
+    //   right  = (-lookZ, lookX)   -- 90 degrees counter-clockwise from look
     //
-    // The previous version rotated the stick vector by +yaw instead, which is
-    // 180 degrees out: pushing the joystick or W moved the player directly
-    // away from the camera, so the character walked backwards.
+    // Two sign errors lived here at different times, and each one was
+    // invisible while the other was present:
+    //
+    //   1. Rotating the stick vector by +yaw instead of negating it. That is
+    //      180 degrees out, so pushing the joystick or W moved the player
+    //      directly away from the camera and the character walked backwards.
+    //   2. The right vector itself, negated. Forward was fixed while this was
+    //      left, so up walked correctly and right went left.
+    //
+    // The rule is that `right` must satisfy: walk left, then left again, and
+    // you should be going where the camera faces. Written out, right is the
+    // look bearing rotated by the opposite sense to the one the camera sits on.
     const camYaw = this.cameraYaw ?? 0;
     const lookX = -Math.sin(camYaw);
     const lookZ = -Math.cos(camYaw);
-    const rightX = lookZ;
-    const rightZ = -lookX;
+    const rightX = -lookZ;
+    const rightZ = lookX;
 
     const dirX = axis.x * rightX + axis.z * lookX;
     const dirZ = axis.x * rightZ + axis.z * lookZ;

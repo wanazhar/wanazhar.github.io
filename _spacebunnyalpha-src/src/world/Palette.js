@@ -46,21 +46,21 @@ export const PALETTE = {
   // ------------------------------------------------------------------- city
   asphalt: 0x6E7386,
   asphaltLight: 0x7E8396,
-  sidewalk: 0xDCDCE8,
+  sidewalk: 0xC9C9D6,
   sidewalkDark: 0xC2C2D0,
   curb: 0xA8AABC,
   laneWhite: 0xFCF3D4,
   laneYellow: 0xF0D96A,
-  crossingWhite: 0xF8F6EC,
+  crossingWhite: 0xDEDBD0,
   // Walls sit in a calm mid range so the saturated accents can carry the eye.
-  buildingWall: 0xE8E4DC,
+  buildingWall: 0xD6D1C7,
   buildingWallAlt: 0xD8CDBE,
   // Weathered timber cladding. Machiya are wood-fronted far more often than
   // plaster, and a warm mid brown stops a row of pale walls reading as a fence.
   buildingWallWood: 0xC4A882,
   buildingWallGrey: 0xC4C6D4,
   buildingWallBlue: 0xB4D2E8,
-  buildingWallPink: 0xF2D8DC,
+  buildingWallPink: 0xDCC4C8,
   // Roofs are the one deliberately dark structural note, as kawara are.
   buildingRoof: 0x5A5F6E,
   buildingRoofBlue: 0x6B7286,
@@ -85,15 +85,20 @@ export const PALETTE = {
   concrete: 0xC4C6D4,
 
   // ------------------------------------------------------ suburbs / houses
-  houseWall: 0xF2EDE0,
-  houseWallWood: 0xDDC9A4,
-  houseWallBlue: 0xC8DCE8,
+  // Walls sit well below paper white on purpose. The anime shader adds rim
+  // light and a subsurface bleed on top of the lit term, so a base near white
+  // clips: at 0xF2EDE0 every house in a row read as one featureless white blob.
+  // Held around 0.82 lightness they still read as sunlit plaster but keep their
+  // shading, which is the entire point of the art direction.
+  houseWall: 0xD8D2C6,
+  houseWallWood: 0xC9B492,
+  houseWallBlue: 0xAFC4D2,
   houseRoof: 0x5A5F6E,
   houseRoofBlue: 0x6B7286,
   houseRoofGrey: 0x747A8A,
   houseRoofGreen: 0x5C7A62,
-  schoolWall: 0xE8E2CC,
-  schoolRoof: 0xD4513B,
+  schoolWall: 0xCCC6B2,
+  schoolRoof: 0xC4453A,
   schoolYard: 0xC4C6D4,
 
   // ------------------------------------------------------------------ rural
@@ -120,14 +125,14 @@ export const PALETTE = {
   shrineRoofEdge: 0x6E7484,
   stone: 0xC4C6D4,
   stoneDark: 0x8E93A8,
-  stoneLight: 0xE0E2EC,
+  stoneLight: 0xCBD0D8,
   moss: 0x6FA83C,
   lanternStone: 0xA8ACBE,
 
   // ------------------------------------------------------------------ coast
   wetSand: 0xC8C79A,
   driftwood: 0xB8A88E,
-  boatHull: 0xF2EDE0,
+  boatHull: 0xDCD6C8,
   boatHullDark: 0xC4BEB0,
   sailCloth: 0xFCF3D4,
   buoy: 0xD4513B,
@@ -147,7 +152,7 @@ export const PALETTE = {
   lampPost: 0x6E7484,
   lampGlass: 0xFCF3D4,
   vending: 0xD4513B,
-  vendingBody: 0xF8F4EC,
+  vendingBody: 0xDCD7CC,
   vendingBlue: 0x4FA8E8,
   utilityPole: 0xB4B8C4,
   wire: 0x4A5060,
@@ -157,7 +162,7 @@ export const PALETTE = {
 
   // ------------------------------------------------------------- characters
   // Skin and hair are the calmest values in the scene so the face reads.
-  skin: 0xFFF6E5,
+  skin: 0xE8DCC8,
   skinShadow: 0xF7CAAC,
   hairDark: 0x4A4450,
   hairBrown: 0x9C6A44,
@@ -166,14 +171,14 @@ export const PALETTE = {
   // Clothing carries the character's accent hue, one per person.
   clothBlue: 0x4FA8E8,
   clothNavy: 0x5A6484,
-  clothWhite: 0xFCF3D4,
+  clothWhite: 0xE0D8BD,
   clothCream: 0xF0E4C4,
   clothRed: 0xEC718C,
   clothYellow: 0xF5DC5E,
   clothGreen: 0x7FBF4A,
   clothPink: 0xF39CCC,
   clothGrey: 0xA8AEBE,
-  apron: 0xE8E4DC,
+  apron: 0xD6D1C7,
   suitNavy: 0x4A5060,
   schoolSailor: 0x5A6484,
   ribbon: 0xEC718C,
