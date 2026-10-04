@@ -66,6 +66,23 @@ Two things about the test command:
   `npm ci` skip devDependencies and leave `jsdom`, `acorn` and `acorn-walk`
   uninstalled. Use `npm ci --include=dev` in CI.
 
+**Verify against a clean install, not your working tree.** `node_modules` here
+is long-lived and drifts from what CI will resolve. A dependency bump can be
+green locally and broken in CI for reasons your stale tree cannot show. The
+failure mode to watch for is an engine mismatch: jsdom 30 requires Node
+`^22.22.2 || ^24.15.0 || >=26`, CI runs Node 20, and the resulting
+`webidl.util.markAsUncloneable is not a function` surfaces only on the runner.
+
+```bash
+# Reproduce CI exactly, in a throwaway tree.
+rm -rf /tmp/sba-ci && mkdir -p /tmp/sba-ci
+cp package.json package-lock.json /tmp/sba-ci/ && cd /tmp/sba-ci
+npm ci --include=dev 2>&1 | grep -c EBADENGINE   # must be 0
+```
+
+jsdom is pinned to `^26.1.0`, the newest line that still supports Node 18+.
+Do not bump it without checking CI's Node version first.
+
 Browser tooling:
 
 ```bash
@@ -253,7 +270,26 @@ console.log(hits.length, hits.slice(0, 4));
 trusted — the bug rate in this project has been consistently "looks fine in the
 data, visibly broken on screen".
 
-## 9. Conventions
+## 9. CI
+
+The Pages workflow triggers on `push` to `main` and `workflow_dispatch` only.
+**There is no `pull_request` trigger**, so nothing validates a PR before it
+lands: the workflow runs after merge, and a failure there takes the deploy down
+for every project in the monorepo.
+
+So verify locally before pushing, and watch the run after merging:
+
+```bash
+gh pr checks <n>
+gh run list --limit 3
+gh run view <id> --log-failed
+```
+
+Adding a `pull_request` trigger would be a genuine improvement, but it is a
+shared-workflow change that touches other agents' jobs — raise it rather than
+slipping it into an unrelated commit.
+
+## 10. Conventions
 
 - **Commit format:** Conventional Commits. Scoped to the project, since the
   monorepo shares one history:
