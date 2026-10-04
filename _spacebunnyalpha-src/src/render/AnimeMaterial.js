@@ -38,6 +38,22 @@ const UNIFORMS = {
   uShadowHueShift: { value: 8.0 / 360.0 },
   uShadowSaturation: { value: 2.1 },
   uShadowValue: { value: 0.94 },
+  // How strongly the ambient colour tints a shadow, and the floor below which
+  // that tint is never allowed to darken anything.
+  //
+  // This exists because multiplying by the raw night ambient turned the whole
+  // island into a horror film: grass at L=0.14 with a cold cast. A tint of 0.35
+  // with a floor of 0.62 keeps the blue cast without ever losing the value
+  // that makes a surface readable.
+  uTintAmount: { value: 0.35 },
+  uShadowFloor: { value: 0.62 },
+  // Overall brightness of the key light, driven by the sun's elevation. The
+  // shader had no intensity term at all, so the ground stayed fully lit at
+  // midnight while the sky went black: daylight under a night sky.
+  uLightStrength: { value: 1.0 },
+  // Saturation retained in the final image. Falls off at night.
+  uSaturation: { value: 1.0 },
+  uDebug: { value: 0.0 },
   uRimColor: { value: new THREE.Color(0xffffff) },
   // A lower exponent gives a wider rim. Wide and soft suits this art
   // direction: a hard thin rim reads as a cel outline, which is the opposite
@@ -106,6 +122,18 @@ const FRAGMENT = /* glsl */ `
   uniform float uShadowHueShift;
   uniform float uShadowSaturation;
   uniform float uShadowValue;
+  uniform float uTintAmount;
+  uniform float uShadowFloor;
+  uniform float uLightStrength;
+  // Debug channel: 0 off, 1 base colour, 2 lit term, 3 shadow term, 4 terminator
+  // t, 5 contact darkening. Set from the console to see which term is eating a
+  // surface.
+  uniform float uDebug;
+  // How much saturation survives in the final image. Night desaturates: a
+  // fully chromatic scene at midnight reads as an overcast afternoon, because
+  // toShadow() deliberately doubles saturation and nothing was taking it back
+  // down again.
+  uniform float uSaturation;
   uniform vec3 uRimColor;
   uniform float uRimPower;
   uniform float uRimStrength;
@@ -161,13 +189,38 @@ const FRAGMENT = /* glsl */ `
 
     float ndl = dot(n, l);
 
+    // At night the sun is below the horizon, so the raw dot product is
+    // negative on every upward-facing surface and the whole scene falls to the
+    // shadow term alone -- which is why midnight rendered as a flat dark slab.
+    // Once the sun has set, the key light becomes the moon: same direction,
+    // raised above the horizon, cool and dim. Shapes stay modelled at night.
+    float keyNdl = (uLightStrength < 0.7) ? max(ndl, 0.0) : ndl;
+
     // A soft terminator, not a hard step. Measured across anime-style 3D, the
     // light/shadow transition is around 0.1 wide; anything harder reads as
     // unlit geometry rather than paint.
-    float t = smoothstep(-uTerminatorWidth, uTerminatorWidth, ndl);
+    float t = smoothstep(-uTerminatorWidth, uTerminatorWidth, keyNdl);
 
-    vec3 lit = base * uLightColor;
-    vec3 shadow = toShadow(base) * uAmbient;
+    vec3 lit = base * uLightColor * uLightStrength;
+
+    // Shadow is the base colour with its hue shifted and saturation lifted,
+    // times a BRIGHTNESS that never falls far. It deliberately does not take
+    // the ambient's own colour as a multiplier: at night the sky publishes a
+    // deep blue, and multiplying by it drove grass to L=0.14 -- a near-black
+    // cold cast that looked like a horror film rather than like night.
+    //
+    // Instead the ambient only tints, gently and with a floor, and the shadow
+    // keeps most of its value. Rimsoft's own shadows sit at roughly the same
+    // lightness as their lights; they gain chroma, they do not lose value.
+    //
+    // The floor is relative to the light: as the sun goes down the whole scene
+    // dims together, so night is dark without ever becoming unreadable or
+    // falling through into a horror palette.
+    float floorValue = uShadowFloor * uLightStrength;
+    vec3 tint = mix(vec3(1.0), uAmbient, uTintAmount);
+    tint = max(tint, vec3(floorValue));
+
+    vec3 shadow = toShadow(base) * tint;
 
     vec3 outColor = mix(shadow, lit, t);
 
@@ -186,6 +239,22 @@ const FRAGMENT = /* glsl */ `
     float rim = 1.0 - max(dot(n, v), 0.0);
     rim = pow(clamp(rim, 0.0, 1.0), uRimPower);
     outColor += uRimColor * rim * uRimStrength;
+
+    // Desaturate as the light goes. Without this the scene stayed fully
+    // chromatic at midnight -- the ground dimmed but its colour did not, so
+    // night read as an overcast afternoon rather than as night.
+    float lum = dot(outColor, vec3(0.2126, 0.7152, 0.0722));
+    outColor = mix(vec3(lum), outColor, uSaturation);
+
+    // Debug channels, off unless uDebug is set.
+    if (uDebug > 0.5) {
+      if (uDebug < 1.5)      outColor = base;
+      else if (uDebug < 2.5) outColor = lit;
+      else if (uDebug < 3.5) outColor = shadow;
+      else if (uDebug < 4.5) outColor = vec3(t);
+      else if (uDebug < 5.5) outColor = vec3(contact * uAoStrength);
+      else                    outColor = toShadow(base);
+    }
 
     gl_FragColor = vec4(outColor, uOpacity);
   }
@@ -239,9 +308,27 @@ export class AnimeMaterialFactory {
     return material;
   }
 
+  // Glowing surfaces -- windows, neon, lamp glass, shoji -- are the one thing
+  // that should NOT dim at night. They are what makes a Japanese street read as
+  // alive after dark: a row of warm lit windows against a blue-grey street is
+  // the whole night-time image, and without them the town just goes black.
+  //
+  // They are excluded from the global light strength and saturation falloff, so
+  // they keep their own colour and brightness whatever the hour.
+  glowsFor(name) {
+    return (
+      name.startsWith('neon') ||
+      name === 'lampGlass' ||
+      name === 'windowLit' ||
+      name === 'lampPostGlass'
+    );
+  }
+
   // Called once a frame with the scene's current light setup.
-  syncLighting({ lightDir, lightColor, ambientColor, rimStrength, groundY }) {
-    for (const uniforms of this.uniformSets.values()) {
+  syncLighting({ lightDir, lightColor, ambientColor, rimStrength, groundY, lightStrength, saturation }) {
+    for (const [name, uniforms] of this.uniformSets) {
+      const isGlow = this.glowsFor(name);
+
       if (lightDir) uniforms.uLightDir.value.copy(lightDir);
       if (lightColor) uniforms.uLightColor.value.copy(lightColor);
       // Accept either a THREE.Color or a hex number. The sky publishes
@@ -252,6 +339,13 @@ export class AnimeMaterialFactory {
       // Ground height follows the player, so contact darkening always refers to
       // the surface the player is actually standing on.
       if (typeof groundY === 'number') uniforms.uGroundY.value = groundY;
+
+      // Lit windows, neon and lamp glass ignore the day/night curve entirely:
+      // they are their own light source, which is exactly what a street lamp
+      // or a shop sign is. Dimming them with the sun meant the town went
+      // completely black at night.
+      uniforms.uLightStrength.value = isGlow ? 1.0 : (lightStrength ?? 1.0);
+      uniforms.uSaturation.value = isGlow ? 1.0 : (saturation ?? 1.0);
     }
   }
 

@@ -128,15 +128,31 @@ test('turning is eased rather than instant', () => {
 
   // Over half a second it should arrive.
   for (let i = 0; i < 30; i += 1) player.update(1 / 60);
-  const target = before + targetTurn;
+
+  // The settled heading is whatever the camera-relative basis actually produces
+  // for an up-right input. Hard-coding +45 degrees baked in the old, wrong
+  // right-vector: it turned the character LEFT for rightward input, which was
+  // the same sign error as "go right, character goes left".
+  const expected = settledHeading(player, 0.7, 0.7);
   const settled = Math.abs(
-    Math.atan2(Math.sin(player.yaw - target), Math.cos(player.yaw - target))
+    Math.atan2(Math.sin(player.yaw - expected), Math.cos(player.yaw - expected))
   );
   assert.ok(
     settled < 0.15,
-    `should have settled on the new heading, off by ${settled.toFixed(3)} rad (yaw ${player.yaw.toFixed(2)}, wanted ${target.toFixed(2)})`
+    `should have settled on the new heading, off by ${settled.toFixed(3)} rad (yaw ${player.yaw.toFixed(2)}, wanted ${expected.toFixed(2)})`
   );
 });
+
+// The world-space heading a given input should settle on, derived from the same
+// camera-relative basis the controller uses.
+function settledHeading(player, axisX, axisZ) {
+  const camYaw = player.cameraYaw ?? 0;
+  const lookX = -Math.sin(camYaw);
+  const lookZ = -Math.cos(camYaw);
+  const rightX = -lookZ;
+  const rightZ = lookX;
+  return Math.atan2(axisX * rightX + axisZ * lookX, axisX * rightZ + axisZ * lookZ);
+}
 
 test('the lean builds up with speed and relaxes when stopped', () => {
   const { player, input } = makeController({ x: 0, z: 1, magnitude: 1 });

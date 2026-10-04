@@ -632,9 +632,15 @@ function frame(now) {
   animeMaterials.syncLighting({
     lightDir: sky.sunDirection,
     lightColor: sky.sunLightColor,
-    ambientColor: sky.horizonColor,
+    // The ambient is published as a hex number. The shader uses it as a TINT
+    // only, mixed in at uTintAmount and then floored, so its own brightness
+    // does not also darken the surface -- which was what turned night into a
+    // horror palette in the first place.
+    ambientColor: sky.ambientTint,
     rimStrength: sky.rimStrength,
-    groundY: player.position.y
+    groundY: player.position.y,
+    lightStrength: sky.lightStrength,
+    saturation: sky.saturation
   });
   // Keep the sea in step with the sky: same sun direction, same horizon hue.
   ocean.setSunDirection(sky.sunDirection.x, sky.sunDirection.y, sky.sunDirection.z);
@@ -675,6 +681,34 @@ window.__sba = {
   playerRig,
   player,
   followCamera,
+  // Exposed so the browser can drive the real stick and check which way the
+  // character actually walks. "Joystick right, character left" is not
+  // something a unit test can be trusted to catch on its own -- it needs the
+  // live input object the touch controls are wired to.
+  input,
+
+  // Pushes the virtual thumbstick and steps the player, returning the world
+  // direction it ended up travelling. The ground truth for control direction.
+  probeMovement(stickX, stickY, steps = 30) {
+    const from = { x: player.position.x, z: player.position.z };
+    player.velocity.set(0, 0, 0);
+    // cameraYaw is a getter onto the follow camera, so there is nothing to set
+    // here: the controller always reads the live bearing.
+    input.setStick(stickX, stickY, true);
+
+    for (let i = 0; i < steps; i += 1) player.update(1 / 60);
+    input.setStick(0, 0, false);
+
+    const dx = player.position.x - from.x;
+    const dz = player.position.z - from.z;
+    const len = Math.hypot(dx, dz);
+    return {
+      camYaw: followCamera.yaw,
+      x: len > 1e-6 ? dx / len : 0,
+      z: len > 1e-6 ? dz / len : 0,
+      distance: len
+    };
+  },
 
   get state() {
     return {

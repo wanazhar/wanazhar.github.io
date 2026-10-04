@@ -138,6 +138,68 @@ function makeSkyTexture() {
   };
 }
 
+// Where the key light points at a given hour, and how high the sun is.
+//
+// After sunset the key light becomes the moon. Without this the direction
+// points below the horizon all night, so every upward-facing surface reads as
+// back-facing and the town renders as a flat dark slab with a character
+// floating in it. The moon keeps the key above the ground, so shapes stay
+// modelled at night; its strength and colour come from elsewhere.
+//
+// Exported because this is pure arithmetic and it was the source of a bug that
+// no test could see -- the whole world rendered blank because of one sign.
+export function dayCycle(hour) {
+  const angle = ((hour - 6) / 12) * Math.PI;
+  const elevation = Math.sin(angle);
+  const dir = new THREE.Vector3(Math.cos(angle) * 0.5, elevation, 0.35).normalize();
+
+  // The moon takes over once the sun is at or below the horizon. Without a
+  // floor, sunrise and sunset sit the key exactly on the horizon, every
+  // surface catches it at a grazing angle, and the whole scene flattens out.
+  if (elevation <= 0.02) {
+    const moonAngle = ((hour - 18 + 12) / 12) * Math.PI;
+    const moonElev = Math.max(0.3, Math.sin(moonAngle));
+    dir.set(Math.cos(moonAngle) * 0.5, moonElev, 0.35).normalize();
+  }
+
+  return { dir, elevation };
+}
+
+// The rim peaks at dusk and falls off through the night.
+//
+// Rim is additive, so a value that looks reasonable on a lit surface will clip
+// to pure white on a dim one. At 0.75 every wall in the suburb row blew out to
+// a featureless white blob at 21:00, which is worse than having no rim at all.
+export function rimFor(daylight) {
+  return lerp(0.34, 0.16, daylight);
+}
+
+// Normalises a colour to unit brightness by its brightest channel.
+//
+// Two reasons this exists. A colour that already encodes its own dimness must
+// not be multiplied by an intensity as well, or everything is dimmed twice --
+// a wall came out at RGB 47 instead of about 135. And HSL lightness is a poor
+// brightness measure for a saturated colour: dividing a deep blue by its HSL
+// lightness pushed the blue channel to 1.45 and the scene came out lurid.
+export function normaliseToUnitBrightness(colour) {
+  const peak = Math.max(colour.r, colour.g, colour.b);
+  if (peak > 0.001) colour.multiplyScalar(1 / peak);
+  return colour;
+}
+
+// How bright and how saturated the scene is at a given sun elevation.
+//
+// Night dims and desaturates together. Dimming alone left the ground fully
+// chromatic at midnight, which reads as an overcast afternoon rather than as
+// night. The floor keeps night navigable rather than frightening.
+export function sceneExposure(elevation, dim = 1) {
+  const t = clamp01(elevation * 2.2);
+  return {
+    lightStrength: lerp(0.62, 1.0, t) * dim,
+    saturation: lerp(0.55, 1.0, t) * (dim < 1 ? 0.9 : 1)
+  };
+}
+
 export class SkySystem {
   constructor(scene, renderer) {
     this.scene = scene;
@@ -197,7 +259,15 @@ export class SkySystem {
     // step with the sky instead of guessing at the hour.
     this.sunDirection = new THREE.Vector3(0, 1, 0);
     this.horizonColor = 0xBFE6F5;
+    // A unit-brightness version of the sky colour, for use as a TINT on
+    // shadows. The raw horizon colour is a dark blue at night, and using it
+    // directly as a multiplier is what turned the island into a horror palette.
+    this.ambientTint = new THREE.Color(0xBFE6F5);
     this.sunLightColor = new THREE.Color(0xFFF6E5);
+    // How bright the key light is overall. The anime shader has no notion of
+    // intensity on its own, so this is what stops the ground staying fully lit
+    // under a night sky.
+    this.lightStrength = 1;
     // Rim strength rises at night and drops in flat daylight, where a strong rim
     // would just wash the surfaces out.
     this.rimStrength = 0.55;
@@ -221,20 +291,28 @@ export class SkySystem {
     this.fog.near = RENDER.fogNear * (weather === 'rain' ? 0.85 : washed ? 0.9 : 1);
     this.fog.far = RENDER.fogFar * (weather === 'rain' ? 0.8 : washed ? 0.85 : 1);
 
-    const angle = ((hour - 6) / 12) * Math.PI;
-    const elevation = Math.sin(angle);
-    const sunDir = this._sunDir.set(Math.cos(angle) * 0.5, elevation, 0.35).normalize();
-    this.sunDirection.copy(sunDir);
-
+    const { dir: sunDir, elevation } = dayCycle(hour);
     const daylight = clamp01((elevation + 0.15) / 0.5);
     const dim = weather === 'rain' || weather === 'storm' ? 0.5 : weather === 'overcast' ? 0.65 : 1;
+
+    this.sunDirection.copy(sunDir);
 
     this.sun.position.copy(sunDir).multiplyScalar(300);
     this.sun.target.position.set(0, 0, 0);
     this.sun.color.setHex(s.sun);
     // The anime materials light themselves from these values rather than from
     // the Three.js lights, so keep both describing the same light.
+    //
+    // The colour is normalised to unit brightness before it is handed over.
+    // Multiplying the already-dim night colour by lightStrength as well dimmed
+    // everything twice: a wall came out at RGB 47 instead of about 135, which
+    // is why midnight rendered as an almost black slab.
     this.sunLightColor.setHex(s.sun);
+    normaliseToUnitBrightness(this.sunLightColor);
+
+    const { lightStrength, saturation } = sceneExposure(elevation, dim);
+    this.lightStrength = lightStrength;
+    this.saturation = saturation;
     // At night the key light is nearly gone and the fill carries the scene.
     this.sun.intensity = Math.max(0, elevation) * 1.55 * dim;
 
@@ -244,11 +322,16 @@ export class SkySystem {
     this.ambient.groundColor.setHex(s.grd);
     this.ambient.intensity = lerp(0.75, 1.05, daylight) * dim;
 
+    // The tint the anime shader mixes into shadows. Normalised to unit
+    // brightness so its darkness cannot become a multiplier.
+    this.ambientTint.setHex(s.sky);
+    normaliseToUnitBrightness(this.ambientTint);
+
     this.rim.color.setHex(s.sky);
     this.rim.intensity = lerp(0.18, 0.4, daylight) * dim;
     // Rim is strongest when the key light is weak, which is exactly when a
     // silhouette needs lifting off the background.
-    this.rimStrength = lerp(0.75, 0.3, daylight) * dim;
+    this.rimStrength = rimFor(daylight) * dim;
 
     if (camera) {
       this.dome.position.copy(camera.position);
