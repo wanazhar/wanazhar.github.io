@@ -41,6 +41,13 @@ const HEADING_GAIN = 1.6;
  */
 const STANLEY_GAIN = 3.0;
 /** Additive damping in the cross-track denominator, so it never divides by zero. */
+/** ERS: charge worth spending, flatness required, and how much the rear will take. */
+const ERS_DEPLOY_MIN = 0.3;
+const ERS_CURVATURE = 0.0035;
+const ERS_SLIDE_LIMIT = 0.14;
+/** How readily a driver spends energy with no car in sight, as a fraction of `drsSkill`. */
+const ERS_OPPORTUNISM = 0.35;
+
 const DAMP_OFFSET = 8;
 /**
  * How far ahead of the car the line's heading is evaluated. Expressed as a time
@@ -355,6 +362,7 @@ export class AIDriver {
     if (slideAngle > 0.12) throttle *= clamp(1 - (slideAngle - 0.12) * 2.4, 0, 1);
 
     physics.drsOpen = this.#shouldUseDrs(context, sample);
+    if (this.#shouldDeployErs(context, sample, throttle, brake, slideAngle)) physics.deployErs();
 
     // --- Mistakes --------------------------------------------------------------
     let commandedSteer = steer;
@@ -535,6 +543,41 @@ export class AIDriver {
     const behind = context.opponentBehind;
     if (!behind || behind.gap > 140) return false;
     return this.random() < this.skill.drsSkill;
+  }
+
+  /**
+   * Whether to spend stored energy now.
+   *
+   * `deployErs()` used to have exactly one caller -- the player's input path in `Game.js`
+   * -- so the entire field had a tool the player did not. The player could lean on it
+   * every straight; the AI could never.
+   *
+   * Where it belongs is the same place DRS belongs: a straight-line tool. Deploying
+   * mid-corner just spins the rears, so it needs the same flat-curvature gate DRS has,
+   * plus the two conditions a driver actually judges it on -- that the car is settled
+   * enough to put 40% more torque through the rear, and that there is somewhere to use
+   * the speed.
+   */
+  #shouldDeployErs(context, sample, throttle, brake, slideAngle) {
+    if (brake > 0.15) return false;            // not while braking for a corner
+    if (this.physics.ersCharge < ERS_DEPLOY_MIN) return false;
+    if (this.physics.boost > 0) return false;  // already deploying
+
+    // Straight, and settled enough that the extra torque will not just spin the car.
+    const straight = Math.abs(sample.curvature) <= ERS_CURVATURE;
+    const settled = slideAngle < ERS_SLIDE_LIMIT;
+    if (!straight || !settled) return false;
+
+    /*
+     * Spend it when it will actually convert into time: either there is a car in front
+     * being passed, or the driver is one that presses on a straight rather than
+     * coasting. `ersSkill` reuses `drsSkill` -- both are "how much does this driver
+     * exploit the straight-line tools it has" -- so a team that is good at DRS is also
+     * good at this, which is how real driver skill is distributed.
+     */
+    const goingForAPass = context.opponentAhead && context.opponentAhead.gap < 60;
+    const opportunistic = this.random() < this.skill.drsSkill * ERS_OPPORTUNISM;
+    return Boolean(goingForAPass) || opportunistic || throttle > 0.6;
   }
 
 /** Fastest speed the tyres can hold through a corner of this curvature. */

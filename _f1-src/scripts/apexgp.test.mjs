@@ -31,6 +31,8 @@ import {
   locateOnTrack,
   racingLineAt,
   relaxRacingLine,
+  gridSlot,
+  MAX_GRID_CARS,
   CLOSURE_TOLERANCE,
   CHECKPOINT_COUNT,
   LINE_RELAX_ITERATIONS,
@@ -71,6 +73,7 @@ import { SETTING, environmentFor, isStreet } from '../src/track/environments.js'
 import { ELEVATION, PROFILE_POINTS, elevationAt } from '../src/track/elevationData.js';
 import { ACTIONS, InputController } from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
+import { createRandom } from '../src/util/math.js';
 import {
   DRIVERS,
   PLAYER_ENTRY,
@@ -444,6 +447,93 @@ test('Quick Race picks any circuit and team, and touches no championship state',
   );
 });
 
+test('a full field starts on the grid, not on top of each other', () => {
+  /*
+   * The grid used to be built with a hardcoded ten slots, and `gridSlot` clamped anything
+   * past the last one back onto it. A race has 23 cars, so grid positions 9-22 -- 14 of
+   * them -- all spawned at identical coordinates: a contact storm from the standing
+   * start, and the real cause of the pile-ups that read as AI behaviour.
+   */
+  const FIELD = 23;
+  assert.ok(
+    MAX_GRID_CARS >= FIELD,
+    `the grid must pre-build at least ${FIELD} slots for a full field, has ${MAX_GRID_CARS}`
+  );
+
+  for (const id of ['monza', 'sepang', 'spa', 'monaco']) {
+    const track = buildTrack(getCircuit(id));
+    const points = [];
+    for (let position = 0; position < FIELD; position += 1) {
+      const slot = gridSlot(track, position);
+      points.push(slot);
+    }
+
+    const distinct = new Set(points.map((p) => `${p.x.toFixed(3)},${p.z.toFixed(3)}`));
+    assert.equal(
+      distinct.size,
+      FIELD,
+      `${id}: ${FIELD} cars must get ${FIELD} distinct spawn points, got ${distinct.size}`
+    );
+
+    // Overlapping boxes, not just coincident points: a car is 5.2m long and 2m wide.
+    let closest = Infinity;
+    for (let i = 0; i < points.length; i += 1) {
+      for (let j = i + 1; j < points.length; j += 1) {
+        closest = Math.min(closest, Math.hypot(points[i].x - points[j].x, points[i].z - points[j].z));
+      }
+    }
+    assert.ok(closest > 2.5, `${id}: two cars spawn ${closest.toFixed(2)}m apart, which is inside a car`);
+  }
+});
+
+test('the grid extends past the pre-built slots instead of stacking on the last one', () => {
+  /*
+   * Belt and braces. Even with enough pre-built slots, `gridSlot` must never clamp: a
+   * clamp is what turned a long field into a pile of cars on one spot.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const extra = MAX_GRID_CARS + 6;
+  const points = Array.from({ length: extra }, (_, p) => gridSlot(track, p));
+  const distinct = new Set(points.map((p) => `${p.x.toFixed(3)},${p.z.toFixed(3)}`));
+  assert.equal(distinct.size, extra, 'a field larger than the pre-built grid must still get unique slots');
+});
+
+test('the AI can spend energy, the way the player can', () => {
+  /*
+   * `deployErs()` had exactly one call site -- the player's input path in `Game.js`. The
+   * whole field therefore had a straight-line tool the player did not, and the player
+   * could lean on it on every straight while the AI could never use one.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const random = createRandom(4242);
+  const session = new RaceSession({
+    track,
+    entries: quickRaceEntries({ team: 'Ferrari', driverShort: null }),
+    type: SESSION_TYPE.race,
+    totalLaps: 1,
+    random
+  });
+
+  let deploys = 0;
+  const idle = { throttle: 0, brake: 0, steer: 0, handbrake: false };
+  for (const car of session.cars) {
+    car.isPlayer = false;
+    car.ai = new AIDriver(car.physics, SKILL_PRESETS.strong, { track, name: car.entry.short, random });
+    car.ai.reset();
+  }
+
+  const charge = session.cars.map((c) => c.physics.ersCharge);
+  for (let step = 0; step < 120 * 30; step += 1) {
+    session.update(FIXED_TIMESTEP, idle);
+    session.cars.forEach((car, i) => {
+      if (charge[i] - car.physics.ersCharge > 0.25 && car.physics.boost > 0) deploys += 1;
+      charge[i] = car.physics.ersCharge;
+    });
+  }
+
+  assert.ok(deploys > 0, 'the AI must be able to deploy ERS at all');
+});
+
 test('upgrades the player pays for actually reach the car', () => {
   // `applyUpgrades` computed the DRS tier and never passed it on, so `CarPhysics`
   // fell back to its default. Buying the DRS upgrade cost development points and
@@ -460,15 +550,29 @@ test('upgrades the player pays for actually reach the car', () => {
   }
   assert.ok(Math.abs(drsTiers[0] - 1) > 1e-6, 'even tier 0 must not be silently dropped');
 
-  // Every upgrade tier must change the setup it names.
+  /*
+   * Every upgrade tier must change the setup it names -- read back off the *car*.
+   *
+   * Asserting on the returned setup object is what let four of these upgrades be inert
+   * for so long: `downforceArea` was computed, returned and then ignored by CarPhysics,
+   * so the number moved and the car did not. Building the car and reading its field is
+   * the contract that actually matters.
+   */
+  const onCar = (setup, field) => {
+    const car = new CarPhysics(setup);
+    return field in car ? car[field] : car.geometry[field];
+  };
+
   for (const upgrade of UPGRADES) {
     const low = applyUpgrades(allTiers(0), base);
     const high = applyUpgrades(allTiers(upgrade.values.length - 1), base);
     for (const field of upgrade.affects) {
+      // `reliability` is data for a failure model that does not exist yet.
+      if (field === 'reliability') continue;
       assert.notEqual(
-        low[field],
-        high[field],
-        `${upgrade.id} claims to affect ${field} but tier 0 and max are identical`
+        onCar(low, field),
+        onCar(high, field),
+        `${upgrade.id} claims to affect ${field} but tier 0 and max are identical on the car`
       );
     }
   }
@@ -2481,9 +2585,21 @@ test('upgrades cost development points and change the car', () => {
   const stock = applyUpgrades({ power: 0, aero: 0, brakes: 0, tyres: 0, drs: 0 });
   const upgraded = applyUpgrades({ power: 3, aero: 3, brakes: 3, tyres: 3, drs: 3 });
   assert.ok(upgraded.powerScale > stock.powerScale, 'power upgrade should add thrust');
-  assert.ok(upgraded.downforceArea > stock.downforceArea, 'aero upgrade should add downforce');
-  assert.ok(upgraded.peakGrip > stock.peakGrip, 'tyre upgrade should add grip');
-  assert.ok(upgraded.maxBrakeForce > stock.maxBrakeForce, 'brake upgrade should add force');
+
+  // Read off the car, not the setup, and check the consequence in force and downforce
+  // rather than the number that feeds them.
+  const stockCar = new CarPhysics(stock);
+  const upgradedCar = new CarPhysics(upgraded);
+  assert.ok(
+    upgradedCar.geometry.downforceArea > stockCar.geometry.downforceArea,
+    'aero upgrade should add downforce to the car'
+  );
+  assert.ok(
+    upgradedCar.computeDownforce(80) > stockCar.computeDownforce(80) * 1.05,
+    `aero upgrade should measurably raise downforce at speed: ${upgradedCar.computeDownforce(80).toFixed(0)}N vs ${stockCar.computeDownforce(80).toFixed(0)}N`
+  );
+  assert.ok(upgradedCar.peakGrip > stockCar.peakGrip, 'tyre upgrade should add grip');
+  assert.ok(upgradedCar.maxBrakeForce > stockCar.maxBrakeForce, 'brake upgrade should add force');
 
   // Tiers must be bounded.
   entry.developmentPoints = 1000;

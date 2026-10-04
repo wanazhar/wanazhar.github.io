@@ -159,8 +159,8 @@ export function topSpeed(mass = DEFAULT_GEOMETRY.mass, dragArea = DEFAULT_GEOMET
  * Grip multiplier for a tyre at a given temperature: flat at 1.0 across the
  * working window, decaying outside it.
  */
-export function temperatureGrip(temp) {
-  const over = Math.max(0, Math.abs(temp - TYRE.optimalTemp) - TYRE.optimalBand);
+export function temperatureGrip(temp, optimalBand = TYRE.optimalBand) {
+  const over = Math.max(0, Math.abs(temp - TYRE.optimalTemp) - optimalBand);
   return clamp(1 - over * TYRE.falloffPerDegree, TYRE.worstCaseGrip, 1);
 }
 
@@ -182,6 +182,19 @@ export class CarPhysics {
     this.powerScale = setup.powerScale ?? 1;
     this.drsStrength = setup.drsStrength ?? 1;
     this.ersStrength = setup.ersStrength ?? 1;
+    /*
+     * Per-car overrides for the four tunables that `applyUpgrades` computes.
+     *
+     * These were returned by `applyUpgrades` and then read by nothing: CarPhysics used
+     * the module constants directly, so the Aerodynamics, Brakes and Tyre upgrade tiers
+     * changed a number that no code path ever looked at. Four of the six purchasable
+     * upgrades were therefore inert -- the player spent development points and the car
+     * did not change.
+     */
+    this.peakGrip = setup.peakGrip ?? TYRE.peakGrip;
+    this.optimalBand = setup.optimalBand ?? TYRE.optimalBand;
+    this.maxBrakeForce = setup.maxBrakeForce ?? BRAKES.maxBrakeForce;
+    this.drsDragReduction = setup.drsDragReduction ?? POWERTRAIN.drsDragReduction;
     this.isPlayer = options.isPlayer ?? false;
     this.name = options.name ?? 'Driver';
 
@@ -272,11 +285,11 @@ export class CarPhysics {
   }
 
   get frontGrip() {
-    return temperatureGrip(this.frontTemp) * (1 - this.frontWear * 0.18);
+    return temperatureGrip(this.frontTemp, this.optimalBand) * (1 - this.frontWear * 0.18);
   }
 
   get rearGrip() {
-    return temperatureGrip(this.rearTemp) * (1 - this.rearWear * 0.18);
+    return temperatureGrip(this.rearTemp, this.optimalBand) * (1 - this.rearWear * 0.18);
   }
 
   /** Combined slip power per axle, used for tyre heating and wear. */
@@ -293,7 +306,7 @@ export class CarPhysics {
 
   /** Downforce in newtons at the current speed, reduced with DRS open. */
   computeDownforce(speed) {
-    const drsFactor = this.drsOpen ? 1 - POWERTRAIN.drsDragReduction * this.drsStrength : 1;
+    const drsFactor = this.drsOpen ? 1 - this.drsDragReduction * this.drsStrength : 1;
     return 0.5 * 1.225 * this.geometry.downforceArea * speed * speed * drsFactor;
   }
 
@@ -358,8 +371,8 @@ export class CarPhysics {
     this.rearSlipAngle = lerp(0, rearDynamic, speedBlend);
 
     // --- Tyre forces --------------------------------------------------------
-    const muFront = TYRE.peakGrip * this.grip * this.frontGrip * surfaceGrip;
-    const muRear = TYRE.peakGrip * this.grip * this.rearGrip * surfaceGrip;
+    const muFront = this.peakGrip * this.grip * this.frontGrip * surfaceGrip;
+    const muRear = this.peakGrip * this.grip * this.rearGrip * surfaceGrip;
 
     // How much of the rear tyres' friction circle the brakes are already using.
     // Computed before the lateral force so the two can share one budget.
@@ -367,7 +380,7 @@ export class CarPhysics {
     // against the budget. Dividing the full requested brake force by the rear
     // load makes even gentle braking look like a near-total loss of grip.
     const brakeBudget = clamp(
-      (brake * BRAKES.maxBrakeForce * (1 - BRAKES.brakeBiasFront) - muRear * loadRear * 0.25) /
+      (brake * this.maxBrakeForce * (1 - BRAKES.brakeBiasFront) - muRear * loadRear * 0.25) /
         Math.max(loadRear, 1),
       0,
       1
@@ -433,7 +446,7 @@ export class CarPhysics {
     // Braking force is capped by what the tyres can actually take. Weight moves
     // forward under braking, so the front axle is the one that limits total
     // deceleration -- which is why the bias is set rearward to keep it stable.
-    const brakeRequest = brake * BRAKES.maxBrakeForce * (this.shiftTimer > 0 ? 0.3 : 1);
+    const brakeRequest = brake * this.maxBrakeForce * (this.shiftTimer > 0 ? 0.3 : 1);
     const brakeGripLimit =
       muFront * loadFront * 1.15 * BRAKES.brakeBiasFront +
       muRear * loadRear * 1.15 * (1 - BRAKES.brakeBiasFront);
@@ -449,7 +462,7 @@ export class CarPhysics {
       Math.min(brakeForce, (Math.abs(this.vLong) * mass) / Math.max(dt, 1e-4) * 0.6);
 
     // --- Resistances --------------------------------------------------------
-    const drsFactor = this.drsOpen ? 1 - POWERTRAIN.drsDragReduction * this.drsStrength : 1;
+    const drsFactor = this.drsOpen ? 1 - this.drsDragReduction * this.drsStrength : 1;
     const drag = 0.5 * 1.225 * spec.dragArea * drsFactor * this.vLong * Math.abs(this.vLong);
     const rolling = this.vLong * 0.4;
 
