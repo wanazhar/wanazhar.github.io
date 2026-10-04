@@ -89,8 +89,18 @@ UNPIN_YAW_JS = """(() => {
 
 
 async def run(url):
-    b = await open_game(url)
     failures = []
+
+    try:
+        b = await open_game(url)
+    except Exception as exc:
+        # A hardcoded default URL made this fail on any machine that is not the
+        # dev box, which is exactly what happened in CI. Fail with the reason
+        # visible rather than as a bare connection error.
+        print(f"FAIL: could not reach {url}: {exc}")
+        print("      pass a reachable URL, or start the server first:")
+        print("      python3 scripts/serve.py --bind 127.0.0.1 --port 4174")
+        return ["game was not reachable at " + url]
 
     cases = [
         ("W", "KeyW", "forward"),
@@ -312,5 +322,12 @@ async def run(url):
 
 
 if __name__ == "__main__":
-    url = sys.argv[1] if len(sys.argv) > 1 else "http://100.98.115.95:4174/"
-    asyncio.run(run(url))
+    # Localhost by default. A hardcoded Tailscale address made this fail
+    # anywhere else, which is exactly what happened on the CI runner.
+    # SBA_URL overrides it for a remote host.
+    url = (
+        sys.argv[1]
+        if len(sys.argv) > 1
+        else os.environ.get("SBA_URL", "http://127.0.0.1:4174/")
+    )
+    sys.exit(asyncio.run(run(url)))

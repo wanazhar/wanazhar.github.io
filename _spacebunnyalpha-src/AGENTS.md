@@ -88,9 +88,18 @@ Browser tooling:
 ```bash
 npm run smoke:browser -- http://100.98.115.95:4174/
 python3 scripts/controls-check.py          # joystick direction, real Chrome
-python3 scripts/serve.py --bind 100.98.115.95 --port 4174 &
+python3 scripts/serve.py --bind 127.0.0.1 --port 4174 --dir ../spacebunnyalpha &
 python3 scripts/serve-check.py             # asserts the server gotchas below
 ```
+
+`serve.py` serves **its own directory** by default, which is the unbuilt source
+tree. The bundle only exists in the sibling output directory, so anything that
+needs a running game must pass `--dir ../spacebunnyalpha`. Getting this wrong
+fails as "the game never became ready", not as an obvious path error.
+
+`controls-check.py` defaults to `http://127.0.0.1:4174/`, overridable with
+`SBA_URL`. Keep it that way — a hardcoded remote address makes the script fail
+on every machine that is not the dev box, including CI.
 
 For visual work, drive a dedicated Chrome over CDP. Do **not** reuse a shared
 browser; a long-running one accumulates tabs and drops its socket mid-run:
