@@ -13,6 +13,15 @@ import { HELP_HTML, UIManager } from './ui/UIManager.js';
 import { CIRCUITS, getCircuit } from './track/circuits.js';
 import { formatLapTime, formatPosition } from './util/math.js';
 import { SESSION_TYPE } from './race/RaceSession.js';
+import {
+  applySegment,
+  createQualifying,
+  entriesForSegment,
+  gridFrom,
+  isComplete,
+  segmentName,
+  QUALIFYING_LAPS
+} from './race/qualifying.js';
 import { UPGRADES } from './physics/upgrades.js';
 import {
   QUICK_RACE_SCREEN,
@@ -48,9 +57,6 @@ import {
   saveChampionship,
   standings
 } from './championship/ChampionshipManager.js';
-
-/** Laps allowed in qualifying. The fastest lap sets the grid. */
-const QUALIFYING_LAPS = 3;
 
 /** How often the finished-session flag is checked, in milliseconds. */
 const FINISH_POLL_MS = 200;
@@ -143,6 +149,17 @@ let state = 'boot';
 let activeSession = null;
 /** Grid decided by qualifying, consumed by the race. */
 let qualifyingGrid = null;
+
+/**
+ * Qualifying in progress: which segment, who is still in, and the best laps so far.
+ *
+ * Real qualifying is a knockout (see `race/qualifying.js`), so the session lifecycle has to
+ * be able to run a segment, fold the result in, and start the next one.
+ */
+let qualifyingSession = null;
+
+/** What the qualifying results panel's button should do, set when that panel is shown. */
+let onQualifyingContinue = null;
 
 /* ------------------------------------------------------------- screens -- */
 
@@ -745,9 +762,18 @@ function showPause() {
   `);
 }
 
-function showResults(results, fastest) {
+/**
+ * Results panel.
+ *
+ * `options.title` / `options.note` / `options.onContinue` exist for qualifying, which is a
+ * knockout: the panel has to say who went home and then put the survivors back out, rather
+ * than jumping straight to the grid the way a race result does.
+ */
+function showResults(results, fastest, options = {}) {
   state = 'results';
+  onQualifyingContinue = options.onContinue ?? null;
   const isRace = activeSession?.type === SESSION_TYPE.race;
+  const { title, note, onContinue } = options;
 
   const rows = results
     .map((result) => {
@@ -773,12 +799,12 @@ function showResults(results, fastest) {
 
   ui.showPanel(`
     <div class="panel">
-      <h1 class="panel-title">${isRace ? 'Race result' : 'Qualifying result'}</h1>
-      <p class="panel-sub">${headline}${fastestNote}</p>
+      <h1 class="panel-title">${title ?? (isRace ? 'Race result' : 'Qualifying result')}</h1>
+      <p class="panel-sub">${note ?? `${headline}${fastestNote}`}</p>
       <div>${rows}</div>
       <div class="panel-actions">
-        <button type="button" class="panel-button" data-action="next-round">
-          ${isRace ? 'Next round' : 'To the race'}
+        <button type="button" class="panel-button" data-action="${onContinue ? 'qualifying-next' : 'next-round'}">
+          ${onContinue ? 'Next session' : isRace ? 'Next round' : 'To the race'}
         </button>
       </div>
     </div>
@@ -787,12 +813,6 @@ function showResults(results, fastest) {
 
 /* ---------------------------------------------------------- transitions -- */
 
-/** Starting grid from a set of qualifying results: fastest lap on pole. */
-function gridFromQualifying(results) {
-  return [...results]
-    .sort((a, b) => (a.bestLap ?? Infinity) - (b.bestLap ?? Infinity))
-    .map((result, index) => ({ entry: result.entry, grid: index }));
-}
 
 /**
  * Start a session on a given circuit with a given field.
@@ -831,7 +851,9 @@ async function startSession(type, options = {}) {
     return;
   }
 
-  const entries = quickRace ? quickRaceEntries(quickRace) : championship.entries;
+  // A qualifying segment runs only the cars that survived the one before it.
+  const entries = options.entries
+    ?? (quickRace ? quickRaceEntries(quickRace) : championship.entries);
   const totalLaps = type === SESSION_TYPE.race ? round.laps : QUALIFYING_LAPS;
   const startedAt = performance.now();
 
@@ -892,10 +914,27 @@ function finishSession(results) {
   const type = activeSession.type;
 
   if (type === SESSION_TYPE.qualifying) {
+    const outcome = applySegment(qualifyingSession, results);
+    const record = qualifyingSession.history[qualifyingSession.history.length - 1];
+
+    if (!isComplete(qualifyingSession)) {
+      // Still to come: say who went home, then put the survivors back out.
+      showResults(results, fastest, {
+        title: `${record.segment} complete`,
+        note: record.eliminated.length
+          ? `Eliminated: ${record.eliminated.join(', ')}. ${qualifyingSession.remaining.length} through to the next session.`
+          : `${qualifyingSession.remaining.length} through to the next session.`,
+        onContinue: () => startSession(SESSION_TYPE.qualifying, {
+          entries: entriesForSegment(qualifyingSession)
+        })
+      });
+      return;
+    }
+
     // The grid for the race comes from here; the race itself is not the same
     // session, so this is stored rather than applied immediately.
-    qualifyingGrid = gridFromQualifying(results);
-    showResults(results, fastest);
+    qualifyingGrid = gridFrom(qualifyingSession);
+    showResults(results, fastest, { title: 'Qualifying' });
     return;
   }
 
@@ -982,7 +1021,12 @@ function handleAction(action) {
 
     case 'start-qualifying':
       qualifyingGrid = null;
-      startSession(SESSION_TYPE.qualifying);
+      qualifyingSession = createQualifying(championship.entries);
+      startSession(SESSION_TYPE.qualifying, { entries: entriesForSegment(qualifyingSession) });
+      break;
+
+    case 'qualifying-next':
+      onQualifyingContinue?.();
       break;
 
     case 'start-race':
