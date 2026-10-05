@@ -34,6 +34,22 @@ import { buildTrack } from '../src/track/trackGeometry.js';
  */
 const TIMEOUT_SECONDS = 1800;
 
+/**
+ * How long to allow one round, in simulated seconds.
+ *
+ * Derived from the round rather than fixed. The flat 1800 was sized for "a 4-lap race on a
+ * 5.4km circuit takes about 19 minutes", and when the calendar went to 6-9 laps every
+ * round in the season reported TIMED OUT while progressing perfectly normally -- which is
+ * exactly the failure the constant's own comment warns about. A budget that has to be
+ * remembered in step with the calendar is a budget that will silently lie again.
+ *
+ * Three times the ideal race distance: the AI runs 10-30% slower than the track
+ * generator's estimate, and the margin has to absorb rescues as well as pace.
+ */
+function timeoutFor(track, laps) {
+  return Math.max(TIMEOUT_SECONDS, Math.ceil(track.lapRecord * laps * 3));
+}
+
 const raceCount = (() => {
   const index = process.argv.indexOf('--races');
   return index >= 0 ? Number(process.argv[index + 1]) : CIRCUITS.length;
@@ -108,7 +124,7 @@ for (let round = 0; round < raceCount; round += 1) {
 
   const controls = { throttle: 0, brake: 0, steer: 0, handbrake: false };
   let steps = 0;
-  const maxSteps = Math.ceil(TIMEOUT_SECONDS / FIXED_TIMESTEP);
+  const maxSteps = Math.ceil(timeoutFor(track, circuit.laps) / FIXED_TIMESTEP);
 
   while (!session.finished && steps < maxSteps) {
     session.update(FIXED_TIMESTEP, controls);

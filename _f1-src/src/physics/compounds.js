@@ -46,7 +46,7 @@ export const COMPOUNDS = [
      * a soft falls behind a hard at ~2.5 laps and a medium at ~7 -- which is where the
      * real trade sits: peak grip now, or grip still there at the end.
      */
-    wearRate: 0.041,
+    wearRate: 0.031,
     /** Operating window. A narrow band is faster but fussy to keep in. */
     band: 34,
     /** Warm-up: how quickly it reaches its window. Faster compounds warm quicker. */

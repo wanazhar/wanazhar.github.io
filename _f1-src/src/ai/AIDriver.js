@@ -48,6 +48,30 @@ const ERS_SLIDE_LIMIT = 0.14;
 /** How readily a driver spends energy with no car in sight, as a fraction of `drsSkill`. */
 const ERS_OPPORTUNISM = 0.35;
 
+/**
+ * Tyre management.
+ *
+ * `TYRE_MANAGE_FROM` is the wear fraction at which a tyre starts to cost real grip, and
+ * `TYRE_MANAGE_GAIN` is how hard a driver backs off once past it. The result is a speed
+ * multiplier, not a cliff: a driver protecting a tyre is a little slower everywhere rather
+ * than suddenly slow, which is what "managing" looks like.
+ *
+ * `skill.tyreCare` scales the whole thing -- a driver who does not care about the tyre is
+ * not managing it, and that has to be visible as a different driver rather than a different
+ * car.
+ */
+const TYRE_MANAGE_FROM = 0.16;
+const TYRE_MANAGE_GAIN = 0.55;
+
+/** How much of the available degradation a driver is willing to give back as pace. */
+function tyreManagement(physics, skill) {
+  const wear = Math.max(physics.frontWear, physics.rearWear);
+  if (wear <= TYRE_MANAGE_FROM) return 0;
+  const care = skill.tyreCare ?? 0.5;
+  return clamp((wear - TYRE_MANAGE_FROM) / (1 - TYRE_MANAGE_FROM), 0, 1) * TYRE_MANAGE_GAIN * care;
+}
+
+
 const DAMP_OFFSET = 8;
 /**
  * How far ahead of the car the line's heading is evaluated. Expressed as a time
@@ -284,6 +308,26 @@ export class AIDriver {
     this.#adaptPace(dt, offTrack, skill);
 
     let targetSpeed = speedPlan.targetSpeed * skill.cornering * PACE_SAFETY * this.paceAdaptation;
+
+    /*
+     * Tyre management.
+     *
+     * Without this, degradation is not a decision -- it is a tax. A driver on a soft tyre
+     * simply gets slower as it wears, and the only correct choice is a hard, so the whole
+     * compound model reduces to "always pick the hard" and the tyre choice stops being one.
+     *
+     * Real drivers lift to save a tyre, and the skill of doing it is a driver characteristic:
+     * a driver who protects a tyre finishes on it, a driver who does not arrives at the pit
+     * stop already out of it. So this is scaled by `skill`, which means a strong driver in
+     * the field can be visibly managing a stint while a weaker one destroys its tyres and
+     * then gets caught.
+     *
+     * The margin only applies past the point where a tyre is actually going off. Early in a
+     * stint `wearGrip` is flat at 1.0, and lifting there would be pure pace thrown away for
+     * nothing.
+     */
+    const wearPenalty = tyreManagement(physics, skill);
+    targetSpeed *= 1 - wearPenalty;
 
     // A car that has run wide has already lost time; rejoining slowly beats
     // rejoining at a speed that puts it into the barrier.

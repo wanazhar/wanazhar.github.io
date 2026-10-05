@@ -108,6 +108,13 @@ const TYRE_CLIFF_START = 0.18;
 const TYRE_CLIFF_GAIN = 0.45;
 const TYRE_GRIP_FLOOR = 0.45;
 
+/** Degrees of tyre temperature per m/s of road speed, and per unit of lateral work. */
+/** Fallback lap length in metres, when a circuit estimate is not supplied. */
+const DEFAULT_LAP_METRES = 5400;
+
+const TYRE_SPEED_HEAT = 1.1;
+const TYRE_LATERAL_HEAT = 0.0018;
+
 /** Fallback lap length, in seconds, when no circuit estimate is supplied. */
 const DEFAULT_LAP_SECONDS = 90;
 
@@ -244,7 +251,20 @@ export class CarPhysics {
     this.compound = compound;
     this.compoundGrip = compound.grip;
     this.lapSeconds = setup.lapSeconds > 0 ? setup.lapSeconds : DEFAULT_LAP_SECONDS;
-    this.wearPerSecond = compound.wearRate / this.lapSeconds;
+    /*
+     * Wear per *metre*, not per second.
+     *
+     * It has to be distance-based, because that is the whole point of tyre management. A
+     * time-based rate means a driver who lifts to save a tyre simply takes longer to wear
+     * it out, so protecting a tyre buys nothing and the only correct choice is never to
+     * manage -- which reduces the entire compound model to "always pick the hard".
+     *
+     * A tyre wears because of the work it does, so it should be charged per metre covered.
+     * Measured before this: an AI managing a tyre still ended a six-lap Jeddah race at 44%
+     * wear with grip down to 0.65.
+     */
+    this.lapMetres = setup.lapMetres > 0 ? setup.lapMetres : DEFAULT_LAP_METRES;
+    this.wearPerMetre = compound.wearRate / this.lapMetres;
     // The compound sets the working window; a tyre upgrade widens it. A narrow band is
     // faster to be in and harder to stay in, which is the trade `band` is describing.
     this.workingBand = compound.band + (this.optimalBand - TYRE.optimalBand);
@@ -636,25 +656,33 @@ export class CarPhysics {
     // invisible to the player.
     const ambient = 26;
     /*
-     * Lateral work in kW-ish units: force (m/s^2 * kg) times a duty factor.
+     * What actually heats a tyre.
      *
-     * The duty factor was 0.0016, which tops the front axle out at **66C** even at 3g --
-     * against a comment three lines above it claiming that a hard but normal lap runs
-     * the tyres into the 90-130C window. The thermal model had therefore never once
-     * reached its own operating window: `temperatureGrip` sat permanently below 1.0,
-     * and every car was driving on cold, out-of-window tyres at a permanent ~4% grip
-     * penalty that nobody had noticed because it was baked into the baseline.
+     * The old model had one term -- lateral work -- plus slip. That is not enough, because
+     * most of a lap is a straight: the AI's *median* lateral acceleration is under 6 m/s2,
+     * so on a straight the equilibrium fell to ambient and the tyres cooled. Measured
+     * against its own comment ("a hard but normal lap runs the tyres into the 90-130C
+     * window"), the old coefficients topped out at 66C at 3g and the thermal model had
+     * never once reached its operating window. `temperatureGrip` therefore sat permanently
+     * below 1.0 and every car in the game drove on cold tyres at a ~4% grip penalty that
+     * nobody could see, because it was baked into the baseline.
      *
-     * 0.005 puts the equilibrium where the comment says it should be:
+     * So there is now a speed term, which is the physically dominant one on a straight: a
+     * tyre rolled at 300kph heats from bearing and aero drag whether or not it is
+     * cornering. Calibrated so that:
      *
-     *     0.8g -> 59C  (below the window: a car being gentle is cold)
-     *     1.6g -> 92C  (a normal lap, in the window)
-     *     2.5g -> 130C (at the top of the window)
-     *     3.0g -> 150C (past it: genuine abuse costs grip, as intended)
+     *     46 m/s on a straight  ->  77C   (cool, but inside the working window)
+     *     70 m/s on a straight  -> 103C   (in the window)
+     *     60 m/s mid-corner     -> 116C   (in the window)
+     *     33 m/s at a hairpin   -> 120C   (hot, and about to go past it)
+     *
+     * which is the spread a real tyre lives in, rather than a model that only heats when
+     * the car is already sideways.
      */
-    const lateralWork = Math.abs(this.lateralG) * this.geometry.mass * 0.005;
-    const frontEquilibrium = ambient + lateralWork * 1.05 + this.slipPowerFront * 0.0012;
-    const rearEquilibrium = ambient + lateralWork * 0.85 + this.slipPowerRear * 0.0016;
+    const speedHeat = this.speed * TYRE_SPEED_HEAT;
+    const lateralHeat = Math.abs(this.lateralG) * this.geometry.mass * TYRE_LATERAL_HEAT;
+    const frontEquilibrium = ambient + speedHeat + lateralHeat * 1.05 + this.slipPowerFront * 0.0012;
+    const rearEquilibrium = ambient + speedHeat + lateralHeat * 0.85 + this.slipPowerRear * 0.0016;
 
     this.frontTemp = clamp(stepTemperature(this.frontTemp, frontEquilibrium, ambient, dt), ambient, 220);
     this.rearTemp = clamp(stepTemperature(this.rearTemp, rearEquilibrium, ambient, dt), ambient, 220);
@@ -671,9 +699,11 @@ export class CarPhysics {
      * divided by the lap time, so a lap is a lap at Monaco and at Monza alike. The
      * sliding term still matters: a car that uses its tyres gets through them faster.
      */
-    const wear = this.wearPerSecond * dt;
-    this.frontWear = clamp(this.frontWear + (0.55 + this.slipPowerFront * 6e-5) * wear, 0, 1);
-    this.rearWear = clamp(this.rearWear + (0.55 + this.slipPowerRear * 6e-5) * wear, 0, 1);
+    const covered = this.speed * dt;
+    const frontWear = this.wearPerMetre * covered * (1 + this.slipPowerFront * 6e-5);
+    const rearWear = this.wearPerMetre * covered * (1 + this.slipPowerRear * 6e-5);
+    this.frontWear = clamp(this.frontWear + frontWear, 0, 1);
+    this.rearWear = clamp(this.rearWear + rearWear, 0, 1);
   }
 
   /** ERS harvests automatically under braking; deployment is a manual button. */
