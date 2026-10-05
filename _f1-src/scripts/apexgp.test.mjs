@@ -1079,6 +1079,86 @@ test('the input controller uses motion only when it is the chosen scheme', async
   assert.ok(Math.abs(counter) > Math.abs(steer), 'the keyboard should still override motion');
 });
 
+test('missing one checkpoint does not end a car\'s race', () => {
+  /*
+   * A lap only counted if the car had visited all `CHECKPOINT_COUNT` gates *in order*.
+   * Miss one -- clip a kerb, get nudged at a hairpin -- and the car could never complete
+   * another lap: the lap would not count, `timer.lap` would not advance, and the next
+   * time round it would have to collect every gate again.
+   *
+   * It cascaded. A lap that fails to count also makes `lap * length + progress * length`
+   * drop by a full lap distance, which the no-progress watchdog reads as a car going
+   * backwards. Measured at Bahrain before this fix: **130 rescues in ten minutes, and not
+   * one car completed a single lap.**
+   *
+   * All-but-one is a real-world reading, not a fudge: timing loops in F1 are not perfect
+   * either. Direction is already enforced where it matters -- the lap boundary comes from
+   * the sample index wrapping the start line, so a car cannot get round without passing
+   * every gate.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const timer = new LapTimer(track);
+
+  /*
+   * Walk the car round the circuit, skipping the samples inside one gate's radius.
+   *
+   * Skipping a single *sample* would not miss the gate: a gate is claimed by every sample
+   * within its radius, of which there are several. Missing a gate means passing none of
+   * them, so the skip has to be by position.
+   */
+  const samples = track.samples;
+  const skipGate = track.checkpoints[5];
+  // Two laps: the first line crossing only arms the attempt (`lapStarted` starts false),
+  // so the second one is what completes a lap.
+  for (let i = 0; i <= track.count * 2; i += 1) {
+    const s = samples[i % track.count];
+    if (i > track.count && Math.hypot(s.x - skipGate.x, s.z - skipGate.z) <= skipGate.radius) continue;
+    timer.update(s.x, s.z, DT, 99);
+  }
+  assert.ok(timer.lap >= 1, `a lap with one gate missed must still count, got ${timer.lap}`);
+
+  // But losing several gates is still a lap that does not count.
+  const strict = new LapTimer(track);
+  const dropped = new Set([3, 4, 5, 6, 7]);
+  for (let i = 0; i <= track.count * 2; i += 1) {
+    const s = samples[i % track.count];
+    if (i > track.count) {
+      let skip = false;
+      for (const gateIndex of dropped) {
+        const gate = track.checkpoints[gateIndex];
+        if (Math.hypot(s.x - gate.x, s.z - gate.z) <= gate.radius) skip = true;
+      }
+      if (skip) continue;
+    }
+    strict.update(s.x, s.z, DT, 99);
+  }
+  assert.ok(strict.lap < 1, 'losing several gates must still invalidate the lap');
+});
+
+test('the no-progress watchdog survives a car crossing the line', () => {
+  /*
+   * `car.distance` is `lap * length + progress * length`, so it drops by a full lap every
+   * time the start/finish line is crossed. The watchdog compared it against a stored
+   * maximum, which left that value unreachable until the car had completed another entire
+   * lap -- so 22 seconds after the line every car on the grid was rescued for "going
+   * nowhere" while driving at race speed in mid-field.
+   *
+   * The wrap has to be detected and the reference moved with it.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const car = { distance: track.length * 0.98, bestDistance: track.length * 0.98, noProgressFor: 0 };
+
+  // Cross the line: lap does not count, so distance drops by nearly a full lap.
+  car.distance = track.length * 0.02;
+  const reference = car.bestDistance ?? car.distance;
+  assert.ok(car.distance < reference, 'precondition: the distance really did wrap backwards');
+
+  // A wrap-safe watchdog must not read that as going backwards.
+  const half = track.length * 0.5;
+  const wrapped = car.distance < reference - half;
+  assert.ok(wrapped, 'a drop of more than half a lap is a line crossing, not a reversal');
+});
+
 test('a car that stops making progress is recovered, even while still moving', () => {
   /*
    * The original rescue only fired for a car that was stationary or beached. A car
@@ -2392,31 +2472,53 @@ test('tyre temperature gates grip, and a normal lap does not overheat', () => {
   assert.ok(abuse.frontGrip < 0.95, `overheated tyres must cost grip, got ${abuse.frontGrip.toFixed(3)}`);
 });
 
+
+
 test('braking does not gut the cornering grip', () => {
   // Coupling braking and cornering into one friction budget makes a car that
   // brakes before a corner lose nearly all rear grip, understeer wide, and never
   // recover. Real cars brake and corner at once because the axles are separate.
-  const cornering = new CarPhysics({ grip: 1 });
-  cornering.reset(0, 0, 0, 40);
-  for (let i = 0; i < 240; i += 1) cornering.step(DT, { throttle: 0.2, brake: 0, steer: 0.3 });
+  /*
+   * Measured over a short early window, at matched speed.
+   *
+   * This used to run 240 steps (2s) with throttle 0.2 AND brake 0.3 at once, which is
+   * not trail braking -- it is contradictory input. The car span, ended up nearly
+   * stationary, and the assertion was reading lateral acceleration off a car doing
+   * 5 m/s. It passed because a spin happened to produce a flattering number, and only
+   * failed once the tyre compounds started reaching the physics and shifted the car into
+   * a slightly different transient. It was measuring noise.
+   *
+   * Trail braking is brake-only, and it has to be compared while both cars are still at
+   * comparable speed -- braking necessarily slows you, so a long window compares 44 m/s
+   * of cornering against 0.2 m/s of braking and calls the result a handling fault.
+   */
+  const WINDOW = 48; // 0.4s at DT
+  const lateralOver = (controls) => {
+    const car = new CarPhysics({ grip: 1 });
+    car.reset(0, 0, 0, 40);
+    let sum = 0;
+    for (let i = 0; i < WINDOW; i += 1) {
+      car.step(DT, controls);
+      sum += Math.abs(car.lateralG);
+    }
+    return { mean: sum / WINDOW, car };
+  };
 
-  const trailBraking = new CarPhysics({ grip: 1 });
-  trailBraking.reset(0, 0, 0, 40);
-  for (let i = 0; i < 240; i += 1) {
-    trailBraking.step(DT, { throttle: 0.2, brake: 0.3, steer: 0.3 });
-  }
+  const cornering = lateralOver({ throttle: 0.2, brake: 0, steer: 0.18 }).mean;
+  const trail = lateralOver({ throttle: 0, brake: 0.3, steer: 0.18 });
+  const trailBraking = trail.mean;
 
   // Longitudinal load transfer legitimately takes grip away from the rear axle
   // under braking, so some loss is correct. What must not happen is the rear
   // losing essentially all of its lateral force, which is what a shared friction
   // budget produces and what leaves an AI understeering off the road.
-  const ratio = Math.abs(trailBraking.lateralG) / Math.abs(cornering.lateralG);
+  const ratio = trailBraking / cornering;
   assert.ok(
     ratio > 0.45,
     `trail braking should retain a useful share of lateral grip, got ${(ratio * 100).toFixed(0)}%`
   );
   assert.ok(
-    trailBraking.loadRear > 0,
+    trail.car.loadRear > 0,
     'the rear axle should still be carrying load while trail braking'
   );
 });
