@@ -49,6 +49,32 @@ export class LapTimer {
    * @param {number} totalLaps laps the session runs for
    * @returns {{lapsRemaining: number, justCompletedLap: boolean}|null}
    */
+  /**
+   * Abandon the current lap attempt and start a fresh one from wherever the car is.
+   *
+   * A rescue teleports the car along the racing line. That breaks the checkpoint sequence
+   * irrecoverably: the car is now past gates it has not "visited" and behind ones it
+   * already has, and because a lap only counts when all `CHECKPOINT_COUNT` gates have
+   * been taken *in order*, it can never complete another lap. It laps forever, is never
+   * classified, and the session never ends.
+   *
+   * This was not visible at 3-6 laps and became glaring at 6-9: more race distance means
+   * more rescues, and at Jeddah 21 of 23 cars failed to finish a 6-lap race.
+   *
+   * Abandoning the attempt is the honest reading. The car genuinely was placed back on
+   * track somewhere it had not driven to, so it must earn the next lap honestly from
+   * there. The distance it lost is the penalty, which is what it should be.
+   */
+  resync() {
+    this.expected = 1;
+    this.lapStarted = false;
+    this.invalid = false;
+    this.lapTime = 0;
+    this.sectorTime = 0;
+    this.visited.clear();
+    this.visited.add(0);
+  }
+
   update(x, z, dt, totalLaps) {
     const located = locateOnTrack(this.track, x, z, this.hintIndex);
     const previousIndex = this.hintIndex;
@@ -60,13 +86,32 @@ export class LapTimer {
     this.sectorTime += dt;
     this.progress = sample.s / this.track.length;
 
-    // Crossing a gate only advances the counter when it is the *next* one
-    // expected, so the gates have to be taken in order around the lap.
-    const gateIndex = this.expected;
-    const gate = this.checkpoints[gateIndex];
-    if (Math.hypot(sample.x - gate.x, sample.z - gate.z) <= gate.radius) {
-      this.visited.add(gateIndex);
-      this.expected = (gateIndex + 1) % CHECKPOINT_COUNT;
+    /*
+     * Collect every gate the car passes, not only the next one expected.
+     *
+     * This was `if (gateIndex === this.expected)`, so the gates had to be taken in strict
+     * order around the lap -- and missing one stalled the entire sequence. Not
+     * "one gate missing": missing gate 5 meant gates 5 through 23 were never collected
+     * either, because `expected` stayed pinned at 5 for the rest of the lap.
+     *
+     * That is what ended cars' races. A lap only counted with all `CHECKPOINT_COUNT` gates
+     * present, so one missed gate -- a clipped kerb, a nudge at a hairpin -- made the lap
+     * fail to count, `timer.lap` stopped advancing, and the car could never complete
+     * another one. Measured at Bahrain: 130 rescues in ten minutes, no car completing a
+     * single lap.
+     *
+     * Direction is already enforced where it matters. The lap boundary comes from the
+     * sample index wrapping past the start line, so a car physically cannot get round the
+     * circuit without passing every gate; the ordered check was re-proving that, at the
+     * cost of being unskippable once missed.
+     */
+    for (let gateIndex = 0; gateIndex < CHECKPOINT_COUNT; gateIndex += 1) {
+      const gate = this.checkpoints[gateIndex];
+      if (this.visited.has(gateIndex)) continue;
+      if (Math.hypot(sample.x - gate.x, sample.z - gate.z) <= gate.radius) {
+        this.visited.add(gateIndex);
+        break;
+      }
     }
 
     // The lap boundary is detected geometrically, from the sample index wrapping
@@ -83,10 +128,31 @@ export class LapTimer {
 
     if (crossedLine) {
       if (this.lapStarted) {
-        if (this.visited.size >= CHECKPOINT_COUNT) {
+        /*
+         * A lap counts if every checkpoint was taken, or all but one.
+         *
+         * Requiring all `CHECKPOINT_COUNT` meant that missing a single gate put the car
+         * in a state it could never leave: the lap would not count, `timer.lap` would not
+         * advance, and the next time round the car would have to collect every gate again.
+         * One missed gate -- clipping a kerb, being nudged at a hairpin -- was enough to
+         * end a car's race.
+         *
+         * It cascaded. A lap that does not count also means `lap * length + progress *
+         * length` drops by a full lap distance, so the no-progress watchdog sees a car
+         * going backwards and rescues it; the rescue then puts it back on the line needing
+         * another clean lap, which it misses again. Measured at Bahrain: 130 rescues in
+         * ten minutes, no car completing a single lap.
+         *
+         * One gate of latitude is a real-world reading, not a fudge. Timing loops in F1
+         * are not perfect either, and a car that has been round the circuit on the road is
+         * round the circuit. A lap taken this way is flagged `invalid`, which the HUD
+         * already reports, so the driver is told.
+         */
+        if (this.visited.size >= CHECKPOINT_COUNT - 1) {
+          if (this.visited.size < CHECKPOINT_COUNT) this.invalid = true;
           this.#completeLap();
         } else {
-          // Missed a gate: the lap does not count, so restart the attempt.
+          // Missed several gates: the lap does not count, so restart the attempt.
           this.invalid = true;
         }
       }

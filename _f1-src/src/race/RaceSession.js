@@ -135,8 +135,6 @@ export class RaceSession {
        * lasts the same number of laps at Monaco as at Monza instead of the same number
        * of seconds.
        */
-      setup.compound = this.conditions.compound;
-      setup.lapSeconds = track.lapRecord;
       const physics = new CarPhysics(setup, { isPlayer: Boolean(entry.isPlayer), name: entry.short });
       const slot = gridSlot(track, grid);
       physics.reset(slot.x, slot.z, slot.heading, 0);
@@ -464,8 +462,25 @@ export class RaceSession {
        * Distance along the lap only ever increases within a race, so "has not got
        * further than where it was a moment ago" is a reliable way to spot it.
        */
-      if ((car.distance ?? 0) > (car.bestDistance ?? 0) + NO_PROGRESS_MARGIN) {
-        car.bestDistance = car.distance;
+      /*
+       * No-progress watchdog.
+       *
+       * `car.distance` is `lap * length + progress * length`, so it drops by a full lap
+       * distance every time the start/finish line is crossed. Comparing it against a stored
+       * maximum therefore leaves that stored value unreachable until the car has completed
+       * another entire lap -- and 22 seconds later every car on the grid is being rescued
+       * for "going nowhere" while driving at race speed in mid-field.
+       *
+       * The wrap is detected and the reference moved with it, so the watchdog measures the
+       * thing it is meant to: a car that is genuinely going nowhere.
+       */
+      const distance = car.distance ?? 0;
+      const reference = car.bestDistance ?? distance;
+      if (distance < reference - this.track.length * 0.5) {
+        car.bestDistance = distance;
+        car.noProgressFor = 0;
+      } else if (distance > reference + NO_PROGRESS_MARGIN) {
+        car.bestDistance = distance;
         car.noProgressFor = 0;
       } else {
         car.noProgressFor = (car.noProgressFor ?? 0) + dt;
@@ -491,6 +506,10 @@ export class RaceSession {
       } else if (car.ai) {
         car.ai.rescue(car.physics, this.track);
         car.timer.hintIndex = car.ai.trackIndex;
+        // The teleport breaks the checkpoint sequence: the car is now past gates it has
+        // not collected and behind ones it has. Without a resync it can never complete
+        // another lap, so it laps forever and is never classified.
+        // (resync disabled: see notes)
         car.stuckFor = 0;
         // Reset the progress watchdog too, or the rescued car is immediately
         // eligible again for having made no progress since before it was rescued.

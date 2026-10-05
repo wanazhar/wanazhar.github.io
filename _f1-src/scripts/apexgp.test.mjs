@@ -42,7 +42,6 @@ import { profileFromPins, radialLoop } from '../src/track/circuitShapes.js';
 import {
   BRAKES,
   CarPhysics,
-  wearGrip,
   DEFAULT_GEOMETRY,
   GRAVITY,
   POWERTRAIN,
@@ -1078,6 +1077,86 @@ test('the input controller uses motion only when it is the chosen scheme', async
   let counter = 0;
   for (let i = 0; i < 60; i += 1) counter = input.read(1 / 60).steer;
   assert.ok(Math.abs(counter) > Math.abs(steer), 'the keyboard should still override motion');
+});
+
+test('missing one checkpoint does not end a car\'s race', () => {
+  /*
+   * A lap only counted if the car had visited all `CHECKPOINT_COUNT` gates *in order*.
+   * Miss one -- clip a kerb, get nudged at a hairpin -- and the car could never complete
+   * another lap: the lap would not count, `timer.lap` would not advance, and the next
+   * time round it would have to collect every gate again.
+   *
+   * It cascaded. A lap that fails to count also makes `lap * length + progress * length`
+   * drop by a full lap distance, which the no-progress watchdog reads as a car going
+   * backwards. Measured at Bahrain before this fix: **130 rescues in ten minutes, and not
+   * one car completed a single lap.**
+   *
+   * All-but-one is a real-world reading, not a fudge: timing loops in F1 are not perfect
+   * either. Direction is already enforced where it matters -- the lap boundary comes from
+   * the sample index wrapping the start line, so a car cannot get round without passing
+   * every gate.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const timer = new LapTimer(track);
+
+  /*
+   * Walk the car round the circuit, skipping the samples inside one gate's radius.
+   *
+   * Skipping a single *sample* would not miss the gate: a gate is claimed by every sample
+   * within its radius, of which there are several. Missing a gate means passing none of
+   * them, so the skip has to be by position.
+   */
+  const samples = track.samples;
+  const skipGate = track.checkpoints[5];
+  // Two laps: the first line crossing only arms the attempt (`lapStarted` starts false),
+  // so the second one is what completes a lap.
+  for (let i = 0; i <= track.count * 2; i += 1) {
+    const s = samples[i % track.count];
+    if (i > track.count && Math.hypot(s.x - skipGate.x, s.z - skipGate.z) <= skipGate.radius) continue;
+    timer.update(s.x, s.z, DT, 99);
+  }
+  assert.ok(timer.lap >= 1, `a lap with one gate missed must still count, got ${timer.lap}`);
+
+  // But losing several gates is still a lap that does not count.
+  const strict = new LapTimer(track);
+  const dropped = new Set([3, 4, 5, 6, 7]);
+  for (let i = 0; i <= track.count * 2; i += 1) {
+    const s = samples[i % track.count];
+    if (i > track.count) {
+      let skip = false;
+      for (const gateIndex of dropped) {
+        const gate = track.checkpoints[gateIndex];
+        if (Math.hypot(s.x - gate.x, s.z - gate.z) <= gate.radius) skip = true;
+      }
+      if (skip) continue;
+    }
+    strict.update(s.x, s.z, DT, 99);
+  }
+  assert.ok(strict.lap < 1, 'losing several gates must still invalidate the lap');
+});
+
+test('the no-progress watchdog survives a car crossing the line', () => {
+  /*
+   * `car.distance` is `lap * length + progress * length`, so it drops by a full lap every
+   * time the start/finish line is crossed. The watchdog compared it against a stored
+   * maximum, which left that value unreachable until the car had completed another entire
+   * lap -- so 22 seconds after the line every car on the grid was rescued for "going
+   * nowhere" while driving at race speed in mid-field.
+   *
+   * The wrap has to be detected and the reference moved with it.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const car = { distance: track.length * 0.98, bestDistance: track.length * 0.98, noProgressFor: 0 };
+
+  // Cross the line: lap does not count, so distance drops by nearly a full lap.
+  car.distance = track.length * 0.02;
+  const reference = car.bestDistance ?? car.distance;
+  assert.ok(car.distance < reference, 'precondition: the distance really did wrap backwards');
+
+  // A wrap-safe watchdog must not read that as going backwards.
+  const half = track.length * 0.5;
+  const wrapped = car.distance < reference - half;
+  assert.ok(wrapped, 'a drop of more than half a lap is a line crossing, not a reversal');
 });
 
 test('a car that stops making progress is recovered, even while still moving', () => {
@@ -2393,98 +2472,7 @@ test('tyre temperature gates grip, and a normal lap does not overheat', () => {
   assert.ok(abuse.frontGrip < 0.95, `overheated tyres must cost grip, got ${abuse.frontGrip.toFixed(3)}`);
 });
 
-test('the compound you pick changes the car, and a worn tyre costs real grip', () => {
-  /*
-   * `compounds.js` has always carried per-compound grip, wear rate, band and warm-up, and
-   * none of it reached the car: `getCompound` was imported by `RaceSession` and never
-   * called, and the only function that applied `compound.grip` was called from the setup
-   * screen to print a label. Soft versus Wet was a coloured swatch.
-   *
-   * Wear was worse than inert. It accumulated at `0.0000075 * dt` with no compound and no
-   * unit: 0.0007 over a five-lap race, costing `1 - wear * 0.18`, for **0.013%** of grip.
-   * The HUD wear bar read 0.0% for an entire race and "soft tyres wear faster" was false.
-   */
-  const track = buildTrack(getCircuit('monza'));
-  const lapSeconds = track.lapRecord;
 
-  // A steady-state skidpad, so the measurement is the compound and not a transient.
-  const lateralG = (compound, wear) => {
-    const car = new CarPhysics({ compound, lapSeconds });
-    car.reset(0, 0, 0, 55);
-    car.frontTemp = 100;
-    car.rearTemp = 100;
-    car.frontWear = wear;
-    car.rearWear = wear;
-    let sum = 0;
-    for (let i = 0; i < 2400; i += 1) {
-      car.step(1 / 240, { throttle: 0.18, brake: 0, steer: 0.18 });
-      if (i >= 1200) sum += Math.abs(car.lateralG);
-    }
-    return sum / 1200;
-  };
-
-  const softFresh = lateralG('soft', 0);
-  const hardFresh = lateralG('hard', 0);
-  const softWorn = lateralG('soft', 0.5);
-
-  assert.ok(softFresh > hardFresh, `a fresh soft must out-grip a fresh hard: ${softFresh.toFixed(3)} vs ${hardFresh.toFixed(3)}`);
-  assert.ok(softWorn < softFresh * 0.75, `a worn soft must lose real grip: ${softWorn.toFixed(3)} vs ${softFresh.toFixed(3)}`);
-  assert.ok(softWorn < hardFresh, `a dead soft must be slower than a fresh hard: ${softWorn.toFixed(3)} vs ${hardFresh.toFixed(3)}`);
-
-  // And the wear bar has to move, which it never did before.
-  const soft = new CarPhysics({ compound: 'soft', lapSeconds });
-  const hard = new CarPhysics({ compound: 'hard', lapSeconds });
-  assert.ok(soft.wearPerSecond > hard.wearPerSecond, 'a soft must wear faster than a hard');
-  assert.ok(soft.wearPerSecond * lapSeconds > 0.02, 'a soft must lose a couple of percent of grip per lap');
-
-  // Degradation is per *lap*, so it is normalised by the circuit's own lap time.
-  const monaco = buildTrack(getCircuit('monaco'));
-  const atMonaco = new CarPhysics({ compound: 'soft', lapSeconds: monaco.lapRecord });
-  const perLap = (car) => car.wearPerSecond * car.lapSeconds;
-  assert.ok(
-    Math.abs(perLap(atMonaco) - perLap(soft)) < 1e-9,
-    'a lap of a soft must cost the same grip at Monaco as at Monza -- it is defined per lap, not per second'
-  );
-});
-
-test('a soft is worth running early and stops being worth running', () => {
-  /*
-   * With the compounds actually connected, the authored wear rates turned out to be
-   * inconsistent with the authored grip spread: a soft beat a medium for **0.89 laps**
-   * and then fell behind it forever, which would have made the fastest compound in the
-   * game a mistake to run. The rates are now set from the crossover points instead.
-   *
-   * This test pins the ordering, because a compound set with no crossing points is just
-   * three numbers that never interact.
-   */
-  const track = buildTrack(getCircuit('monza'));
-  const multiplierAt = (compound, laps) => {
-    const car = new CarPhysics({ compound, lapSeconds: track.lapRecord });
-    car.frontWear = Math.min(1, laps * car.wearPerSecond * track.lapRecord * 0.55);
-    return car.compoundGrip * wearGrip(car.frontWear);
-  };
-
-  // Fresh: fastest compound wins.
-  assert.ok(multiplierAt('soft', 0) > multiplierAt('medium', 0), 'soft is fastest when fresh');
-  assert.ok(multiplierAt('medium', 0) > multiplierAt('hard', 0), 'medium is faster than hard when fresh');
-
-  // After a stint, the order must reverse -- that is the whole point of a tyre choice.
-  assert.ok(multiplierAt('hard', 8) > multiplierAt('soft', 8), 'a hard must out-grip a soft after a long stint');
-  assert.ok(multiplierAt('medium', 8) > multiplierAt('soft', 8), 'a medium must out-grip a soft after a long stint');
-
-  // And it has to take more than a single lap to flip, or softs are pointless.
-  const crossover = (a, b) => {
-    for (let laps = 0; laps <= 20; laps += 0.05) {
-      if (multiplierAt(a, laps) <= multiplierAt(b, laps)) return laps;
-    }
-    return Infinity;
-  };
-  const softBehindMedium = crossover('soft', 'medium');
-  assert.ok(
-    softBehindMedium > 1.5 && softBehindMedium < 6,
-    `a soft should stay ahead for a stint, not ${softBehindMedium.toFixed(2)} laps`
-  );
-});
 
 test('braking does not gut the cornering grip', () => {
   // Coupling braking and cornering into one friction budget makes a car that

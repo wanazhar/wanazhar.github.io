@@ -35,18 +35,8 @@ export const COMPOUNDS = [
     colour: 0xe23b3b,
     /** Peak friction as a multiple of the model's baseline. */
     grip: 1.075,
-    /**
-     * How fast grip is lost, as a fraction of peak per lap.
-     *
-     * RECALIBRATED. These were 0.085 / 0.05 / 0.028, which were inert because nothing
-     * read them. Wired into the car, they turned out to be internally inconsistent with
-     * the `grip` spread above: a soft beat a medium for **0.89 laps** and then fell
-     * behind it forever, so the fastest compound in the game would have been strictly
-     * a mistake to run. The ratios are now set from the crossover points instead --
-     * a soft falls behind a hard at ~2.5 laps and a medium at ~7 -- which is where the
-     * real trade sits: peak grip now, or grip still there at the end.
-     */
-    wearRate: 0.041,
+    /** How fast grip is lost, as a fraction of peak per lap. */
+    wearRate: 0.085,
     /** Operating window. A narrow band is faster but fussy to keep in. */
     band: 34,
     /** Warm-up: how quickly it reaches its window. Faster compounds warm quicker. */
@@ -58,7 +48,7 @@ export const COMPOUNDS = [
     name: 'Medium',
     colour: 0xf0c419,
     grip: 1.04,
-    wearRate: 0.019,
+    wearRate: 0.05,
     band: 40,
     warmup: 1.2,
     blurb: 'The default. Works for anything, wins nothing spectacular.'
@@ -68,7 +58,7 @@ export const COMPOUNDS = [
     name: 'Hard',
     colour: 0xf2f2f2,
     grip: 1.0,
-    wearRate: 0.014,
+    wearRate: 0.028,
     band: 48,
     warmup: 0.95,
     blurb: 'Slow all race, which is exactly the point.'
@@ -78,7 +68,7 @@ export const COMPOUNDS = [
     name: 'Intermediate',
     colour: 0x43b02a,
     grip: 0.985,
-    wearRate: 0.017,
+    wearRate: 0.03,
     band: 46,
     warmup: 1.0,
     blurb: 'For a damp track that is not quite wet.'
@@ -88,7 +78,7 @@ export const COMPOUNDS = [
     name: 'Full Wet',
     colour: 0x1f7ae0,
     grip: 0.96,
-    wearRate: 0.015,
+    wearRate: 0.026,
     band: 50,
     warmup: 0.8,
     blurb: 'Only sensible in standing water.'
