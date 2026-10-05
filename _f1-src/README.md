@@ -469,6 +469,31 @@ but not by `src/`, which means the balance tools and the game currently disagree
 every circuit. Both are listed as load-bearing below rather than quietly wired up, because
 wiring them changes handling everywhere at once and wants its own measurement.
 
+### Qualifying is a knockout, not a time trial
+
+It used to be a three-lap race with the start lights switched off: every car on track at
+the same time, nobody eliminated, and the grid produced by sorting every best lap. That is
+not qualifying. Nothing about a lap mattered differently from any other -- in real
+qualifying a lap has to be a *flying* lap, out on cold tyres, learn the circuit, then commit
+-- and the tension that makes qualifying a session, a full field with five cars going home,
+did not exist.
+
+Now three segments of five eliminations, the shape F1 uses:
+
+    Q1   23 cars, 5 eliminated  ->  18 remain
+    Q2   18 cars, 5 eliminated  ->  13 remain
+    Q3   13 cars fight for pole
+
+A driver's result is the best lap across every segment they appeared in, so being quick in
+Q1 and then knocked out in Q2 still starts them on that Q1 time. That is what makes the
+knockout a risk rather than a formality.
+
+The rules live in `src/race/qualifying.js` as pure state with no session or UI code, so the
+format is testable without a browser and the rules sit in one readable place instead of
+being spread through the session lifecycle. Two edge cases it handles that are easy to get
+wrong: a car that never took the start is eliminated on the same terms as one that set no
+time, and a short grid is never eliminated below six cars.
+
 ### Elevation: real data, from two sources
 
 I said earlier this could not be done honestly. That was wrong, and the user was right

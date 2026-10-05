@@ -54,6 +54,13 @@ import {
 } from '../src/physics/CarPhysics.js';
 import { AIDriver } from '../src/ai/AIDriver.js';
 import { LapTimer } from '../src/race/LapTimer.js';
+import {
+  createQualifying,
+  applySegment,
+  entriesForSegment,
+  isComplete,
+  classification
+} from '../src/race/qualifying.js';
 import { SESSION_TYPE, RaceSession, FIXED_TIMESTEP } from '../src/race/RaceSession.js';
 import { UPGRADES, applyUpgrades, developmentPointsFor, upgradeCost } from '../src/physics/upgrades.js';
 import {
@@ -1077,6 +1084,64 @@ test('the input controller uses motion only when it is the chosen scheme', async
   let counter = 0;
   for (let i = 0; i < 60; i += 1) counter = input.read(1 / 60).steer;
   assert.ok(Math.abs(counter) > Math.abs(steer), 'the keyboard should still override motion');
+});
+
+test('qualifying is a knockout, not a time trial', () => {
+  /*
+   * Qualifying used to be a three-lap race with the lights off: every car on track at once,
+   * nobody eliminated, grid sorted by best lap. That is a time trial with a grid at the end,
+   * and it has none of the tension that makes qualifying a session.
+   */
+  const entries = Array.from({ length: 23 }, (_, i) => ({
+    short: `D${i}`, name: `Driver ${i}`, team: 'T', colour: 0, upgrades: {}
+  }));
+
+  const q = createQualifying(entries);
+  assert.equal(entriesForSegment(q).length, 23, 'everyone starts in Q1');
+
+  const ran = [];
+  while (!isComplete(q)) {
+    const running = entriesForSegment(q);
+    // Deliberately: the back of the field is slower in every segment.
+    const results = running.map((entry, i) => ({ entry, bestLap: 80 + i * 0.5 + q.segment * 1.5 }));
+    ran.push(running.length);
+    applySegment(q, results);
+  }
+
+  assert.deepEqual(ran, [23, 18, 13], 'five out of Q1, five out of Q2, thirteen fight for pole');
+  assert.equal(classification(q).length, 18, 'everyone who set a time is classified, knockouts included');
+  assert.equal(classification(q)[0].short, 'D0', 'fastest lap takes pole');
+
+  /*
+   * A driver knocked out in Q2 keeps the time they set in Q1, which is what makes the
+   * knockout a risk rather than a formality.
+   */
+  const outInQ2 = q.history[1].eliminated;
+  assert.equal(outInQ2.length, 5, `five eliminated in Q2, got ${outInQ2.length}`);
+  for (const short of outInQ2) {
+    assert.ok(q.best.has(short), `${short} was eliminated but must still hold a classified time`);
+  }
+
+  /*
+   * A car that produced no result at all -- crashed on the out lap, never took the start --
+   * must go home on the same terms as one that set no time. Without this it never appears in
+   * `results`, never gets ranked, and silently reappears in the next segment.
+   */
+  const stalled = createQualifying(entries);
+  applySegment(stalled, entries.slice(0, 22).map((entry) => ({ entry, bestLap: 90 })));
+  assert.ok(
+    stalled.history[0].eliminated.includes(entries[22].short),
+    'a car that never ran must be eliminated'
+  );
+});
+
+test('qualifying never eliminates the field down to nothing', () => {
+  const few = Array.from({ length: 6 }, (_, i) => ({
+    short: `D${i}`, name: `D${i}`, team: 'T', colour: 0, upgrades: {}
+  }));
+  const q = createQualifying(few);
+  applySegment(q, few.map((entry, i) => ({ entry, bestLap: 80 + i })));
+  assert.ok(q.remaining.length >= 6, `a small grid must not be eliminated away, left ${q.remaining.length}`);
 });
 
 test('missing one checkpoint does not end a car\'s race', () => {
