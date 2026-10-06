@@ -78,6 +78,71 @@ export const SKILL_PRESETS = {
     tyreCare: 0.55,
     mistakeChance: 0.016
   },
+  /*
+   * A competent human at the wheel, which is the reference the balance question actually needs.
+   *
+   * Every other preset here is a model of *the AI's* idea of a good or bad driver, and none of
+   * them is a person. That matters because the headline "the player wins 24 of 24" was
+   * measured with an `ace` autopilot in the player's seat: it says the ace autopilot is quicker
+   * than the field, not that a game is winnable or fair. Asking "is this balanced" without a
+   * human in the seat is the wrong question, and answering it anyway is how a balance problem
+   * gets reported as a solved one.
+   *
+   * `reactionMs` is the one number taken from outside this codebase, and it is the load-bearing
+   * one. 200ms is the standard figure for human reaction in motorsport; the AI presets run
+   * 90-220ms, so `ace` at 90ms is superhuman by a factor of two and `backmarker` at 220ms is
+   * already human-fast. Everything else is then set so the driver's *pace* lands where a
+   * competent human's would, which is measured rather than asserted -- see the field-spread
+   * figures in the README.
+   *
+   * ## What this preset is not calibrated against
+   *
+   * The figures above set *shape*. The absolute pace is not defensible yet, and shipping it
+   * as if it were would repeat the mistake this investigation was started to fix.
+   *
+   * Measuring a flying lap -- lap 2, averaged over five seeds, no traffic -- the `ace` preset's
+   * seed-to-seed scatter is 0.16 to 2.63s where a real flying lap is repeatable to about
+   * 0.1-0.3s, so the field is not repeatable enough to say what a human is worth against it.
+   * And `reactionMs` is mis-scaled: it is applied as a sample-and-hold on the entire control
+   * loop, so an 80ms difference between two presets costs 2.4 to 14.0s a lap, roughly a
+   * hundred times more than reaction time should. Until that is fixed, a human lap time
+   * measured against these presets is measuring the reaction model's error bar, not the driver.
+   *
+   * So this preset exists to make the question askable and to give the balance work a fixed
+   * reference point -- not to claim a calibrated difficulty.
+   *
+   * The remaining traits describe how a person is worse than the AI, and they are worse in
+   * specific ways rather than uniformly:
+   *
+   *   - `consistency` 0.08: a real lap is repeatable to about a tenth, and driving rather than
+   *     replaying a line scatters wider than that. This is what makes a human's qualifying
+   *     session look the way it does.
+   *   - `mistakeChance` 0.018: not constant, just frequent. Roughly one small error every
+   *     minute of racing, which is what a committed but imperfect lap looks like.
+   *   - `linePrecision` 0.86: high, because a human who knows the circuit is genuinely good at
+   *     the line -- and not 0.96, because nobody holds it under braking.
+   *   - `brakeConfidence` 0.9: humans brake slightly early. Being marginally conservative
+   *     under braking is where a lap goes, and it is not a defect.
+   *   - `aggression` 0.55: willing to race, not willing to crash. A human picks battles a
+   *     little more carefully than an ace and a lot more carefully than a backmarker.
+   */
+  human: {
+    label: 'Human',
+    pace: 0.972,
+    /** Fraction of the theoretical cornering limit actually used. */
+    cornering: 0.93,
+    brakeConfidence: 0.9,
+    consistency: 0.08,
+    aggression: 0.55,
+    /** Published human reaction time in motorsport. The AI's fastest is 90ms. */
+    reactionMs: 200,
+    /** How closely the racing line is followed, 0 = loose, 1 = glued. */
+    linePrecision: 0.86,
+    drsSkill: 0.7,
+    /** How carefully this driver protects a tyre: 0 = drives it to destruction. */
+    tyreCare: 0.7,
+    mistakeChance: 0.018
+  },
   backmarker: {
     label: 'Backmarker',
     pace: 0.908,

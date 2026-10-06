@@ -499,6 +499,52 @@ the roll is on distance rather than frames.
 failed. Every round completes cleanly whether nothing retires or half the grid does, so neither
 shows up in the pass/fail line — only the distribution distinguishes them.
 
+### Balance: what the question actually needs
+
+The `human` preset in `physics/drivers.js` exists because every other preset in that file is a
+model of *the AI's* idea of a driver, and none of them is a person. The "player wins 24 of 24"
+figure was measured with an `ace` autopilot in the player's seat: it says the autopilot beats
+the field, not that a game is fair.
+
+Its one externally-sourced number is `reactionMs: 200`, the standard figure for human reaction
+in motorsport. The AI presets run 90-220ms, so `ace` at 90ms is superhuman by a factor of two
+and `backmarker` at 220ms is already human-fast.
+
+**It is not yet a calibrated difficulty, and the reason is worth writing down.** Measuring a
+flying lap -- lap 2, averaged over five seeds, no traffic -- surfaces three defects that have
+to be fixed before any pace number means anything:
+
+| measurement | this model | reality |
+|---|---|---|
+| seed-to-seed scatter, `ace` flying lap | 0.16-2.63 s | ~0.1-0.3 s |
+| cost of 80 ms of `reactionMs` | 2.4-14.0 s/lap | well under 1 s/lap |
+| `consistency` | defined on all 5 presets, read by nothing | — |
+
+**`consistency` is dead.** It is on every preset, documented, and no line of `src/` reads it --
+so the AI has no repeatability model at all, which is why the same driver produces a lap that
+varies by 1.95s run to run. This is the seventh instance in this repo of a value defined
+correctly and then never read.
+
+**`reactionMs` is mis-scaled by about a hundred times.** It is applied as a sample-and-hold on
+the *entire control loop*, so at 90ms the AI steers in 11Hz steps; at 83m/s each steering
+decision covers 7.5m of travel. That is not reaction time -- nobody re-decides their steering
+every 200ms -- and it is why an 80ms difference between two presets costs up to 14s a lap.
+
+Two replacements were built and measured rather than reasoned about:
+
+- **A transport delay on material changes** (delay big changes, apply small tracking
+  corrections immediately): *much* worse, up to +39s/lap. It latches a stale **brake** value
+  through a braking zone, which is precisely backwards.
+- **A first-order lag** on the controls: right in kind. Cut `ace` seed-to-seed scatter at Monza
+  from 1.95s to **0.28s** and at Silverstone from 0.45s to **0.11s** -- real flying-lap
+  repeatability. But it cost about 7% of pace across the field, which pushes a 6-lap race past
+  the pit-stop test's fixed 840s budget.
+
+Both were **reverted rather than shipped half-verified**, and the second is worth resuming:
+the fix and the budget retune belong in the same change, with the whole season re-measured.
+The measurements are pinned in a test so the next attempt starts from the numbers rather than
+rediscovering them.
+
 ### Weather that arrives during the race
 
 A race's weather was read once in the `RaceSession` constructor and never touched, so the
