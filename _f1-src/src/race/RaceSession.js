@@ -135,6 +135,10 @@ export class RaceSession {
        * lasts the same number of laps at Monaco as at Monza instead of the same number
        * of seconds.
        */
+
+setup.compound = this.conditions.compound;
+      setup.lapSeconds = track.lapRecord;
+
       const physics = new CarPhysics(setup, { isPlayer: Boolean(entry.isPlayer), name: entry.short });
       const slot = gridSlot(track, grid);
       physics.reset(slot.x, slot.z, slot.heading, 0);

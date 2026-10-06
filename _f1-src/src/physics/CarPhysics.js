@@ -16,6 +16,7 @@
  */
 
 import { clamp, damp, lerp, magicFormula } from '../util/math.js';
+import { getCompound } from './compounds.js';
 
 export const GRAVITY = 9.81;
 
@@ -92,6 +93,24 @@ export const BRAKES = {
   brakeBiasFront: 0.63
 };
 
+/*
+ * How worn a tyre costs grip, and where it falls off the cliff.
+ *
+ * `wear` is a fraction of peak grip lost, which is how `compounds.js` documents
+ * `wearRate` ("fraction of peak per lap"), so the linear term is simply `1 - wear`.
+ *
+ * A linear fade alone never produces the decision F1 is actually about, so past
+ * `TYRE_CLIFF_START` a tyre loses grip faster than linearly -- that is what "it is gone"
+ * means. `TYRE_GRIP_FLOOR` keeps a destroyed tyre slow rather than undriveable.
+ */
+const TYRE_WEAR_LOSS = 1.0;
+const TYRE_CLIFF_START = 0.18;
+const TYRE_CLIFF_GAIN = 0.45;
+const TYRE_GRIP_FLOOR = 0.45;
+
+/** Fallback lap length, in seconds, when no circuit estimate is supplied. */
+const DEFAULT_LAP_SECONDS = 90;
+
 const WHEEL_CIRCUMFERENCE = Math.PI * POWERTRAIN.wheelDiameter;
 const WHEEL_RADIUS = POWERTRAIN.wheelDiameter / 2;
 
@@ -164,6 +183,20 @@ export function temperatureGrip(temp, optimalBand = TYRE.optimalBand) {
   return clamp(1 - over * TYRE.falloffPerDegree, TYRE.worstCaseGrip, 1);
 }
 
+/**
+ * Grip remaining on a worn tyre, from 0 (fresh) to 1 (destroyed).
+ *
+ * Linear to the cliff, then faster. Exported because the tyre model is only
+ * interesting if it can be plotted, and a plot is the only way to check that a soft
+ * actually crosses below a hard somewhere in the second lap.
+ */
+export function wearGrip(wear) {
+  const linear = 1 - wear * TYRE_WEAR_LOSS;
+  const past = clamp((wear - TYRE_CLIFF_START) / (1 - TYRE_CLIFF_START), 0, 1);
+  const cliff = 1 - past * TYRE_CLIFF_GAIN;
+  return clamp(linear * cliff, TYRE_GRIP_FLOOR, 1);
+}
+
 /** One tyre temperature step: heats towards equilibrium, cools towards ambient. */
 function stepTemperature(current, equilibrium, ambient, dt) {
   const heating = clamp(dt * 0.9, 0, 1);
@@ -193,6 +226,28 @@ export class CarPhysics {
      */
     this.peakGrip = setup.peakGrip ?? TYRE.peakGrip;
     this.optimalBand = setup.optimalBand ?? TYRE.optimalBand;
+
+    /*
+     * The compound.
+     *
+     * `compounds.js` has always carried real per-compound grip, wear rate, operating
+     * window and warm-up, and none of it reached the car: `getCompound` was imported by
+     * `RaceSession` and never called, and the one exported function that did apply
+     * `compound.grip` was called from the setup screen to print a label. Choosing Soft
+     * over Wet changed a swatch and nothing else.
+     *
+     * `wearRate` is documented as a fraction of peak per *lap*, so it has to be divided by
+     * a lap time to become a rate. Using the circuit's own estimate does the right thing
+     * automatically: a long, fast lap wears a tyre less per second than a short, slow one.
+     */
+    const compound = getCompound(setup.compound);
+    this.compound = compound;
+    this.compoundGrip = compound.grip;
+    this.lapSeconds = setup.lapSeconds > 0 ? setup.lapSeconds : DEFAULT_LAP_SECONDS;
+    this.wearPerSecond = compound.wearRate / this.lapSeconds;
+    // The compound sets the working window; a tyre upgrade widens it. A narrow band is
+    // faster to be in and harder to stay in, which is the trade `band` is describing.
+    this.workingBand = compound.band + (this.optimalBand - TYRE.optimalBand);
     this.maxBrakeForce = setup.maxBrakeForce ?? BRAKES.maxBrakeForce;
     this.drsDragReduction = setup.drsDragReduction ?? POWERTRAIN.drsDragReduction;
     this.isPlayer = options.isPlayer ?? false;
@@ -296,11 +351,11 @@ export class CarPhysics {
   }
 
   get frontGrip() {
-    return temperatureGrip(this.frontTemp, this.optimalBand) * (1 - this.frontWear * 0.18);
+    return temperatureGrip(this.frontTemp, this.workingBand) * wearGrip(this.frontWear);
   }
 
   get rearGrip() {
-    return temperatureGrip(this.rearTemp, this.optimalBand) * (1 - this.rearWear * 0.18);
+    return temperatureGrip(this.rearTemp, this.workingBand) * wearGrip(this.rearWear);
   }
 
   /** Combined slip power per axle, used for tyre heating and wear. */
@@ -382,8 +437,8 @@ export class CarPhysics {
     this.rearSlipAngle = lerp(0, rearDynamic, speedBlend);
 
     // --- Tyre forces --------------------------------------------------------
-    const muFront = this.peakGrip * this.grip * this.frontGrip * surfaceGrip;
-    const muRear = this.peakGrip * this.grip * this.rearGrip * surfaceGrip;
+    const muFront = this.peakGrip * this.compoundGrip * this.grip * this.frontGrip * surfaceGrip;
+    const muRear = this.peakGrip * this.compoundGrip * this.grip * this.rearGrip * surfaceGrip;
 
     // How much of the rear tyres' friction circle the brakes are already using.
     // Computed before the lateral force so the two can share one budget.
@@ -615,21 +670,45 @@ export class CarPhysics {
     // thermal model never engages during a normal lap and tyre management is
     // invisible to the player.
     const ambient = 26;
-    // Lateral work in kW-ish units: force (m/s^2 * kg) times a duty factor.
-    // The coefficients are set so that a hard but normal lap runs the tyres into
-    // the 90-130C window, and only genuine abuse -- wheelspin, lock-ups, a long
-    // stint at full commitment -- pushes them past it.
-    const lateralWork = Math.abs(this.lateralG) * this.geometry.mass * 0.0016;
+    /*
+     * Lateral work in kW-ish units: force (m/s^2 * kg) times a duty factor.
+     *
+     * The duty factor was 0.0016, which tops the front axle out at **66C** even at 3g --
+     * against a comment three lines above it claiming that a hard but normal lap runs
+     * the tyres into the 90-130C window. The thermal model had therefore never once
+     * reached its own operating window: `temperatureGrip` sat permanently below 1.0,
+     * and every car was driving on cold, out-of-window tyres at a permanent ~4% grip
+     * penalty that nobody had noticed because it was baked into the baseline.
+     *
+     * 0.005 puts the equilibrium where the comment says it should be:
+     *
+     *     0.8g -> 59C  (below the window: a car being gentle is cold)
+     *     1.6g -> 92C  (a normal lap, in the window)
+     *     2.5g -> 130C (at the top of the window)
+     *     3.0g -> 150C (past it: genuine abuse costs grip, as intended)
+     */
+    const lateralWork = Math.abs(this.lateralG) * this.geometry.mass * 0.005;
     const frontEquilibrium = ambient + lateralWork * 1.05 + this.slipPowerFront * 0.0012;
     const rearEquilibrium = ambient + lateralWork * 0.85 + this.slipPowerRear * 0.0016;
 
     this.frontTemp = clamp(stepTemperature(this.frontTemp, frontEquilibrium, ambient, dt), ambient, 220);
     this.rearTemp = clamp(stepTemperature(this.rearTemp, rearEquilibrium, ambient, dt), ambient, 220);
 
-    // Wear accumulates with sliding, which is what makes a long stint degrade.
-    const wear = 0.0000075 * dt;
-    this.frontWear = clamp(this.frontWear + (0.2 + this.slipPowerFront * 3e-6) * wear, 0, 1);
-    this.rearWear = clamp(this.rearWear + (0.2 + this.slipPowerRear * 3e-6) * wear, 0, 1);
+    /*
+     * Wear, in units of the compound's own life.
+     *
+     * This used to be `0.0000075 * dt` with no compound and no unit: over a five-lap
+     * race it accumulated to 0.0007, the grip cost was a flat `1 - wear * 0.18`, and the
+     * total grip lost was **0.013%**. The HUD wear bar read 0.0% for the whole race and
+     * "soft tyres wear faster" was simply false.
+     *
+     * Now it is the compound's documented rate -- a fraction of peak grip per lap --
+     * divided by the lap time, so a lap is a lap at Monaco and at Monza alike. The
+     * sliding term still matters: a car that uses its tyres gets through them faster.
+     */
+    const wear = this.wearPerSecond * dt;
+    this.frontWear = clamp(this.frontWear + (0.55 + this.slipPowerFront * 6e-5) * wear, 0, 1);
+    this.rearWear = clamp(this.rearWear + (0.55 + this.slipPowerRear * 6e-5) * wear, 0, 1);
   }
 
   /** ERS harvests automatically under braking; deployment is a manual button. */
