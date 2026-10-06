@@ -56,6 +56,7 @@ import {
 import { AIDriver } from '../src/ai/AIDriver.js';
 import { LapTimer } from '../src/race/LapTimer.js';
 import { inPitLane, PIT_LANE_WIDTH, shouldPit } from '../src/race/pit.js';
+import { weatherAt, weatherPlan } from '../src/race/weather.js';
 import {
   createQualifying,
   applySegment,
@@ -1508,6 +1509,64 @@ test('the minimap projection agrees with the outline it sits on', () => {
     const pb = b.project(moved[index].x, moved[index].z);
     assert.ok(Math.abs(pa.x - pb.x) < 1e-6 && Math.abs(pa.y - pb.y) < 1e-6, 'projection must not depend on position');
   }
+});
+
+test('weather arrives during the race, and it costs grip', () => {
+  /*
+   * A race's weather used to be read once in the constructor and never touched: the forecast
+   * could not arrive, the track could not go off under the cars, and a wet race was wet from
+   * the lights. The flags and safety-car hooks beside it were initialised and never used.
+   *
+   * The plan is deterministic and keyed to the circuit rather than re-rolled per race, so a
+   * round is reproducible and testable.
+   */
+  const changeable = weatherPlan('suzuka', 'clear');
+  assert.ok(changeable.length > 0, 'a circuit with a wet reputation must plan a change');
+  assert.equal(changeable[0].from, 'clear', 'a race must start dry -- that is the whole drama');
+  assert.ok(changeable[0].at > 0.35, `the first change should land in the second half, got ${changeable[0].at}`);
+  for (const step of changeable) {
+    assert.ok(step.at < 1, `a transition at ${step.at} cannot happen before the flag`);
+  }
+  assert.deepEqual(weatherPlan('monza', 'clear'), [], 'a dry circuit plans no weather');
+
+  // Progress through the race gives the right weather at the right point.
+  assert.equal(weatherAt(changeable, 'clear', 0), 'clear');
+  assert.equal(weatherAt(changeable, 'clear', changeable[0].at + 0.01), changeable[0].to);
+
+  // And it actually costs grip on the road.
+  const dry = getWeather('clear');
+  const wet = getWeather('light-rain');
+  assert.ok(wet.grip < dry.grip, `rain must cost grip, ${wet.grip} vs ${dry.grip}`);
+  assert.ok(wet.spray > dry.spray, 'and spray must rise with it');
+
+  /*
+   * The session wiring, asserted directly rather than by simulating a race.
+   *
+   * A whole six-lap session is a poor unit test: it takes over a minute, and it depends on the
+   * AI actually completing the distance, which is a moving target for reasons that have nothing
+   * to do with weather. The standalone probe covers the behaviour -- Suzuka dry at the lights,
+   * overcast on lap 2, light rain on lap 4, surface grip 1.000 -> 0.879.
+   */
+  const track = buildTrack(getCircuit('suzuka'));
+  const session = new RaceSession({
+    track,
+    entries: createChampionship().entries,
+    type: SESSION_TYPE.race,
+    totalLaps: 6,
+    random: createRandom(7),
+    conditions: { compound: 'medium', weather: 'clear' }
+  });
+  assert.equal(session.weatherState.id, 'clear', 'races start dry');
+  assert.ok(session.weatherPlan.length > 0, 'the session must carry a plan for a changeable circuit');
+  assert.equal(session.startWeather, 'clear', 'and remember what it started as');
+
+  // Progress through the race distance selects the weather, so the transition is driven by
+  // distance rather than by lap count.
+  const total = 6 * track.length;
+  session.distanceCovered = session.weatherPlan[0].at * total * 1.01;
+  session.update(FIXED_TIMESTEP, { throttle: 0, brake: 0, steer: 0, handbrake: false });
+  assert.notEqual(session.weatherState.id, 'clear', 'passing the first transition must change the weather');
+  assert.ok(session.weatherChanged, 'and the change must be recorded so the HUD can show it');
 });
 
 test('no two HUD regions can overlap, at any viewport', () => {

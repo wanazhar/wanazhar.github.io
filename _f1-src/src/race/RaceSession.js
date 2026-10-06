@@ -15,6 +15,7 @@ import { setupForEntry } from '../championship/ChampionshipManager.js';
 import { getCompound, getWeather } from '../physics/compounds.js';
 import { inContact, resolveCarContacts } from './collision.js';
 import { StartSequence } from './startSequence.js';
+import { weatherAt, weatherPlan, weatherProgress } from './weather.js';
 import {
   BOX_PROGRESS,
   PIT_LANE_WIDTH,
@@ -125,6 +126,17 @@ export class RaceSession {
       delayBefore: 1.4
     });
     this.weatherState = getWeather(this.conditions.weather);
+    /*
+     * A plan for weather that arrives during the race.
+     *
+     * The forecast was previously fixed for the whole session: read once here and never
+     * touched, so the track could not go off under the cars and a wet race was wet from the
+     * lights. Deterministic and keyed to the circuit rather than re-rolled per race, so the
+     * same round always gets the same weather and can be tested.
+     */
+    this.startWeather = this.conditions.weather ?? 'clear';
+    this.weatherPlan = weatherPlan(track.circuit?.id ?? track.id ?? '', this.startWeather);
+    this.weatherChanged = false;
     this.type = type;
     this.totalLaps = totalLaps;
     this.random = random;
@@ -298,6 +310,23 @@ setup.lapMetres = track.length;
      */
     if (this.contacts) resolveCarContacts(this.cars);
 
+    /*
+     * Advance the weather.
+     *
+     * Driven by how far through the *race* the field is rather than by lap count, so a longer
+     * race does not simply hold the same weather for longer.
+     */
+    if (this.weatherPlan.length) {
+      const progress = Math.min(1, this.distanceCovered / Math.max(1, this.totalLaps * this.track.length));
+      const now = weatherAt(this.weatherPlan, this.startWeather, progress);
+      if (now !== this.weatherState.id) {
+        this.weatherState = getWeather(now);
+        this.weatherChanged = true;
+      }
+      this.weatherPhase = weatherProgress(this.weatherPlan, progress);
+    }
+
+    this.#updateRaceDistance();
     this.#updateStrategy();
     this.#rescueStuckCars(dt);
 
@@ -614,6 +643,16 @@ setup.lapMetres = track.length;
         car.rescues = (car.rescues ?? 0) + 1;
       }
     }
+  }
+
+  /** Total distance the leader has covered, which is what the weather timeline runs on. */
+  #updateRaceDistance() {
+    let furthest = 0;
+    for (const car of this.cars) {
+      const d = car.distance ?? 0;
+      if (d > furthest) furthest = d;
+    }
+    this.distanceCovered = furthest;
   }
 
   #updateProgress() {
