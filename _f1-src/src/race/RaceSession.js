@@ -15,6 +15,17 @@ import { setupForEntry } from '../championship/ChampionshipManager.js';
 import { getCompound, getWeather } from '../physics/compounds.js';
 import { inContact, resolveCarContacts } from './collision.js';
 import { StartSequence } from './startSequence.js';
+import {
+  BOX_PROGRESS,
+  PIT_LANE_WIDTH,
+  PIT_SIDE,
+  PIT_SPEED_LIMIT,
+  PIT_STOP_SECONDS,
+  applyPitStop,
+  inPitLane,
+  laneProgress,
+  shouldPit
+} from './pit.js';
 import { clamp } from '../util/math.js';
 
 /** Fixed physics timestep. Rendering runs free; physics never does. */
@@ -164,7 +175,13 @@ setup.lapMetres = track.length;
         finished: false,
         finishTime: Infinity,
         retired: false,
-        pitStop: false,
+        pitStops: 0,
+        maxStops: 1,
+        pitRequested: false,
+        pitStopTime: 0,
+        pitWhen: 0.2,
+        inPitLane: false,
+        lastPitLap: 0,
         distance: 0,
         speed: 0,
         lateral: located.lateral,
@@ -281,6 +298,7 @@ setup.lapMetres = track.length;
      */
     if (this.contacts) resolveCarContacts(this.cars);
 
+    this.#updateStrategy();
     this.#rescueStuckCars(dt);
 
     if (this.cars.every((car) => car.finished || car.retired)) {
@@ -304,7 +322,10 @@ setup.lapMetres = track.length;
       // The AI has to know it is being touched, or it keeps driving into the other
       // car for the whole corner. Passing it here rather than letting the driver
       // reach into the session keeps the driver dependent on nothing but physics.
-      contact: inContact(car)
+      contact: inContact(car),
+      // Whether this driver has been told to stop. The session decides *that*; the driver
+      // still has to steer there, so the lane and the box cost real time.
+      pitRequested: car.pitRequested === true
     });
   }
 
@@ -389,6 +410,35 @@ setup.lapMetres = track.length;
      */
     const weather = this.weatherState;
     const wetPenalty = 1 - weather.spray * 0.25;
+    /*
+     * The pit lane: a corridor beside the main straight, occupying the pit window of the lap and
+     * a band beyond the road edge on the pit side. While in it the FIA limit applies, and crossing
+     * the box with a stop requested takes the tyres off and fits fresh ones.
+     */
+    const lapFraction = here.s / this.track.length;
+    car.inPitLane = inPitLane(lapFraction, car.lateral, half);
+
+    if (car.pitStopTime > 0) {
+      // Stationary in the box: the only thing happening this step.
+      car.pitStopTime -= dt;
+      physics.vLong = 0;
+      physics.vLat = 0;
+      car.surfaceGrip = 1;
+      return;
+    }
+
+    if (car.inPitLane) {
+      if (physics.speed > PIT_SPEED_LIMIT) {
+        physics.vLong = Math.sign(physics.vLong) * Math.max(0, physics.speed - 22 * dt);
+      }
+      if (car.pitRequested && Math.abs(laneProgress(lapFraction) - BOX_PROGRESS) < 0.05) {
+        const id = this.#pitCompound();
+        applyPitStop(car, id, getCompound(id).grip);
+        car.pitRequested = false;
+        car.pitStopTime = PIT_STOP_SECONDS;
+      }
+    }
+
     car.surfaceGrip = (onKerb ? 0.86 * wetPenalty : 1) * weather.grip;
     if (onKerb && physics.speed > 20) {
       // A light constant scrub, plus the reduced grip set above.
@@ -396,8 +446,15 @@ setup.lapMetres = track.length;
       car.onKerb = true;
     }
 
-    // Barrier: a hard stop that costs speed and shakes the camera.
-    const limit = half + 1.6;
+    /*
+     * Barrier: a hard stop that costs speed and shakes the camera.
+     *
+     * With a gap through the pit window, on the pit side only. The lane is beyond the road edge,
+     * so without this the barrier walls the pit off: cars queue against it for the whole window
+     * and can never reach their box. It is the only place the circuit is not closed.
+     */
+    const openToPit = inPitLane(here.s / this.track.length, located.lateral, half);
+    const limit = half + (openToPit ? PIT_LANE_WIDTH + 1 : 1.6);
     if (Math.abs(located.lateral) > limit) {
       const clamped = clamp(located.lateral, -limit, limit);
       const sample = located.sample;
@@ -437,6 +494,26 @@ setup.lapMetres = track.length;
  * automatically, after a few seconds of being well off the road and not moving.
  * The penalty is the time lost getting there, which is what it should be.
  */
+/**
+ * The compound a stop fits. One strategy for the session, as a real team runs.
+ */
+#pitCompound() {
+  return this.conditions?.pitCompound ?? this.conditions?.compound ?? 'medium';
+}
+
+/**
+ * Strategy: ask each driver whether it wants a stop, and let it steer into the lane itself.
+ *
+ * A question rather than a rule the session applies to the car, because the car has to actually
+ * aim for the lane -- so a stop costs the entry and the exit as well as the box.
+ */
+#updateStrategy() {
+  for (const car of this.cars) {
+    if (car.retired || car.finished || car.pitStopTime > 0 || car.pitRequested) continue;
+    if (shouldPit(car, Math.max(0, this.totalLaps - car.timer.lap))) car.pitRequested = true;
+  }
+}
+
 #rescueStuckCars(dt) {
     /*
      * Never during the start lights.
@@ -451,6 +528,17 @@ setup.lapMetres = track.length;
 
     for (const car of this.cars) {
       if (car.retired || car.finished) continue;
+
+      /*
+       * Never rescue a car that is stopped on purpose.
+       *
+       * A car in its pit box is stationary, which is exactly the signature of a car beached in
+       * the run-off -- so the rescue fired during every stop and dragged the car back onto the
+       * racing line mid-service. `PIT_STOP_SECONDS` is 2.4 against a rescue delay of 2.5, so they
+       * were the same length to within a tenth of a second. Measured before this: one car took
+       * 507 seconds for the lap it stopped in.
+       */
+      if (car.pitStopTime > 0 || car.inPitLane) continue;
 
       const wellOff = Math.abs(car.lateral) > car.trackHalfWidth + OFF_TRACK_MARGIN;
       const crawling = car.physics.speed < RESCUE_SPEED;

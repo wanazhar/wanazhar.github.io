@@ -55,6 +55,7 @@ import {
 } from '../src/physics/CarPhysics.js';
 import { AIDriver } from '../src/ai/AIDriver.js';
 import { LapTimer } from '../src/race/LapTimer.js';
+import { inPitLane, PIT_LANE_WIDTH, shouldPit } from '../src/race/pit.js';
 import {
   createQualifying,
   applySegment,
@@ -2506,6 +2507,82 @@ test('reverse is a recovery aid, never a driving mode', () => {
   for (let i = 0; i < Math.ceil(20 / DT); i += 1) held.step(DT, { throttle: 1, brake: 0, steer: 0 });
   assert.equal(held.direction, 1, 'reverse must give way to forward once the car is moving');
   assert.ok(REVERSE_LIMIT <= 8, 'reverse must be strictly speed-limited');
+});
+
+test('a pit stop actually happens, and it actually costs time', () => {
+  /*
+   * `car.pitStop` used to be a boolean that was initialised and never read. Now that compounds
+   * and degradation reach the car, a stop has to be a decision rather than a lap-count animation
+   * -- so the mechanic has to work end to end, not merely exist.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  // A real championship field, not hand-rolled entries: the AI's skill preset and the cars'
+  // setups both come from the entry, and a stub entry produces a field that does not race.
+  const entries = createChampionship().entries;
+  const session = new RaceSession({
+    track,
+    entries,
+    type: SESSION_TYPE.race,
+    totalLaps: 6,
+    random: createRandom(4242),
+    conditions: { compound: 'soft', weather: 'clear' }
+  });
+
+  const idle = { throttle: 0, brake: 0, steer: 0, handbrake: false };
+  let boxSteps = 0;
+  let laneSteps = 0;
+  const lapEnd = new Map();
+
+  for (let i = 0; i < 120 * 60 * 14 && !session.finished; i += 1) {
+    session.update(FIXED_TIMESTEP, idle);
+    for (const car of session.cars) {
+      if (car.pitStopTime > 0) boxSteps += 1;
+      if (car.inPitLane) laneSteps += 1;
+      const prev = lapEnd.get(car.entry.short) ?? 0;
+      if (car.timer.lap > prev) { lapEnd.set(car.entry.short, car.timer.lap); }
+    }
+  }
+
+  const stops = session.cars.map((car) => car.pitStops ?? 0);
+  assert.ok(stops.some((n) => n > 0), 'at least one driver must actually stop');
+  assert.ok(boxSteps > 0, `a car must stand in the box, got ${boxSteps} car-steps`);
+  assert.ok(laneSteps > boxSteps, 'reaching the box has to involve being in the lane first');
+
+  // The stop has to cost time. This is the whole point: a stop whose only cost were the two
+  // seconds in the box would never be worth taking, so nobody would stop and the tyre model
+  // would stay decorative.
+  const stopped = session.cars.find((car) => (car.pitStops ?? 0) > 0);
+  assert.ok(stopped.physics.frontWear < 0.2, `fresh rubber, got ${(stopped.physics.frontWear * 100).toFixed(0)}% wear`);
+});
+
+test('the pit lane is a lane, not most of the circuit', () => {
+  /*
+   * The lane test was originally `(lateral - PIT_SIDE * halfWidth) * -PIT_SIDE`, which is
+   * algebraically identical but evaluates to `lateral + halfWidth` when `PIT_SIDE` is -1. That
+   * made it true for nearly the whole width of the road and false for the actual lane: every car
+   * was "in the pit lane" while racing on the circuit, the 80 km/h limit applied on track, and
+   * none of them ever reached the box.
+   */
+  const HALF = 12;
+  assert.equal(inPitLane(0.98, -HALF - 5, HALF), true, 'on the pit side, past the edge: in the lane');
+  assert.equal(inPitLane(0.98, -(HALF + 4), HALF), true, 'mid-lane is in the lane');
+  assert.equal(inPitLane(0.98, -HALF, HALF), false, 'exactly on the road edge is not yet in the lane');
+  assert.equal(inPitLane(0.98, 0, HALF), false, 'the middle of the road is not in the lane');
+  assert.equal(inPitLane(0.98, HALF + 5, HALF), false, 'the far side is not the pit lane');
+  assert.equal(inPitLane(0.98, -(HALF + PIT_LANE_WIDTH + 1), HALF), false, 'past the far wall is not the lane');
+  assert.equal(inPitLane(0.5, -(HALF + 5), HALF), false, 'mid-lap there is no lane');
+
+  // The window wraps the line, so entry and exit are on opposite sides of it.
+  assert.equal(inPitLane(0.99, -(HALF + 5), HALF), true, 'before the line is still in the window');
+  assert.equal(inPitLane(0.01, -(HALF + 5), HALF), true, 'after the line is still in the window');
+});
+
+test('nobody pitters on the final lap', () => {
+  const car = { finished: false, retired: false, maxStops: 1, pitStops: 0, pitWhen: 0.2, physics: { frontWear: 0.9, rearWear: 0.9 }, timer: {} };
+  assert.equal(shouldPit(car, 3), true, 'a worn tyre with three laps left is worth stopping for');
+  assert.equal(shouldPit(car, 1), false, 'not with one lap left -- the fresh tyre would never pay for itself');
+  car.pitStops = 1;
+  assert.equal(shouldPit(car, 5), false, 'and not twice');
 });
 
 test('downforce grows with the square of speed and lifts the car in fast corners', () => {

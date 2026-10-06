@@ -432,7 +432,44 @@ furniture (barriers, buildings, trees, hoardings) follows the road, and the hori
 -- a ring, with no per-sample height -- is pinned to the circuit's mean ground level so a
 circuit at 190m does not float above a forest growing out of the plane.
 
-### Tyres: compounds and wear, finally reaching the car
+### Pit stops
+
+`car.pitStop` was a boolean that was initialised and never read: no lane, no box, no tyre
+change, and a race ran to the flag. With compounds and degradation reaching the car, a stop can
+finally be a decision rather than a lap-count animation.
+
+The lane is a corridor beside the main straight, in the same `(lap fraction, lateral)` space the
+race already tracks -- entry before the line, the box in the middle of the lane, exit after it.
+While in it the FIA 80 km/h limit applies. Crossing the box with a stop requested fits fresh
+rubber at 68 C, not ambient, because a tyre out of the pit is not cold.
+
+Three things had to be true, and each was a real fault found by measurement:
+
+**The rescue fired during every stop.** A car in its box is stationary, which is exactly the
+signature of a car beached in the run-off. `PIT_STOP_SECONDS` is 2.4 against a rescue delay of
+2.5 -- the same length to within a tenth of a second -- so the rescue dragged cars back onto the
+racing line mid-service. One car took **507 seconds** for the lap it stopped in.
+
+**The lane test had an inverted sign.** `(lateral - PIT_SIDE * halfWidth) * -PIT_SIDE` is
+algebraically identical to `PIT_SIDE * lateral - halfWidth` and behaviourally the opposite: it
+evaluates to `lateral + halfWidth` when `PIT_SIDE` is -1, so it was true for nearly the whole
+width of the road and false for the actual lane. Every car was "in the pit lane" while racing on
+the circuit, which applied the 80 km/h limit *on track*, and none of them reached the box.
+
+**The barrier walled the pit off.** Cars cannot pass `half + 1.6`, so a lane at `half + 5` was
+unreachable and cars queued against the wall for the whole window. There is now a gap through
+the pit window on the pit side -- the only place the circuit is not closed.
+
+And the decision itself had to be priced honestly. A stop costing only the two seconds in the
+box would never be worth taking, so the AI is *asked* whether it wants to stop and then has to
+steer there itself: lane in, box, lane out, measured at **about 40 seconds** lost against a
+normal lap, of which 2.4 is stationary.
+
+The first attempt cost 185 seconds, because the driver began steering for the lane the moment it
+was asked and ran off the racing line for most of a lap. Drivers do not cross the circuit on
+decision -- they run to the end of the straight and then turn off, which is what it does now.
+
+### Tyres: compounds and wear, finally reaching the car### Tyres: compounds and wear, finally reaching the car
 
 `compounds.js` has always carried per-compound grip, wear rate, operating window and warm-up.
 `getCompound` was imported by `RaceSession` and never called; the one function that applied

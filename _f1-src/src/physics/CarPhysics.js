@@ -109,6 +109,9 @@ const TYRE_CLIFF_GAIN = 0.45;
 const TYRE_GRIP_FLOOR = 0.45;
 
 /** Degrees of tyre temperature per m/s of road speed, and per unit of lateral work. */
+/** Temperature a fresh set of tyres comes off the pit wall at. */
+const PIT_TYRE_START_TEMP = 68;
+
 /** Fallback lap length in metres, when a circuit estimate is not supplied. */
 const DEFAULT_LAP_METRES = 5400;
 
@@ -368,6 +371,26 @@ export class CarPhysics {
     const sin = Math.sin(this.heading);
     this.vLong += ix * cos + iz * sin;
     this.vLat += -ix * sin + iz * cos;
+  }
+
+  /**
+   * Fit a fresh set of tyres, as a pit stop does.
+   *
+   * The compound sets peak grip and the working window; wear starts at zero and the tyres start
+   * warm rather than at ambient, because rubber that has come out of the pit is not cold.
+   *
+   * @param {string} compoundId
+   * @param {number} compoundGrip the resolved compound's grip multiplier
+   */
+  applyCompound(compoundId, compoundGrip) {
+    const compound = getCompound(compoundId);
+    this.compound = compound;
+    this.compoundGrip = compoundGrip ?? compound.grip;
+    this.workingBand = compound.band + (this.optimalBand - TYRE.optimalBand);
+    this.frontWear = 0;
+    this.rearWear = 0;
+    this.frontTemp = PIT_TYRE_START_TEMP;
+    this.rearTemp = PIT_TYRE_START_TEMP;
   }
 
   get frontGrip() {
