@@ -3110,6 +3110,61 @@ test('the AI has a distinct behaviour for rejoining a car that left the road', (
   assert.match(aiSource, /offTrack && offTrackDistance > OFF_TRACK_REJOIN/);
 });
 
+test('there is a human driver to calibrate balance against, and a known reaction-model error', () => {
+  /*
+   * Every skill preset in this file is a model of *the AI's* idea of a driver, and none of them
+   * is a person. The headline "the player wins 24 of 24" was measured with an `ace` autopilot
+   * in the player's seat: it says the autopilot beats the field, not that a game is fair.
+   * Asking "is this balanced" with nobody in the driver's seat is the wrong question, and
+   * answering it anyway is how a balance problem gets reported as a solved one.
+   *
+   * So a `human` preset exists, with `reactionMs` taken from published motorsport figures.
+   */
+  assert.ok(SKILL_PRESETS.human, 'a human reference driver must exist');
+  const human = SKILL_PRESETS.human;
+  assert.equal(human.reactionMs, 200, '200ms is the standard human figure for motorsport');
+  // The AI's fastest driver is superhuman by a factor of two; the human must not be faster.
+  assert.ok(
+    human.reactionMs > SKILL_PRESETS.ace.reactionMs,
+    'the AI ace must stay superhuman, or the grid has no headroom for the player'
+  );
+  assert.ok(human.reactionMs < SKILL_PRESETS.backmarker.reactionMs, 'and a human is not a backmarker');
+
+  /*
+   * `consistency` is dead, and this is the seventh time this repo has had a value defined in
+   * every preset and read by nothing. It is not asserted here as a working feature because it
+   * is not one: what is asserted is that the gap is visible, so it cannot be closed by
+   * accident and forgotten.
+   */
+  const aiSource = readFileSync(new URL('../src/ai/AIDriver.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(
+    aiSource,
+    /skill\.consistency/,
+    'KNOWN DEFECT: consistency is defined on every preset and read by nothing, so the AI has ' +
+    'no repeatability model at all. Measured: an ace flying lap varies 0.16-2.63s run to run ' +
+    'where a real one varies 0.1-0.3s. Delete this assertion when the field reads it.'
+  );
+
+  /*
+   * `reactionMs` is applied as a sample-and-hold on the whole control loop, which is not what
+   * reaction time is. At 90ms that is an 11Hz steering input, and at 83m/s each steering
+   * decision covers 7.5m of travel. Measured cost of 80ms: 2.4-14.0s a lap.
+   *
+   * Two fixes were built and measured. A transport delay on material changes was much worse
+   * (up to +39s a lap -- it latches a stale *brake* through a braking zone). A first-order lag
+   * was right in kind and cut seed-to-seed scatter on an ace from 1.95s to 0.28s at Monza,
+   * but cost about 7% of pace overall, which pushes a 6-lap race past the pit-stop test's
+   * fixed 840s budget. Both were reverted rather than shipped half-verified; this assertion
+   * is here so the next attempt starts from the measurement instead of rediscovering it.
+   */
+  assert.match(
+    aiSource,
+    /reactionDelay >= lag/,
+    'KNOWN DEFECT: reactionMs is a sample-and-hold on the control loop, not a lag. ' +
+    'Replace it with a first-order response and retune the pit-stop budget alongside it.'
+  );
+});
+
 test('the AI never commands throttle and brake together', () => {
   const car = new CarPhysics({ grip: 1 });
   car.reset(0, 0, 0, 45);
