@@ -314,6 +314,17 @@ export class CarPhysics {
     this.boost = 0;
 
     this.downforce = 0;
+    /*
+     * Damage multipliers, set by the race layer from `race/damage.js`.
+     *
+     * They live on the physics rather than being applied to the resulting forces, because
+     * downforce and torque are the two inputs every downstream calculation already reads.
+     * Deriving lap time from handling, rather than subtracting a penalty from a time, is what
+     * makes a damaged car feel damaged: it understeers into a corner it used to take flat.
+     */
+    this.aeroFactor = 1;
+    this.powerFactor = 1;
+    this.steerPull = 0;
     this.frontSlipAngle = 0;
     this.rearSlipAngle = 0;
     this.longitudinalG = 0;
@@ -413,10 +424,10 @@ export class CarPhysics {
     );
   }
 
-  /** Downforce in newtons at the current speed, reduced with DRS open. */
+  /** Downforce in newtons at the current speed, reduced with DRS open and with damage. */
   computeDownforce(speed) {
     const drsFactor = this.drsOpen ? 1 - this.drsDragReduction * this.drsStrength : 1;
-    return 0.5 * 1.225 * this.geometry.downforceArea * speed * speed * drsFactor;
+    return 0.5 * 1.225 * this.geometry.downforceArea * speed * speed * drsFactor * this.aeroFactor;
   }
 
   rpmFromWheels(gearRatio) {
@@ -460,7 +471,7 @@ export class CarPhysics {
     // Steering lock falls away with speed, as it does on a real car where the
     // rack ratio and the driver's arms are the limit.
     const maxSteer = lerp(0.52, 0.09, clamp(Math.abs(this.vLong) / 85, 0, 1));
-    this.steerAngle = steerInput * maxSteer;
+    this.steerAngle = steerInput * maxSteer + this.steerPull;
 
     // --- Slip angles --------------------------------------------------------
     // Slip angle is measured between where the tyre is pointing and where it is
@@ -532,7 +543,7 @@ export class CarPhysics {
         this.powerScale *
         torqueFactor(this.rpm) *
         (1 + this.boost * 0.42 * this.ersStrength);
-      driveForce = thrustFromTorque(this.engineTorque, Math.abs(gearRatio)) * throttle * Math.sign(gearRatio);
+      driveForce = thrustFromTorque(this.engineTorque * this.powerFactor, Math.abs(gearRatio)) * throttle * Math.sign(gearRatio);
       // Reverse is deliberately feeble: enough to unstick the car, nowhere near
       // enough to matter in a race.
       if (reversing) driveForce = Math.max(driveForce, -REVERSE_FORCE);

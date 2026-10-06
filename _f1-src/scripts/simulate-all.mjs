@@ -67,7 +67,10 @@ const championship = createChampionship();
  * with a fresh generator, and timed out at 1800s with the shared one, on the same
  * circuit with the same field.
  */
-const randomFor = (round) => createRandom(20240218 + round);
+const SEED_BASE = 20240218;
+const randomFor = (round) => createRandom(SEED_BASE + round);
+/** The same seed, passed on so per-car damage streams replay identically. */
+const seedFor = (round) => SEED_BASE + round;
 
 /**
  * Hand the player slot to an AI so the race runs unattended.
@@ -93,6 +96,9 @@ function autopilot(session, track, random) {
 }
 
 console.log(`Simulating a full season: ${raceCount} rounds, ${championship.entries.length} cars\n`);
+
+/** Every session simulated, so the retirement tally at the end can see across the season. */
+const sessions = [];
 console.log('round  circuit           laps  winner  fastest  pace vs ideal  status');
 
 let failures = 0;
@@ -114,6 +120,7 @@ for (let round = 0; round < raceCount; round += 1) {
     totalLaps: circuit.laps,
     gridOrder: championship.entries.map((entry, index) => ({ entry, grid: index })),
     random,
+    seed: seedFor(round),
     // `APEXGP_CONTACTS=0` runs the same season with car-to-car contact disabled, so
     // the effect of collisions on race completion can be measured rather than
     // argued about.
@@ -132,6 +139,8 @@ for (let round = 0; round < raceCount; round += 1) {
   }
 
   const timedOut = steps >= maxSteps;
+  sessions.push(session);
+
   const results = session.results();
   const fastest = session.fastestLap();
   const winner = results.find((result) => result.position === 1);
@@ -169,7 +178,13 @@ for (let round = 0; round < raceCount; round += 1) {
     const laps = car?.timer?.lap ?? 0;
     const retired = car?.retired === true;
     const recovered = (car?.rescues ?? 0) > 0;
-    return `${result.short}(laps ${laps}/${circuit.laps}${retired ? ', retired' : ''}${recovered ? `, ${car.rescues} rescues` : ''})`;
+    /*
+     * Why it retired, not just that it did. A mechanical failure, accumulated damage and a
+     * car wedged in a barrier are three different problems, and reporting only the first word
+     * ("retired") is what left a regression invisible behind an otherwise clean season.
+     */
+    const why = car?.retirementReason ? ` ${car.retirementReason}` : '';
+    return `${result.short}(laps ${laps}/${circuit.laps}${retired ? `, retired${why}` : ''}${recovered ? `, ${car.rescues} rescues` : ''})`;
   });
 
   let status = 'ok';
@@ -219,6 +234,33 @@ console.log(
   `\nplayer: P${player.position}, ${player.points} pts, ${player.wins} win(s), ` +
     `${player.developmentPoints} development point(s)`
 );
+
+/*
+ * Retirements across the season, by cause.
+ *
+ * A season where nothing retires and a season where half the grid does not are equally wrong,
+ * and neither shows up in the pass/fail line -- every round completes cleanly either way. So
+ * the distribution is printed. A mechanical failure landing in lap 1 is ordinary racing; a
+ * handful of them is a rate that has been miscalibrated, and only the total shows which.
+ */
+const retirementTally = new Map();
+for (const session of sessions) {
+  for (const car of session.cars) {
+    if (!car.retired) continue;
+    const why = car.retirementReason ?? 'UNCLASSIFIED';
+    retirementTally.set(why, (retirementTally.get(why) ?? 0) + 1);
+  }
+}
+if (retirementTally.size) {
+  const total = [...retirementTally.values()].reduce((a, b) => a + b, 0);
+  const breakdown = [...retirementTally.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([why, count]) => `${why} ${count}`)
+    .join(', ');
+  console.log(`retirements: ${total} over ${sessions.length} rounds (${(total / sessions.length).toFixed(2)} per round) -- ${breakdown}`);
+} else {
+  console.log('retirements: none');
+}
 
 if (failures > 0) {
   console.log(`\n${failures} round(s) failed.`);

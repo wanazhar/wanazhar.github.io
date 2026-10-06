@@ -155,6 +155,16 @@ export class UIManager {
           </div>
         </div>
 
+        <!--
+          Damage. Beside the tyre bars rather than in a corner, because it is the same kind
+          of thing: the car telling you what condition it is in. Hidden while undamaged, so a
+          clean race does not spend the space on a bar that is always empty.
+        -->
+        <div class="hud-damage" data-damage hidden>
+          <span class="hud-damage-label">DAMAGE</span>
+          <span class="hud-damage-track"><i data-damage-fill></i></span>
+        </div>
+
         <div class="hud-alert" data-alert></div>
         <div class="hud-controls-toggle">
           <button type="button" data-action="toggle-ui" aria-label="Hide interface">◧</button>
@@ -229,6 +239,8 @@ export class UIManager {
       ersBadge: find('ers-badge'),
       tyreFront: find('tyre-front'),
       tyreRear: find('tyre-rear'),
+      damage: find('damage'),
+      damageFill: find('damage-fill'),
       weather: find('weather'),
       weatherIcon: find('weather-icon'),
       weatherLabel: find('weather-label'),
@@ -545,6 +557,29 @@ export class UIManager {
 
     if (telemetry.invalidLap) this.alert('INVALID LAP', 'bad');
     this.#setWeather(telemetry.weather, telemetry.weatherPhase);
+    this.#setDamage(telemetry.damage, telemetry.retireReason);
+  }
+
+  /**
+   * Damage readout.
+   *
+   * Carries the reason for retirement as well as the level, because "the car is finished" is
+   * a different piece of information from "the nose is bent" and the player is entitled to
+   * both. The bar is hidden below 2%, where it is all noise.
+   */
+  #setDamage(damage = 0, retireReason = null) {
+    const e = this.elements;
+    if (!e.damage) return;
+    const fraction = Math.min(1, Math.max(0, damage));
+    e.damage.hidden = fraction < 0.02 && !retireReason;
+    e.damage.dataset.tone = retireReason ? 'terminal' : fraction > 0.6 ? 'severe' : fraction > 0.3 ? 'bad' : 'minor';
+    e.damageFill.style.width = `${Math.round(fraction * 100)}%`;
+
+    // The transition into terminal is worth saying out loud, once.
+    if (retireReason && retireReason !== this.lastRetirement) {
+      this.lastRetirement = retireReason;
+      this.alert(retireReason === 'MECHANICAL' ? 'MECHANICAL FAILURE' : 'CAR RETIRED', 'bad');
+    }
   }
 
   /**

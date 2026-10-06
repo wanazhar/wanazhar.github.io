@@ -432,6 +432,73 @@ furniture (barriers, buildings, trees, hoardings) follows the road, and the hori
 -- a ring, with no per-sample height -- is pinned to the circuit's mean ground level so a
 circuit at 190m does not float above a forest growing out of the plane.
 
+### Damage, mechanical failure and retirement
+
+Contact resolved impulse and yaw kick correctly and then threw the energy away. Two cars could
+lean on each other for a season and both finish on the lead lap, because nothing recorded that
+the nose had gone in. There was no `damage` anywhere in `src/`, and `TEAMS[].reliability` —
+documented as feeding mechanical failure — was inert in three places.
+
+Damage is expressed as **lost downforce and lost power**, not as a lap-time deduction, so the
+cost falls out of the handling: a damaged car understeers into a corner it used to take flat.
+`physics.aeroFactor` and `physics.powerFactor` are the two hooks, and both feed calculations
+the physics already performs.
+
+**Calibrating the threshold took three attempts**, and the way the first two were wrong is the
+reason the numbers below exist.
+
+1. Counting `car.contact.age === 0` is not a way to count impacts. `collision.js`
+   `recordContact` returns early when a car already has a contact with the same opponent, and
+   that `return` leaves the function, so the *other* car never has its contact refreshed — its
+   age never returns to zero, and an `age === 0` watcher misses every repeat contact involving
+   it. The distribution came out far too light and the first version retired 9 cars in the
+   first 100 seconds.
+2. Counting a per-car flag properly was still wrong by about 20×, because the flag was read
+   *before* `update()` and so reported the previous frame's decision.
+3. Reading the counters the session writes from inside the step is the only thing that cannot
+   drift from the code that runs.
+
+Measured over a full Monza race — 27,507 contacts considered:
+
+| | severity | events | per car |
+|---|---|---|---|
+| p50 | 0.07 | | |
+| p90 | 0.19 | | |
+| p99 | 4.37 | | |
+| p99.9 | 14.53 | | |
+| | ≥ 20 | 14 | 0.6 |
+| | ≥ 10 | 83 | 3.6 |
+
+`p90 = 0.19` is the load-bearing result: **the overwhelming majority of contact in this model is
+two cars rubbing, not hitting.** The onset is therefore 20, which leaves the entire
+wheel-to-wheel population free — a model that damages cars for running two abreast punishes the
+only thing racing should reward.
+
+Three further faults, each found by measuring:
+
+- **The cascade.** Damage is self-amplifying: less downforce means understeer, understeering
+  cars collect more contact. With an onset of 10, **23 of 23 cars retired from one Monza
+  race**. The missing piece is negative feedback, and in real F1 it is the driver, so
+  `ai/AIDriver.js` lifts for a damaged car — capped at 12%, because a driver managing a car
+  still wants points.
+- **The metric is not bounded.** The rate was sized against a worst case near 38; the worst
+  shunt actually measured was **231.6**, which retires both cars involved from one incident.
+  Per-impact damage is now capped, so terminal damage is something a race accumulates.
+- **A 7× distance error.** `FAILURE_HAZARD_PER_KM` was derived for a 5.3 km race, but these
+  circuits run 35–40 km. A hazard is a rate, so the result was 4 mechanical retirements in one
+  Bahrain race and 6–25% per car. Calibrated over 38 km it is now 1.42 retirements per round
+  across 23 cars, of which the season's 34 split 31 mechanical / 3 damage.
+
+One more fault, of a kind worth naming on its own: mechanical failure originally rolled off the
+**session's shared random stream**, once per car per step — 23 × 120 = 2,760 draws a second,
+which silently perturbed every other stochastic decision until the whole field stopped
+progressing. Each car now has its own stream, seeded from the race so replays reproduce, and
+the roll is on distance rather than frames.
+
+`simulate-all.mjs` now prints a season retirement tally by cause and names the reason a car
+failed. Every round completes cleanly whether nothing retires or half the grid does, so neither
+shows up in the pass/fail line — only the distribution distinguishes them.
+
 ### Weather that arrives during the race
 
 A race's weather was read once in the `RaceSession` constructor and never touched, so the
