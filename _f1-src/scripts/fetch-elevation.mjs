@@ -33,10 +33,21 @@
  * former and discards the latter, which is what a circuit builder does anyway. The
  * smoothing width is stated in the output so the choice is visible rather than buried.
  *
+ * ## Elevation source
+ *
+ * Originally Open-Meteo's elevation API, which rate-limits: a full run got three circuits and
+ * spent the rest of its retries being refused, and because a missing circuit renders flat, the
+ * run looked like it had simply not found those tracks.
+ *
+ * Now AWS Terrarium terrain tiles (SRTM, ASTGTM2, NED and others), fetched at z13 and decoded
+ * here. No API key and no request-rate limit, so a circuit fails one tile at a time and loudly
+ * instead of the run quietly producing fewer circuits. Verified against Open-Meteo at eight
+ * points across four continents before use: agreement within 0.1-11 m.
+ *
  * ## Attribution
  *
  * Geometry: OpenStreetMap contributors, ODbL.
- * Elevation: Open-Meteo's elevation API (SRTM and other public DEMs).
+ * Elevation: AWS `elevation-tiles-prod` Terrarium tiles.
  *
  * Run: node scripts/fetch-elevation.mjs            # only the missing circuits
  *     node scripts/fetch-elevation.mjs --force    # all of them
@@ -47,6 +58,7 @@ import { fileURLToPath } from 'node:url';
 
 import { centrelineFor } from '../src/track/circuitData.js';
 import { CIRCUITS } from '../src/track/circuits.js';
+import { sampleElevation } from './lib/elevationSource.mjs';
 
 /**
  * Circuit centres, and a search radius.
@@ -84,7 +96,62 @@ const LOCATIONS = {
   yasmarina: [24.4672, 54.6031]
 };
 
-const OVERPASS = 'https://overpass-api.de/api/interpreter';
+/**
+ * Overpass endpoints, tried in order.
+ *
+ * The public instance is frequently saturated -- during this work it answered
+ * `runtime error: ... Dispatcher_Client::request_read_and_idx::timeout` for every query, and
+ * then began timing out entirely. A single hard-coded endpoint turns "the mirror is busy" into
+ * "this circuit has no elevation", which is the failure mode this whole script exists to
+ * avoid. So the mirrors are rotated and each one is tried before giving up on a circuit.
+ */
+const OVERPASS_MIRRORS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter'
+];
+
+/**
+ * OSM tag patterns that identify a circuit's racing surface, in order of preference.
+ *
+ * `highway=raceway` is the correct tag and covers most of the calendar. It is not universal:
+ * Melbourne's Albert Park is not tagged as a raceway at all -- verified, `way(around:2200,
+ * -37.8497,144.968)["highway"="raceway"]` returns a count of 0 -- because it is a public road
+ * circuit inside a park, and mappers tagged the park instead. `leisure=track` finds 16 ways
+ * there.
+ *
+ * Nothing broader than `highway=track` is in this list. An earlier version had `["sport"]` as
+ * a final fallback, which matches *any* sport-tagged way: it returned 81 ways at Interlagos
+ * and produced a smooth, entirely plausible 27m profile with no indication that it had found
+ * the surrounding sports complex rather than the circuit. A wrong answer that looks right is
+ * worse than a missing one, so the chain stops where the tags stop meaning "a road you race
+ * on", and `verifyLapLength` is the backstop for everything that slips through.
+ */
+/**
+ * Circuits whose traced geometry does not match the circuit, measured and refused.
+ *
+ * `silverstone`: the 95 `highway=raceway` ways within 2km of the Grand Prix circuit include
+ * enough of the rest of the Silverstone estate to pass the extent check, and the resulting
+ * profile came out at 154.4-156.1m -- 1.7m of relief. Sampling the DEM directly at real points
+ * around the actual circuit gives 146.2-157.3m, about 11.1m, so the profile understates the
+ * relief by roughly 6x. Smoothing is not the cause: re-smoothing the profile at +/-3 points
+ * still only gives 1.6m, so the trace itself is flat.
+ *
+ * Refused rather than shipped. A wrong profile is worse than a missing one, because a missing
+ * circuit renders flat *honestly* while a wrong one renders a real circuit incorrectly -- and
+ * at Silverstone that silently removes the Chapel and Maggotts/Becketts changes of elevation.
+ *
+ * To restore it, the geometry needs to come from a trace that is actually the Grand Prix loop
+ * (a relation rather than a bag of ways, or a manual way id list), not from a proximity query.
+ */
+const REFUSED = new Set(['silverstone']);
+
+const RACEWAY_QUERIES = [
+  '["highway"="raceway"]',
+  '["leisure"="track"]',
+  '["highway"="track"]'
+];
 const ELEVATION = 'https://api.open-meteo.com/v1/elevation';
 const USER_AGENT = 'ApexGP/1.0';
 
@@ -92,30 +159,14 @@ const OUTPUT = fileURLToPath(new URL('../src/track/elevationData.js', import.met
 const CACHE = fileURLToPath(new URL('../.circuit-cache/', import.meta.url));
 
 /**
- * DEM points per request.
+ * Where decoded terrain tiles are cached between runs.
  *
- * Open-Meteo accepts up to 100 coordinates per call.
+ * This is the whole reason a re-run is cheap: a full season of profiles is a few hundred
+ * distinct tiles, and once they are on disk the fetch is pure arithmetic.
  */
-const DEM_BATCH = 100;
+const TILE_CACHE = fileURLToPath(new URL('../.circuit-cache/tiles/', import.meta.url));
 
-/**
- * Minimum gap between DEM calls, milliseconds.
- *
- * This replaced Open-Elevation, whose public endpoint rate-limited a batch run across
- * 24 circuits into twenty-four identical 429s even with exponential backoff. Open-Meteo
- * has a documented free tier and answers a hundred points in well under a second.
- */
-/**
- * Minimum gap between DEM calls, milliseconds.
- *
- * Measured, not documented. Open-Meteo's public tier allows a short burst of about
- * three calls and then answers 429 for a while; at 350ms spacing a full run got three
- * circuits and spent the rest of its retries being refused. 1.6s is comfortably inside
- * the sustained rate.
- */
-const DEM_INTERVAL = 1600;
-
-/** Lookup radius for the raceway, metres. Generous: OSM tagging varies by circuit. */
+/** Lookup radius for the circuit's ways, metres. Generous: OSM tagging varies by circuit. */
 const SEARCH_RADIUS = 2200;
 
 /**
@@ -150,11 +201,16 @@ async function exists(path) {
  * reason to lose a circuit.
  */
 async function overpass(query, attempt = 0) {
-  const url = `${OVERPASS}?data=${encodeURIComponent(`[out:json][timeout:90];${query}`)}`;
+  // Mirror N is chosen by the attempt count, so retries walk the list rather than hammering
+  // whichever endpoint happened to be busy first.
+  const endpoint = OVERPASS_MIRRORS[attempt % OVERPASS_MIRRORS.length];
+  const url = `${endpoint}?data=${encodeURIComponent(`[out:json][timeout:90];${query}`)}`;
   const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
   if (response.status === 429 || response.status === 504 || response.status === 503) {
-    if (attempt >= 4) throw new Error(`overpass HTTP ${response.status} after 5 attempts`);
-    await sleep(6000 * 2 ** attempt);
+    if (attempt >= OVERPASS_MIRRORS.length * 2) {
+      throw new Error(`overpass HTTP ${response.status} after ${attempt + 1} attempts`);
+    }
+    await sleep(6000 * 2 ** (attempt % 3));
     return overpass(query, attempt + 1);
   }
   if (!response.ok) throw new Error(`overpass HTTP ${response.status}`);
@@ -171,56 +227,8 @@ async function overpass(query, attempt = 0) {
  * 24 identical 429s, zero data.
  */
 async function elevations(pairs) {
-  const out = [];
-  let lastCall = 0;
-
-  for (let i = 0; i < pairs.length; i += DEM_BATCH) {
-    const batch = pairs.slice(i, i + DEM_BATCH);
-    /*
-     * Open-Meteo takes two parallel comma-separated lists, not Open-Elevation's
-     * interleaved `lat,lon|lat,lon`. Passing the old shape gets a 403, because the
-     * endpoint sees a request it does not recognise -- which is what happened on the
-     * first run after the switch, and it cost twenty-four circuits.
-     */
-    const latitudes = batch.map(([lat]) => lat.toFixed(5)).join(',');
-    const longitudes = batch.map(([, lon]) => lon.toFixed(5)).join(',');
-
-    let heights = null;
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      // Hold the gap even after a failure, so backing off actually spaces the calls.
-      const wait = DEM_INTERVAL - (Date.now() - lastCall);
-      if (wait > 0) await sleep(wait);
-      lastCall = Date.now();
-
-      try {
-        const response = await fetch(`${ELEVATION}?latitude=${latitudes}&longitude=${longitudes}`, {
-          headers: { 'User-Agent': USER_AGENT }
-        });
-        if (response.status === 429 || response.status >= 500) {
-          await sleep(2500 * 2 ** attempt);
-          continue;
-        }
-        if (!response.ok) throw new Error(`elevation HTTP ${response.status}`);
-        const json = await response.json();
-        // Open-Meteo answers with a positional array, not per-point objects.
-        if (!Array.isArray(json.elevation)) throw new Error('unexpected elevation payload');
-        heights = json.elevation;
-        break;
-      } catch (error) {
-        // A network error is worth one more try; anything else is fatal for the batch.
-        if (attempt === 4) throw error;
-        await sleep(2000 * 2 ** attempt);
-      }
-    }
-    if (!heights) throw new Error('elevation endpoint rate-limited after 5 attempts');
-
-    // Positional: the i-th height belongs to the i-th requested location.
-    for (let k = 0; k < batch.length; k += 1) {
-      const [lat, lon] = batch[k];
-      out.push([lat, lon, heights[k]]);
-    }
-  }
-  return out;
+  const heights = await sampleElevation(pairs, TILE_CACHE);
+  return pairs.map(([lat, lon], index) => [lat, lon, heights[index]]);
 }
 
 /**
@@ -319,6 +327,15 @@ function smoothCircular(values, halfWidth) {
  * @returns {Promise<{id: string, profile: number[], min: number, max: number}|null>}
  */
 async function buildProfile(id, centre, points, force) {
+  /*
+   * Ahead of the cache check, not after it: a refused circuit with a cache entry would
+   * otherwise return the stale profile and quietly stay in the output.
+   */
+  if (REFUSED.has(id)) {
+    console.log(`  ${id.padEnd(14)} refused: traced geometry does not match the circuit`);
+    return null;
+  }
+
   const cacheFile = `${CACHE}elev-${id}.json`;
   if (!force && (await exists(cacheFile))) {
     try {
@@ -333,12 +350,96 @@ async function buildProfile(id, centre, points, force) {
   }
 
   const [lat, lon] = centre;
-  const ways = await overpass(
-    `way(around:${SEARCH_RADIUS},${lat},${lon})["highway"="raceway"];out geom;`
-  );
+  /*
+   * Try each way of tagging a racing surface until one returns something.
+   *
+   * Melbourne is the case that forced this: Albert Park carries no `highway=raceway` at all
+   * within 2km, because it is a public road circuit in a park and mappers tagged the park.
+   */
+  let ways = [];
+  let matched = null;
+  for (const filter of RACEWAY_QUERIES) {
+    /*
+     * Two failures that must not be confused.
+     *
+     * "The query succeeded and found nothing" means this circuit is tagged that other way, and
+     * the next filter is the right move. "The query failed" means we do not know, and moving
+     * on is how Bahrain ended up with a profile traced from `highway=track` on a run where the
+     * raceway query merely timed out -- a plausible, smooth, and wrongly-sourced answer.
+     *
+     * So a failed query is retried against the other mirrors before the filter is abandoned.
+     */
+    ways = [];
+    for (let attempt = 0; attempt < OVERPASS_MIRRORS.length; attempt += 1) {
+      try {
+        ways = await overpass(`way(around:${SEARCH_RADIUS},${lat},${lon})${filter};out geom;`, attempt);
+        break;
+      } catch (error) {
+        if (attempt === OVERPASS_MIRRORS.length - 1) {
+          console.log(`  ${id.padEnd(14)} ${filter} unavailable on all mirrors: ${error.message}`);
+        }
+      }
+    }
+    if (ways.length) {
+      matched = filter;
+      break;
+    }
+  }
   if (!ways.length) {
     console.log(`  ${id.padEnd(14)} NO OSM DATA (searched ${SEARCH_RADIUS}m around ${lat},${lon})`);
     return null;
+  }
+  /*
+   * Does this geometry actually form the circuit?
+   *
+   * The tag fallback can only tell you that *something* tagged that way is nearby.
+   * `highway=track` matches a farm track, `leisure=track` matches a park path, and either will
+   * happily produce a smooth, entirely plausible profile of the wrong place.
+   *
+   * Measured by **extent**, not by summed way length. Summing is wrong in a way that looked
+   * plausible: a circuit is usually mapped as several ways that overlap at the junctions and
+   * share access roads, so the sum double-counts. Measured, it rejected Monza as 12.30km
+   * traced against 5.793km real -- rejecting 12 of 22 circuits that the previous run had
+   * fetched successfully.
+   *
+   * Extent is invariant to how the lap is split into ways, and strongly sensitive to tracing
+   * the wrong feature, which is exactly the property wanted here. Real circuits sit at an
+   * extent-to-lap-length ratio of roughly 0.25-0.65 (Monza ~0.31, Monaco ~0.24, Silverstone
+   * ~0.61), so the bounds below accept a real circuit and reject both a park footpath
+   * (too small) and a whole district (too big).
+   */
+  const real = CIRCUITS.find((entry) => entry.id === id)?.length;
+  if (Number.isFinite(real)) {
+    const MPD_LAT = 111320;
+    const cosLat = Math.cos((centre[0] * Math.PI) / 180);
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const way of ways) {
+      for (const node of way.geometry ?? []) {
+        const x = (node.lon - centre[1]) * MPD_LAT * cosLat;
+        const y = (node.lat - centre[0]) * MPD_LAT;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    const extent = Math.hypot(maxX - minX, maxY - minY);
+    const ratio = extent / (real * 1000);
+    if (!(ratio >= 0.12 && ratio <= 0.95)) {
+      console.log(
+        `  ${id.padEnd(14)} REJECTED geometry: extent ${(extent / 1000).toFixed(2)}km against a real ${real}km lap (ratio ${ratio.toFixed(2)}, want 0.12-0.95)`
+      );
+      return null;
+    }
+  }
+
+  if (matched !== RACEWAY_QUERIES[0]) {
+    // Worth saying out loud: this circuit's profile came from a less specific tag, so it is
+    // worth more scrutiny than one found by the obvious one.
+    console.log(`  ${id.padEnd(14)} found via ${matched} (${ways.length} ways)`);
   }
 
   // Gather nodes. Overpass returns them per way; dedupe on lat/lon to 1cm.
@@ -452,7 +553,82 @@ async function buildProfile(id, centre, points, force) {
  * left an empty file and threw away everything it had fetched. Progress now survives
  * being killed, which is the only thing that makes a script this slow usable.
  */
+/** Parse the profiles already published, so they can be compared against and preserved. */
+async function readExistingProfiles() {
+  try {
+    const source = await readFile(OUTPUT, 'utf8');
+    const body = source.slice(source.indexOf('ELEVATION = {') + 'ELEVATION ='.length);
+    const object = body.slice(body.indexOf('{'), body.lastIndexOf('};') + 1);
+    // Generated keys are bare identifiers; quote both levels, circuit id and `profile`.
+    const parsed = JSON.parse(
+      object.replace(/^(\s*)([a-z]+):/gm, '$1"$2":').replace(/\bprofile:/g, '"profile":')
+    );
+    const out = {};
+    for (const [id, entry] of Object.entries(parsed)) {
+      if (Array.isArray(entry?.profile) && !REFUSED.has(id)) out[id] = { profile: entry.profile };
+    }
+    console.log(`seeding from ${Object.keys(out).length} existing profile(s)`);
+    return out;
+  } catch (error) {
+    console.log(`no existing profiles to seed from (${error.message})`);
+    return {};
+  }
+}
+
 async function writeOutput(collected) {
+  /*
+   * Never publish a profile that is worse than one already published.
+   *
+   * The DEM is higher resolution than the source the first seven circuits came from, so over
+   * equivalent geometry it can only add relief, not remove it. A *smaller* range therefore
+   * means the trace missed part of the lap -- and it did, three times:
+   *
+   *     monaco    37.6m -> 22.6m   from 137 DEM readings
+   *     montreal   6.1m ->  1.2m   from 269
+   *     miami      1.3m ->  0.2m   from 331
+   *
+   * against 1766 readings for Silverstone, which came out fine. Sparse geometry is the cause,
+   * so the sparse result is kept out and the previous one is retained. Anything that genuinely
+   * got flatter -- a quarry, a regraded circuit -- is vanishingly unlikely and would show up in
+   * this report, so it is not silently swallowed.
+   */
+  let restored = 0;
+  try {
+    /*
+     * Extract just the object literal. Parsing the file as a module was the first attempt and
+     * it failed silently -- this file has two exports, not one, so the whole thing never became
+     * valid JSON and the catch below quietly disabled the guard while it looked like it was
+     * running. A guard that cannot fail loudly is not a guard, so the parse is checked.
+     */
+    const source = await readFile(OUTPUT, 'utf8');
+    const body = source.slice(source.indexOf('ELEVATION = {') + 'ELEVATION ='.length);
+    const object = body.slice(body.indexOf('{'), body.lastIndexOf('};') + 1);
+    // The generated keys are bare identifiers, so quote them before parsing. Both levels:
+    // the circuit id starts a line, but `profile` sits on the same line as it.
+    const previous = JSON.parse(
+      object.replace(/^(\s*)([a-z]+):/gm, '$1"$2":').replace(/\bprofile:/g, '"profile":')
+    );
+    if (typeof previous !== 'object' || previous === null) throw new Error('no previous profiles');
+    for (const [id, entry] of Object.entries(collected)) {
+      const old = previous[id]?.profile;
+      if (!Array.isArray(old) || old.length !== entry.profile.length) continue;
+      const span = (p) => Math.max(...p) - Math.min(...p);
+      if (span(entry.profile) < span(old) * 0.8) {
+        console.log(`  ${id.padEnd(14)} keeping existing profile: ${span(old).toFixed(1)}m beats ${span(entry.profile).toFixed(1)}m`);
+        collected[id] = { profile: old };
+        restored += 1;
+      }
+    }
+  } catch (error) {
+    /*
+     * Loud, not silent. The first version of this guard swallowed a parse failure, and the
+     * symptom was that it looked like it was protecting the profiles while doing nothing --
+     * which is the same failure mode as the thing it was written to prevent.
+     */
+    console.log(`  note: no previous profiles to compare against (${error.message})`);
+  }
+  if (restored) console.log(`  kept ${restored} existing profile(s) over a sparser new trace`);
+
   const body = Object.entries(collected)
     .map(([id, entry]) => `  ${id}: { profile: [${entry.profile.join(',')}] }`)
     .join(',\n');
@@ -464,16 +640,19 @@ async function writeOutput(collected) {
  *
  * Real elevation around the lap, for every circuit the fetch managed.
  *
- * Geometry from OpenStreetMap contributors (ODbL); elevation from Open-Meteo's public
- * DEM endpoint. Regenerate with \`node scripts/fetch-elevation.mjs\`, which is
- * resumable: completed circuits are cached and skipped.
+ * Geometry from OpenStreetMap contributors (ODbL); elevation from AWS \`elevation-tiles-prod\`
+ * Terrarium tiles at z13. Regenerate with \`node scripts/fetch-elevation.mjs\`, which is
+ * resumable: completed circuits and terrain tiles are cached and skipped.
  *
  * \`profile\` is metres above sea level at ${PROFILE_POINTS} evenly spaced points around
  * the lap, starting where the circuit centreline starts, smoothed with a circular
  * moving average of +/-${SMOOTH_SAMPLES} points to strip DEM noise.
  *
- * A circuit may be missing: OSM's \`highway=raceway\` tagging is inconsistent, and the
- * public DEM endpoint rate-limits. Missing means flat, not wrong.
+ * A circuit may be missing: OSM tagging of a racing surface is inconsistent, so the geometry
+ * search falls back through \`highway=raceway\`, \`leisure=track\` and \`highway=track\`, and
+ * a candidate whose extent disagrees with the circuit's known length is rejected. Missing means
+ * flat, not wrong. The writer also refuses to replace an existing profile with one of
+ * materially smaller relief, which is the signature of a trace that missed part of the lap.
  */
 
 /** Points per profile around the lap. */
@@ -515,7 +694,18 @@ console.log('Fetching real elevation: OSM geometry + DEM sampling\n');
 console.log(`circuit         result`);
 console.log(`smoothing: circular moving average, +/-${SMOOTH_SAMPLES} profile points\n`);
 
-const collected = {};
+/*
+ * Seeded from the file that is already on disk, for two reasons.
+ *
+ * `writeOutput` runs after *every* circuit, so the file is rewritten with whatever has been
+ * collected so far. Starting empty, the first circuit therefore truncates the file down to
+ * itself -- which destroys the previous profiles before they can be compared, and is why the
+ * never-shrink guard silently did nothing: by the time Monaco was checked, the only previous
+ * profile left in the file was Bahrain's.
+ *
+ * Seeding also means an interrupted run cannot drop circuits it already published.
+ */
+const collected = await readExistingProfiles();
 let failures = 0;
 
 for (const circuit of CIRCUITS) {
@@ -538,6 +728,7 @@ for (const circuit of CIRCUITS) {
     } else failures += 1;
   } catch (error) {
     console.log(`  ${circuit.id.padEnd(14)} FAILED: ${String(error.message).slice(0, 60)}`);
+    if (process.env.APEXGP_ELEV_DEBUG) console.log(error.stack);
     failures += 1;
   }
   // Space the spatial queries out. A circuit every second is well inside the rate a
