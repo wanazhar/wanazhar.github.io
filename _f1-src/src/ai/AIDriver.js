@@ -19,6 +19,7 @@
 
 import { clamp, damp, moveToward, wrapAngle } from '../util/math.js';
 import { locateOnTrack, racingLineAt, sampleAtDistance } from '../track/trackGeometry.js';
+import { PIT_SIDE, PIT_WINDOW_END, PIT_WINDOW_START } from '../race/pit.js';
 
 /**
  * Controller gains.
@@ -47,6 +48,26 @@ const ERS_CURVATURE = 0.0035;
 const ERS_SLIDE_LIMIT = 0.14;
 /** How readily a driver spends energy with no car in sight, as a fraction of `drsSkill`. */
 const ERS_OPPORTUNISM = 0.35;
+
+/**
+ * Is the pit entry coming up?
+ *
+ * A driver does not cross the circuit the moment they decide to stop -- they run to the end of
+ * the straight, and only then turn off. Steering for the lane from the moment a stop is
+ * requested put the car off the racing line for most of a lap, which cost 185 seconds against a
+ * 2.4 second box, and made stopping look catastrophically expensive.
+ *
+ * @param {number} distance metres along the lap from the start line
+ * @param {number} length lap length
+ */
+function approachingPitWindow(fraction) {
+  const f = (((fraction % 1) + 1) % 1);
+  // The window wraps the line, so entry is the stretch just before 1.0.
+  return f >= PIT_WINDOW_START - 0.06 || f <= PIT_WINDOW_END + 0.02;
+}
+
+/** Metres into the pit lane the driver aims for, between the road edge and the far wall. */
+const PIT_LANE_CENTRE = 5;
 
 /** Must match `CarPhysics`: brake hold before reverse actually engages. */
 const REVERSE_ENGAGE_HOLD = 0.45;
@@ -229,7 +250,13 @@ export class AIDriver {
 
     const sample = located.sample;
     const limit = Math.max(0, sample.width * 0.5 - 2.0);
-    const lineOffset = clamp(sample.lineOffset + this.#offsetFor(context, distance, dt, limit), -limit, limit);
+    /*
+     * A car heading for the pit needs room beyond the road edge, because that is where the lane
+     * is. Clamping back to the road half-width would aim it at the kerb and it would simply
+     * refuse to leave the circuit.
+     */
+    const pitRoom = context.pitRequested ? limit + PIT_LANE_CENTRE + 2 : limit;
+    const lineOffset = clamp(sample.lineOffset + this.#offsetFor(context, distance, dt, pitRoom), -pitRoom, pitRoom);
     const offTrackDistance = Math.max(0, Math.abs(located.lateral) - Math.abs(lineOffset));
     const offTrack = offTrackDistance > OFF_TRACK_DISTANCE;
     this.offTrackTimer = offTrack ? this.offTrackTimer + dt : 0;
@@ -571,6 +598,20 @@ export class AIDriver {
     const sample = sampleAtDistance(this.track, distance);
     const budget = Math.max(0, limit) * 0.45;
     let target = 0;
+
+    /*
+     * A requested stop overrides everything: the driver is going to the pit, not racing.
+     *
+     * This has to be the driver steering rather than the session moving the car. A stop whose
+     * only cost is the two seconds in the box is never worth taking, so the AI would never stop
+     * and the tyre model would stay decorative. The lane in, the lane out and the box are what
+     * the decision is weighed against.
+     */
+    if (context.pitRequested && approachingPitWindow(distance / this.track.length)) {
+      // Negative lateral, matching `pit.js`'s `PIT_SIDE`. Aiming at the middle of the lane puts
+      // the car clear of the road edge and clear of the far wall.
+      target = PIT_SIDE * (sample.width * 0.5 + PIT_LANE_CENTRE);
+    }
 
     const ahead = context.opponentAhead;
     const closing = ahead && ahead.gapSpeed !== undefined ? ahead.gapSpeed > 0.8 : false;
