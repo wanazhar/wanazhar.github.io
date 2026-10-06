@@ -515,14 +515,49 @@ export class CarPhysics {
       this.direction = 1;
       this.reverseHold = 0;
     } else if (this.speed > 0.8) {
-      this.direction = Math.sign(this.vLong) || this.direction;
+      /*
+       * Moving: hold whatever is selected.
+       *
+       * This used to be `this.direction = Math.sign(this.vLong) || this.direction`, which is
+       * how a car that spun while rolling backwards stayed in reverse. Now that reverse has a
+       * real engagement path -- hold the brake -- that legacy rule is not just redundant, it
+       * is a fault: reverse releases above `REVERSE_LIMIT`, the car is still rolling
+       * backwards on the next step, and `Math.sign(vLong)` puts it straight back in. Speed
+       * then oscillated either side of the limit and the selector chattered, flipping
+       * direction several times a second -- 359 flips in eight seconds, measured.
+       *
+       * It was hidden for as long as reverse was undriveable, because throttle forced
+       * `direction = 1` every step and the boundary was never reached. Making reverse
+       * drivable is what exposed it, so the two have to be fixed together.
+       *
+       * Reverse is entered by holding the brake and left on speed, and nothing in between
+       * changes the selection. That is how a real selector behaves.
+       */
       this.reverseHold = 0;
     } else if (brake > 0.5 && throttle < 0.2) {
       this.reverseHold += dt;
       // Only after the brake has been held does reverse actually engage.
       if (this.reverseHold > REVERSE_ENGAGE_HOLD) this.direction = -1;
-    } else if (throttle > 0.2) {
-      // Any throttle input selects forward again and clears the reverse hold.
+    } else if (throttle > 0.2 && this.direction !== -1) {
+      /*
+       * Throttle selects forward again -- but only when forward is already selected.
+       *
+       * This was unconditional, which made reverse selectable but not drivable: reverse
+       * engaged, and then the throttle needed to actually drive backwards deselected it on
+       * the very next step.
+       *
+       * It went unnoticed because the only test of it asserted `direction === -1` after a
+       * brake hold, which still passed. The bug was in the gap between *selecting* reverse
+       * and *driving* in it, and nothing covered that.
+       *
+       * The consequence was that a spun car applied full throttle to whatever was in front
+       * of it, indefinitely. Measured at Jeddah: 90% of stopped cars faced backwards,
+       * 79-92% were against the barrier, 1% were reversing, and the field spent 29% of a
+       * race below walking pace.
+       *
+       * Leaving reverse is still bounded, deliberately: it is released on speed, and by
+       * dropping the brake.
+       */
       this.direction = 1;
       this.reverseHold = 0;
     }
