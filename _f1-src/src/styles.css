@@ -490,6 +490,57 @@ body {
   background: var(--warn);
 }
 
+/*
+ * Conditions.
+ *
+ * Placed under the lap counter in the top-left stack, where the session label is: it is
+ * status, not a number the player is chasing. The bar fills as the forecast builds, so the
+ * change is announced before it arrives rather than at the same moment as the grip loss.
+ */
+.hud-weather {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-top: 0.35em;
+  font-size: var(--ui-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+.hud-weather-icon {
+  width: 0.62em;
+  height: 0.62em;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.hud-weather-bar {
+  width: 2.6em;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+
+.hud-weather-bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: currentColor;
+  transition: width 400ms ease;
+}
+
+.hud-weather[data-tone='cloudy'] {
+  color: var(--warn);
+}
+.hud-weather[data-tone='light-rain'] {
+  color: #7fc4ff;
+}
+.hud-weather[data-tone='heavy-rain'] {
+  color: #4aa3ff;
+}
+
 /* Transient messages */
 .hud-alert {
   position: absolute;
@@ -508,6 +559,9 @@ body {
 }
 .hud-alert[data-tone='good'] {
   color: var(--good);
+}
+.hud-alert[data-tone='warn'] {
+  color: var(--warn);
 }
 
 .hud-alert.is-visible {

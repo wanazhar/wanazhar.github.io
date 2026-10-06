@@ -1569,6 +1569,41 @@ test('weather arrives during the race, and it costs grip', () => {
   assert.ok(session.weatherChanged, 'and the change must be recorded so the HUD can show it');
 });
 
+test('the HUD tells the player what the weather is doing', () => {
+  /*
+   * Weather that reaches the physics but not the screen is worse than no weather at all:
+   * the car stops gripping and the player has nothing to explain it, so it reads as the
+   * controls breaking. This is the seventh time this repo has had a value computed
+   * correctly and then never read.
+   *
+   * `weather` reaches the car already -- `surfaceGrip` follows `weatherState.grip`. What was
+   * missing was anything the player could see.
+   */
+  const gameSource = readFileSync(new URL('../src/core/Game.js', import.meta.url), 'utf8');
+  assert.match(
+    gameSource,
+    /weather: this\.session\.weatherState\?\.id/,
+    'the session weather must reach the HUD telemetry'
+  );
+
+  // The label map must not drift from the presets, or the chip shows a state the car is not in.
+  const labels = uiSource.match(/const WEATHER_LABEL = \{([\s\S]*?)\n\};/);
+  assert.ok(labels, 'the HUD must map weather ids to labels');
+  const mapped = [...labels[1].matchAll(/\s*'?([a-z-]+)'?:/g)].map((m) => m[1]);
+  for (const state of WEATHER) {
+    assert.ok(mapped.includes(state.id), `the HUD has no label for the '${state.id}' preset`);
+  }
+
+  // And the change must be announced, not merely displayed: a chip that silently reads
+  // LIGHT RAIN is easy to miss while chasing a car.
+  assert.match(uiSource, /WEATHER_ANNOUNCE\[weather\]/, 'a weather change must raise an alert');
+  assert.match(uiSource, /this\.alert\(WEATHER_ANNOUNCE/, 'and it must go through the alert path');
+
+  // The chip is hidden on a circuit that cannot change, so a dry race does not spend a
+  // HUD region promising something that will not happen.
+  assert.match(uiSource, /e\.weather\.hidden = !changeable/);
+});
+
 test('no two HUD regions can overlap, at any viewport', () => {
   /*
    * A structural check rather than a screenshot.

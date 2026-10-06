@@ -459,6 +459,14 @@ Transitions move one step at a time through the presets, because the sky does no
 to monsoon, and because the intermediate step is where the grip cliff is nastiest: `cloudy`
 costs almost nothing, `light-rain` takes 10% off the surface and `heavy-rain` takes 26%.
 
+Grip reaching the car is only half of it. The HUD carries a conditions chip in the top-left
+stack with a bar that fills as the forecast builds, and the arrival raises an alert — because
+weather the player cannot see is worse than no weather at all: the car stops gripping and the
+only explanation available is that the controls have broken. The chip is hidden on a circuit
+that cannot change, so a permanently dry race does not spend a HUD region promising rain that
+never comes. A test asserts the label map covers every `WEATHER` preset id, so the readout
+cannot drift from the state the car is actually in.
+
 ### Pit stops
 
 `car.pitStop` was a boolean that was initialised and never read: no lane, no box, no tyre

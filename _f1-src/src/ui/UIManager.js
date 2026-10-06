@@ -12,6 +12,26 @@ import { ACTIONS } from '../core/InputController.js';
 
 const SESSION_LABEL = { qualifying: 'QUALIFYING', race: 'RACE' };
 
+/**
+ * Conditions, as the HUD shows them.
+ *
+ * The ids match `physics/compounds.js` WEATHER presets, so the chip cannot drift from the
+ * grip the car actually gets.
+ */
+const WEATHER_LABEL = {
+  clear: 'DRY',
+  cloudy: 'OVERCAST',
+  'light-rain': 'LIGHT RAIN',
+  'heavy-rain': 'HEAVY RAIN'
+};
+
+/** What gets announced when the forecast arrives. The first rain is the headline. */
+const WEATHER_ANNOUNCE = {
+  cloudy: 'OVERCAST',
+  'light-rain': 'RAIN',
+  'heavy-rain': 'HEAVY RAIN'
+};
+
 /** Build phases, in order, used to advance the loading bar. */
 const LOADING_PHASES = ['track', 'mesh', 'scenery', 'lighting', 'grid'];
 
@@ -41,6 +61,16 @@ export class UIManager {
           <div class="hud-session" data-session-label>RACE</div>
           <div class="hud-circuit" data-circuit-name></div>
           <div class="hud-lap"><span data-lap>1</span><span class="hud-lap-total">/1</span></div>
+          <!--
+            Conditions. Present from the lights, because knowing the track is dry when it is
+            dry is half the information: the player can see the change coming rather than
+            discovering it as a slide. The bar fills as the forecast builds.
+          -->
+          <div class="hud-weather" data-weather hidden>
+            <span class="hud-weather-icon" data-weather-icon></span>
+            <span class="hud-weather-label" data-weather-label>DRY</span>
+            <span class="hud-weather-bar"><i data-weather-fill></i></span>
+          </div>
         </div>
 
         <!--
@@ -199,6 +229,10 @@ export class UIManager {
       ersBadge: find('ers-badge'),
       tyreFront: find('tyre-front'),
       tyreRear: find('tyre-rear'),
+      weather: find('weather'),
+      weatherIcon: find('weather-icon'),
+      weatherLabel: find('weather-label'),
+      weatherFill: find('weather-fill'),
       alert: find('alert')
     };
 
@@ -510,6 +544,32 @@ export class UIManager {
     this.#setTyreBar(e.tyreRear, telemetry.rearTemp, telemetry.rearWear);
 
     if (telemetry.invalidLap) this.alert('INVALID LAP', 'bad');
+    this.#setWeather(telemetry.weather, telemetry.weatherPhase);
+  }
+
+  /**
+   * Conditions readout, and a one-shot alert when the forecast actually arrives.
+   *
+   * The alert is what makes this a mechanic rather than an ambience setting: without it the
+   * rain shows up as the car suddenly not gripping and the player has to guess why.
+   */
+  #setWeather(weather = 'clear', phase = 1) {
+    const e = this.elements;
+    if (!e.weather) return;
+    // Hidden on a circuit that cannot change, so a permanently dry race does not spend a
+    // HUD region telling the player something that will not happen.
+    const changeable = weather !== 'clear' || phase < 1;
+    e.weather.hidden = !changeable;
+    e.weather.dataset.tone = weather;
+    e.weatherLabel.textContent = WEATHER_LABEL[weather] ?? 'DRY';
+    e.weatherFill.style.width = `${Math.round(phase * 100)}%`;
+    if (weather !== this.lastWeather) {
+      // `clear` -> `cloudy` is not worth interrupting for; the first rain is.
+      if (this.lastWeather !== undefined && WEATHER_LABEL[weather] !== 'DRY') {
+        this.alert(WEATHER_ANNOUNCE[weather] ?? 'WEATHER CHANGE', weather === 'heavy-rain' ? 'bad' : 'warn');
+      }
+      this.lastWeather = weather;
+    }
   }
 
   #setTyreBar(element, temp, wear) {
