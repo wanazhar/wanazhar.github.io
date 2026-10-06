@@ -42,6 +42,7 @@ import { profileFromPins, radialLoop } from '../src/track/circuitShapes.js';
 import {
   BRAKES,
   CarPhysics,
+  wearGrip,
   DEFAULT_GEOMETRY,
   GRAVITY,
   POWERTRAIN,
@@ -2540,11 +2541,27 @@ test('tyre temperature gates grip, and a normal lap does not overheat', () => {
     'overheated tyres must lose grip'
   );
 
+  /*
+   * A lap, not a lap's worth of corner.
+   *
+   * This held throttle 0.45 and steer 0.18 for forty continuous seconds, which is not a
+   * normal lap -- it is forty seconds of unbroken cornering, and it never let the car
+   * straighten up. The test passed only because the thermal model under-heated so badly
+   * that even that scenario stayed under 150C. With a speed term added, sustained cornering
+   * correctly cooks a tyre, which is the behaviour we want, so the scenario had to change
+   * to match the claim it is making.
+   *
+   * Measured on real circuits, the AI's *median* lateral acceleration is under 6 m/s2:
+   * most of a lap is a straight. So a lap is modelled as alternating.
+   */
   const normal = new CarPhysics({ grip: 1 });
-  normal.reset(0, 0, 0, 30);
-  for (let i = 0; i < 120 * 40; i += 1) normal.step(DT, { throttle: 0.45, brake: 0, steer: 0.18 });
+  normal.reset(0, 0, 0, 55);
+  for (let i = 0; i < 120 * 40; i += 1) {
+    const phase = Math.floor(i / (120 * 2.5)) % 2;
+    normal.step(DT, phase === 0 ? { throttle: 1, brake: 0, steer: 0 } : { throttle: 0.2, brake: 0.2, steer: 0.16 });
+  }
   assert.ok(
-    normal.frontTemp > 60 && normal.frontTemp < 150,
+    normal.frontTemp > 70 && normal.frontTemp < 150,
     `a normal lap should run the tyres in the window, got ${normal.frontTemp.toFixed(0)}C`
   );
   assert.ok(normal.frontGrip > 0.95, 'a normal lap should not lose grip to heat');
@@ -2560,6 +2577,103 @@ test('tyre temperature gates grip, and a normal lap does not overheat', () => {
   assert.ok(abuse.frontGrip < 0.95, `overheated tyres must cost grip, got ${abuse.frontGrip.toFixed(3)}`);
 });
 
+
+test('the compound you pick changes the car, and a worn tyre costs real grip', () => {
+  /*
+   * `compounds.js` has always carried per-compound grip, wear rate, band and warm-up, and
+   * none of it reached the car: `getCompound` was imported by `RaceSession` and never
+   * called, and the only function that applied `compound.grip` was called from the setup
+   * screen to print a label. Soft versus Wet was a coloured swatch.
+   *
+   * Wear was worse than inert. It accumulated at `0.0000075 * dt` with no compound and no
+   * unit: 0.0007 over a five-lap race, costing `1 - wear * 0.18`, for **0.013%** of grip.
+   * The HUD wear bar read 0.0% for an entire race and "soft tyres wear faster" was false.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const lapSeconds = track.lapRecord;
+
+  // A steady-state skidpad, so the measurement is the compound and not a transient.
+  const lateralG = (compound, wear) => {
+    const car = new CarPhysics({ compound, lapSeconds });
+    car.reset(0, 0, 0, 55);
+    car.frontTemp = 100;
+    car.rearTemp = 100;
+    car.frontWear = wear;
+    car.rearWear = wear;
+    let sum = 0;
+    for (let i = 0; i < 2400; i += 1) {
+      car.step(1 / 240, { throttle: 0.18, brake: 0, steer: 0.18 });
+      if (i >= 1200) sum += Math.abs(car.lateralG);
+    }
+    return sum / 1200;
+  };
+
+  const softFresh = lateralG('soft', 0);
+  const hardFresh = lateralG('hard', 0);
+  const softWorn = lateralG('soft', 0.5);
+
+  assert.ok(softFresh > hardFresh, `a fresh soft must out-grip a fresh hard: ${softFresh.toFixed(3)} vs ${hardFresh.toFixed(3)}`);
+  assert.ok(softWorn < softFresh * 0.75, `a worn soft must lose real grip: ${softWorn.toFixed(3)} vs ${softFresh.toFixed(3)}`);
+  assert.ok(softWorn < hardFresh, `a dead soft must be slower than a fresh hard: ${softWorn.toFixed(3)} vs ${hardFresh.toFixed(3)}`);
+
+  // And the wear bar has to move, which it never did before.
+  const soft = new CarPhysics({ compound: 'soft', lapSeconds, lapMetres: track.length });
+  const hard = new CarPhysics({ compound: 'hard', lapSeconds, lapMetres: track.length });
+  assert.ok(soft.wearPerMetre > hard.wearPerMetre, 'a soft must wear faster than a hard');
+  assert.ok(soft.wearPerMetre * track.length > 0.02, 'a soft must lose a couple of percent of grip per lap');
+
+  /*
+   * Degradation is per *distance*, not per second. That is what makes tyre management
+   * possible at all: a time-based rate means a driver who lifts to save a tyre just takes
+   * longer to wear it out, so protecting a tyre buys nothing.
+   */
+  const monaco = buildTrack(getCircuit('monaco'));
+  const atMonaco = new CarPhysics({ compound: 'soft', lapSeconds: monaco.lapRecord, lapMetres: monaco.length });
+  const perLap = (car) => car.wearPerMetre * car.lapMetres;
+  assert.ok(
+    Math.abs(perLap(atMonaco) - perLap(soft)) < 1e-9,
+    'a lap of a soft must cost the same grip at Monaco as at Monza -- it is defined per lap, not per second'
+  );
+});
+
+test('a soft is worth running early and stops being worth running', () => {
+  /*
+   * With the compounds actually connected, the authored wear rates turned out to be
+   * inconsistent with the authored grip spread: a soft beat a medium for **0.89 laps**
+   * and then fell behind it forever, which would have made the fastest compound in the
+   * game a mistake to run. The rates are now set from the crossover points instead.
+   *
+   * This test pins the ordering, because a compound set with no crossing points is just
+   * three numbers that never interact.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const multiplierAt = (compound, laps) => {
+    const car = new CarPhysics({ compound, lapSeconds: track.lapRecord, lapMetres: track.length });
+    car.frontWear = Math.min(1, laps * car.wearPerMetre * track.length);
+    return car.compoundGrip * wearGrip(car.frontWear);
+  };
+
+  // Fresh: fastest compound wins.
+  assert.ok(multiplierAt('soft', 0) > multiplierAt('medium', 0), 'soft is fastest when fresh');
+  assert.ok(multiplierAt('medium', 0) > multiplierAt('hard', 0), 'medium is faster than hard when fresh');
+
+  // After a stint, the order must reverse -- that is the whole point of a tyre choice.
+  assert.ok(multiplierAt('hard', 8) > multiplierAt('soft', 8), 'a hard must out-grip a soft after a long stint');
+  assert.ok(multiplierAt('medium', 8) > multiplierAt('soft', 8), 'a medium must out-grip a soft after a long stint');
+
+  // And it has to take more than a single lap to flip, or softs are pointless.
+  const crossover = (a, b) => {
+    for (let laps = 0; laps <= 20; laps += 0.05) {
+      if (multiplierAt(a, laps) <= multiplierAt(b, laps)) return laps;
+    }
+    return Infinity;
+  };
+  const softBehindMedium = crossover('soft', 'medium');
+  assert.ok(
+    softBehindMedium > 1.5 && softBehindMedium < 6,
+    `a soft should stay ahead for a stint, not ${softBehindMedium.toFixed(2)} laps`
+  );
+});
 
 
 test('braking does not gut the cornering grip', () => {
