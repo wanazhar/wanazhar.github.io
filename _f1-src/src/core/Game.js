@@ -701,6 +701,10 @@ export class Game {
       rearWear: physics.rearWear,
       sessionType: this.session.type,
       finished: this.session.finished,
+      // Weather, so the HUD can say what the track is doing. Without this the forecast
+      // arrives and the player just starts sliding with nothing to explain it.
+      weather: this.session.weatherState?.id ?? 'clear',
+      weatherPhase: this.session.weatherPhase ?? 1,
       cameraMode: this.rig.mode
     };
   }

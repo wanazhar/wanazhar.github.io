@@ -432,6 +432,41 @@ furniture (barriers, buildings, trees, hoardings) follows the road, and the hori
 -- a ring, with no per-sample height -- is pinned to the circuit's mean ground level so a
 circuit at 190m does not float above a forest growing out of the plane.
 
+### Weather that arrives during the race
+
+A race's weather was read once in the `RaceSession` constructor and never touched, so the
+forecast could not arrive, the track could not go off under the cars, and a wet race was wet from
+the lights. The flags and safety-car hooks sitting beside it were initialised and never used.
+
+Now `race/weather.js` plans a deterioration and the session walks it, driven by how far through
+the **race distance** the field is rather than by lap count -- so a longer race does not simply
+hold the same weather for longer.
+
+The plan is **deterministic and keyed to the circuit**, not re-rolled per race. Real weather does
+not change each time a race is run, and more usefully a reproducible answer can be tested and a
+random one cannot. About a third of the calendar has a wet reputation and plans a change; the
+rest stay dry.
+
+Races start dry. That is the whole drama of a wet race in F1 -- the track is dry at the lights
+and somewhere in the second half the cloud breaks and the field has to change tyres while trying
+to hold the line. Measured at Suzuka:
+
+    lap 0   clear       surface grip 1.000
+    lap 2   cloudy      1.000
+    lap 4   light-rain  0.962   -> final 0.879 as the tyres go off too
+
+Transitions move one step at a time through the presets, because the sky does not jump from sun
+to monsoon, and because the intermediate step is where the grip cliff is nastiest: `cloudy`
+costs almost nothing, `light-rain` takes 10% off the surface and `heavy-rain` takes 26%.
+
+Grip reaching the car is only half of it. The HUD carries a conditions chip in the top-left
+stack with a bar that fills as the forecast builds, and the arrival raises an alert — because
+weather the player cannot see is worse than no weather at all: the car stops gripping and the
+only explanation available is that the controls have broken. The chip is hidden on a circuit
+that cannot change, so a permanently dry race does not spend a HUD region promising rain that
+never comes. A test asserts the label map covers every `WEATHER` preset id, so the readout
+cannot drift from the state the car is actually in.
+
 ### Pit stops
 
 `car.pitStop` was a boolean that was initialised and never read: no lane, no box, no tyre
