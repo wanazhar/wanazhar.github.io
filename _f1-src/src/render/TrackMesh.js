@@ -6,6 +6,14 @@
 
 import * as THREE from 'three';
 import {
+  BOX_PROGRESS,
+  PIT_LANE_WIDTH,
+  PIT_SIDE,
+  PIT_WINDOW_END,
+  PIT_WINDOW_START,
+  laneProgress
+} from '../race/pit.js';
+import {
   asphaltTexture,
   concreteTexture,
   crowdTexture,
@@ -289,6 +297,122 @@ const roadMaterial = new THREE.MeshStandardMaterial({
   const road = new THREE.Mesh(roadGeometry, roadMaterial);
   road.receiveShadow = true;
   group.add(road);
+
+  /*
+   * The pit lane.
+   *
+   * `race/pit.js` puts the lane beyond the road edge on the pit side, through a window either
+   * side of the start line, with the FIA speed limit applying and a box partway along. Without
+   * geometry here a car taking a stop drives onto nothing -- off the end of the run-off into
+   * empty space -- which makes the whole mechanic look broken even though it works.
+   *
+   * Three pieces, all instanced or single-buffer so the draw-call cost is fixed:
+   *   - the lane surface, a strip beside the main straight
+   *   - a pit wall between the lane and the circuit, with a gap where cars cross
+   *   - the garage frontage and the boxes along the far side
+   */
+  const pitStripPositions = [];
+  const pitStripIndices = [];
+  const pitStripUvs = [];
+  const pitWallPositions = [];
+  const pitWallIndices = [];
+  const PIT_LANE_RENDER_WIDTH = PIT_LANE_WIDTH;
+  const boxes = [];
+  let previousIndex = -1;
+
+  for (let i = 0; i <= count; i += 1) {
+    const s = samples[i % count];
+    const fraction = s.s / track.length;
+    // The window wraps the line, so walk it as a contiguous run from just before the line.
+    const inWindow = fraction >= PIT_WINDOW_START || fraction <= PIT_WINDOW_END;
+    if (!inWindow) {
+      if (previousIndex >= 0) previousIndex = -1;
+      continue;
+    }
+
+    const edge = PIT_SIDE * (s.width * 0.5);
+    const outer = edge + PIT_SIDE * PIT_LANE_RENDER_WIDTH;
+
+    // Lane surface.
+    pitStripPositions.push(
+      s.x + s.rightX * edge, s.y + 0.03, s.z + s.rightZ * edge,
+      s.x + s.rightX * outer, s.y + 0.03, s.z + s.rightZ * outer
+    );
+    const v = (i / count) * track.length * 0.1;
+    pitStripUvs.push(0, v, 1, v);
+
+    // Pit wall, 1.2m high, with a gap at the box so cars can reach the far side.
+    const atBox = Math.abs(laneProgress(fraction) - BOX_PROGRESS) < 0.06;
+    if (!atBox) {
+      pitWallPositions.push(
+        s.x + s.rightX * edge, s.y, s.z + s.rightZ * edge,
+        s.x + s.rightX * edge, s.y + 1.2, s.z + s.rightZ * edge
+      );
+    }
+
+    // Garages and boxes along the far side, instanced.
+    // One garage per team frontage: real complexes have a building per entry, not a wall of them.
+    if (i % 10 === 0) {
+      boxes.push({
+        x: s.x + s.rightX * (outer - PIT_SIDE * 3.5),
+        y: s.y,
+        z: s.z + s.rightZ * (outer - PIT_SIDE * 3.5),
+        heading: s.heading
+      });
+    }
+
+    previousIndex = i;
+  }
+
+  // Indices, now that the runs are known.
+  for (let base = 0; base * 2 < pitStripPositions.length / 3; base += 1) {
+    const a = base * 2;
+    pitStripIndices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+  }
+  for (let base = 0; base * 2 < pitWallPositions.length / 3; base += 1) {
+    const a = base * 2;
+    pitWallIndices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+  }
+  void previousIndex;
+
+  if (pitStripIndices.length) {
+    const laneGeometry = new THREE.BufferGeometry();
+    laneGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pitStripPositions, 3));
+    laneGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(pitStripUvs, 2));
+    laneGeometry.setIndex(pitStripIndices);
+    laneGeometry.computeVertexNormals();
+    const lane = new THREE.Mesh(laneGeometry, runOffMaterial);
+    lane.receiveShadow = true;
+    group.add(lane);
+  }
+
+  if (pitWallIndices.length) {
+    const pitWallGeometry = new THREE.BufferGeometry();
+    pitWallGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pitWallPositions, 3));
+    pitWallGeometry.setIndex(pitWallIndices);
+    pitWallGeometry.computeVertexNormals();
+    group.add(new THREE.Mesh(pitWallGeometry, wallMaterial));
+  }
+
+  if (boxes.length) {
+    // One garage block per few samples, instanced: a hundred separate meshes would be a
+    // hundred draw calls for scenery.
+    const garage = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(7, 4.2, 5),
+      new THREE.MeshStandardMaterial({ color: 0xd8dce2, roughness: 0.85 }),
+      boxes.length
+    );
+    const matrix = new THREE.Matrix4();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3(1, 1, 1);
+    boxes.forEach((box, index) => {
+      quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), -box.heading);
+      matrix.compose(new THREE.Vector3(box.x, box.y + 2.1, box.z), quaternion, scale);
+      garage.setMatrixAt(index, matrix);
+    });
+    garage.castShadow = true;
+    group.add(garage);
+  }
 
   // --- Run-off apron and barrier walls ---------------------------------------
   const apronPositions = [];
