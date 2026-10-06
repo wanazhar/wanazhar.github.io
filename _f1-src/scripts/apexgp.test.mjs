@@ -1892,6 +1892,26 @@ test('elevation is real data, and the gradient stays driveable', () => {
   const withData = Object.entries(ELEVATION);
   assert.ok(withData.length > 0, 'at least some circuits should have real elevation');
 
+  /*
+   * Coverage, and the two circuits deliberately without a profile.
+   *
+   * `silverstone` is refused rather than missing by accident. Its 95 `highway=raceway` ways
+   * within 2km include enough of the rest of the estate to pass the extent check, and the
+   * profile came out 1.7m of relief where sampling the DEM at real points round the actual
+   * circuit gives 11.1m -- an underestimate by about 6x. Re-smoothing does not recover it
+   * (+/-3 points still gives 1.6m), so the trace itself is flat, not the smoothing.
+   *
+   * A wrong profile is worse than a missing one: a missing circuit renders flat *honestly*,
+   * while a wrong one renders a real circuit incorrectly, and at Silverstone that silently
+   * removes the Chapel and Maggotts/Becketts elevation changes.
+   */
+  const refused = Object.keys(ELEVATION).filter((id) => id === 'silverstone');
+  assert.deepEqual(refused, [], 'silverstone must be refused, not published from a wrong trace');
+  assert.ok(
+    withData.length >= CIRCUITS.length - 2,
+    `expected at least ${CIRCUITS.length - 2} of ${CIRCUITS.length} circuits to have elevation, got ${withData.length}`
+  );
+
   for (const [id, entry] of withData) {
     assert.equal(entry.profile.length, PROFILE_POINTS, `${id}: profile should have ${PROFILE_POINTS} points`);
     for (const value of entry.profile) {
@@ -1968,11 +1988,20 @@ test('elevation is real data, and the gradient stays driveable', () => {
     assert.ok(seam < 0.5, `${id}: ${seam.toFixed(2)}m step across the start/finish line`);
   }
 
-  // A circuit with no data must be flat, not broken.
-  const flat = buildTrack(getCircuit('spa'));
+  /*
+   * A circuit with no data must be flat, not broken.
+   *
+   * The circuit is chosen from what is actually missing rather than hardcoded, because a named
+   * example goes stale the moment coverage improves: this asserted on Spa, and then Spa gained a
+   * real profile, at which point the assertion was testing a circuit with the most elevation in
+   * the calendar against a claim that it has none.
+   */
+  const missing = CIRCUITS.find((circuit) => !ELEVATION[circuit.id]);
+  assert.ok(missing, 'at least one circuit is expected to lack elevation data, for this check to mean anything');
+  const flat = buildTrack(getCircuit(missing.id));
   assert.ok(
     flat.samples.every((sample) => sample.y === 0),
-    'a circuit with no elevation data must be flat'
+    `${missing.id}: a circuit with no elevation data must be flat`
   );
 
   // And the interpolator must wrap rather than clamp.

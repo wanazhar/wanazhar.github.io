@@ -250,6 +250,57 @@ itself. Those are the circuits. What is still guarded is a lap that folds *throu
 itself, which is what the radial generator could produce and what a failed
 medial-axis reduction produces.
 
+### Elevation: 22 of 24 circuits
+
+The DEM source was the problem, not the code. Open-Meteo's elevation endpoint rate-limits, and
+because a circuit with no profile renders *flat*, a partial run looked like those circuits had
+simply been missed. Seven circuits made it.
+
+Now **AWS Terrarium terrain tiles** (`elevation-tiles-prod`) at z13, decoded by a small PNG
+reader on Node's zlib — no API key, no request-rate limit, ~15-19m per pixel against Open-Meteo's
+~90m SRTM resampling. Verified against Open-Meteo at eight points across four continents before
+use: **agreement within 0.1-11m**.
+
+**Coverage went from 7 to 22 of 24**, and the values are right:
+
+| circuit | measured | reality |
+|---|---|---|
+| Baku | **-20.7 to -7.7 m** | below sea level |
+| Yas Marina | -1.4 to 2.4 m | ≈ sea level |
+| Mexico | 2235.0 to 2241.3 m | Mexico City ≈ 2240 m |
+| Spielberg | 684.6 to 729.9 m | Red Bull Ring ≈ 700 m |
+| Interlagos | 752.6 to 783.2 m | ≈ 750 m |
+| Spa | 397.5 to 468.5 m | most relief on the calendar, correctly |
+
+Confirmed to reach the car rather than merely be returned: `sample.y` varies per circuit exactly
+as the profiles say — Spa 71.0m, Interlagos 30.6m, Miami 1.3m.
+
+Four faults, three of them mine:
+
+- **Melbourne has no `highway=raceway` at all** within 2km — verified, count 0 — because Albert
+  Park is a public road circuit in a park. `leisure=track` finds it.
+- **A transient Overpass failure was being read as "not tagged this way."** That is how Bahrain
+  got a smooth, plausible, wrongly-*sourced* profile from `highway=track` on a run where the
+  raceway query had merely timed out. Failures are now retried across mirrors before a filter is
+  abandoned.
+- **The extent gate first summed way lengths**, which double-counts because a circuit is mapped
+  as several overlapping ways. It rejected Monza as 12.30km traced against 5.793km real and
+  refused 12 of 22 circuits. Now measured by extent — invariant to how a lap splits into ways,
+  sensitive to tracing the wrong feature; real circuits sit at extent/lap ≈ 0.25-0.65.
+- **`writeOutput` runs after every circuit**, so an empty collection truncated the file to the
+  first circuit and destroyed the baseline the never-shrink guard compared against — which is
+  why that guard silently did nothing. It now parses loudly on failure, because a guard that
+  cannot fail loudly is not a guard.
+
+**Silverstone is refused, not missing by accident.** Its profile came out at 1.7m of relief where
+sampling the DEM at real points round the actual circuit gives 11.1m — 6x under. Not a smoothing
+artifact: re-smoothing at ±3 points still gives 1.6m, so the trace itself is flat. The 95
+`highway=raceway` ways within 2km include enough of the rest of the estate to pass the extent
+check. Shipping it would silently remove the Chapel and Maggotts/Becketts elevation changes from
+a circuit whose character is having them, so it is refused with the measurement recorded and a
+test asserts it stays out. Vegas is the other absence: only 4 of 240 profile buckets are
+fillable from its fragmented street-circuit ways.
+
 ### Car-to-car contact
 
 There were no collisions between cars at all: `RaceSession` resolved the track edges
