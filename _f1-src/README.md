@@ -432,6 +432,58 @@ furniture (barriers, buildings, trees, hoardings) follows the road, and the hori
 -- a ring, with no per-sample height -- is pinned to the circuit's mean ground level so a
 circuit at 190m does not float above a forest growing out of the plane.
 
+### Tyres: compounds and wear, finally reaching the car
+
+`compounds.js` has always carried per-compound grip, wear rate, operating window and warm-up.
+`getCompound` was imported by `RaceSession` and never called; the one function that applied
+`compound.grip` was called from the setup screen to print a label. Choosing Soft over Wet
+changed a swatch and nothing else.
+
+Wear was worse. It accumulated at `0.0000075 * dt` with no compound and no unit, the grip cost
+was a flat `1 - wear * 0.18`, and over a five-lap race that came to **0.013%**. The HUD wear bar
+read 0.0% for an entire race and "soft tyres wear faster" was simply false.
+
+Three things had to be true for it to work:
+
+**Wear is charged per metre, not per second.** `wearRate` is documented as a fraction of peak
+per lap, and dividing by lap *time* meant a driver who lifted to save a tyre simply took longer
+to wear it out. Protecting one bought nothing, so the whole model reduced to "always pick the
+hard".
+
+**The AI can manage a tyre.** Without it, degradation is a tax rather than a decision. `AIDriver`
+backs off once a tyre passes the point where it actually costs grip, scaled by `skill.tyreCare`
+(0.95 for ace down to 0.3 for a backmarker). Only past the cliff -- early in a stint `wearGrip` is
+flat at 1.0, and lifting there throws away pace for nothing.
+
+**The authored numbers had to be made self-consistent.** Wired up, the original wear rates
+disagreed with the grip spread: a soft beat a medium for **0.89 laps** and then fell behind it
+forever, making the fastest compound in the game a mistake to run. Recalibrated from crossover
+points, and wear now has a cliff past 18% because a linear fade alone never produces the
+decision F1 is about.
+
+Measured on a steady-state skidpad, 55 m/s, temperatures in the window:
+
+| wear | soft | medium | hard |
+|---|---|---|---|
+| 0.00 | **2.720** | 2.685 | 2.636 |
+| 0.20 | 2.388 | 2.352 | 2.295 |
+| 0.45 | 1.590 | 1.563 | 1.516 |
+
+Fresh soft beats fresh hard by 3%, and a dead soft is 42% down. Compounds order correctly at
+every wear level, and a soft is worth running early and stops being worth running -- which is the
+only reason choosing one is a decision.
+
+### What this was actually blocked by
+
+Not by grip. Four attempts were spent on cornering-speed theories and every one was wrong: the
+field uses **19-21% of the friction circle in steady cornering** and drives at **80-91% of the
+speed profile's prediction**, so there was never a margin problem to fix.
+
+It was blocked by #29. Cars spun, and a spun car could not reverse, so the field spent ~29% of
+each race jammed against a barrier facing backwards and was rescued 651-801 times. Degradation
+made cars slower, slower cars got caught in traffic, and caught cars spun. Fix the recovery and
+the tyre model has room to work.
+
 ### Four things that were built but not connected
 
 A survey of the simulation found four systems where the data existed, the numbers moved,
