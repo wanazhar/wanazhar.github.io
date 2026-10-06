@@ -139,6 +139,8 @@ export class RaceSession {
 setup.compound = this.conditions.compound;
       setup.lapSeconds = track.lapRecord;
 
+setup.lapMetres = track.length;
+
       const physics = new CarPhysics(setup, { isPlayer: Boolean(entry.isPlayer), name: entry.short });
       const slot = gridSlot(track, grid);
       physics.reset(slot.x, slot.z, slot.heading, 0);

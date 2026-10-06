@@ -46,6 +46,8 @@ export const SKILL_PRESETS = {
     /** How closely the racing line is followed, 0 = loose, 1 = glued. */
     linePrecision: 0.96,
     drsSkill: 0.9,
+    /** How carefully this driver protects a tyre: 0 = drives it to destruction. */
+    tyreCare: 0.95,
     mistakeChance: 0.004
   },
   strong: {
@@ -58,6 +60,8 @@ export const SKILL_PRESETS = {
     reactionMs: 120,
     linePrecision: 0.9,
     drsSkill: 0.75,
+    /** How carefully this driver protects a tyre: 0 = drives it to destruction. */
+    tyreCare: 0.78,
     mistakeChance: 0.009
   },
   mid: {
@@ -70,6 +74,8 @@ export const SKILL_PRESETS = {
     reactionMs: 165,
     linePrecision: 0.82,
     drsSkill: 0.6,
+    /** How carefully this driver protects a tyre: 0 = drives it to destruction. */
+    tyreCare: 0.55,
     mistakeChance: 0.016
   },
   backmarker: {
@@ -82,6 +88,8 @@ export const SKILL_PRESETS = {
     reactionMs: 220,
     linePrecision: 0.72,
     drsSkill: 0.45,
+    /** How carefully this driver protects a tyre: 0 = drives it to destruction. */
+    tyreCare: 0.3,
     mistakeChance: 0.026
   }
 };
