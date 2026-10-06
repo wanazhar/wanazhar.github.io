@@ -491,6 +491,49 @@ body {
 }
 
 /*
+ * Damage.
+ *
+ * Bottom-centre, under the car, because it is the most urgent state in the HUD: the tyres
+ * are a management problem you plan around, and damage is a clock you are losing.
+ */
+.hud-damage {
+  position: absolute;
+  bottom: calc(var(--pad) + var(--safe-b) + 2.6em);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: var(--ui-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--warn);
+}
+
+.hud-damage-track {
+  width: 9em;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.hud-damage-track > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: currentColor;
+  transition: width 300ms ease;
+}
+
+.hud-damage[data-tone='bad'] {
+  color: var(--bad);
+}
+.hud-damage[data-tone='severe'],
+.hud-damage[data-tone='terminal'] {
+  color: var(--accent-bright);
+}
+
+/*
  * Conditions.
  *
  * Placed under the lap counter in the top-left stack, where the session label is: it is

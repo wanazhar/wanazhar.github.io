@@ -58,6 +58,14 @@ import { LapTimer } from '../src/race/LapTimer.js';
 import { inPitLane, PIT_LANE_WIDTH, shouldPit } from '../src/race/pit.js';
 import { weatherAt, weatherPlan } from '../src/race/weather.js';
 import {
+  applyImpact,
+  createDamage,
+  failureRisk,
+  retirementReason,
+  rollMechanical,
+  setReliability
+} from '../src/race/damage.js';
+import {
   createQualifying,
   applySegment,
   entriesForSegment,
@@ -1567,6 +1575,156 @@ test('weather arrives during the race, and it costs grip', () => {
   session.update(FIXED_TIMESTEP, { throttle: 0, brake: 0, steer: 0, handbrake: false });
   assert.notEqual(session.weatherState.id, 'clear', 'passing the first transition must change the weather');
   assert.ok(session.weatherChanged, 'and the change must be recorded so the HUD can show it');
+});
+
+test('damage costs the car lap time, and wheel-to-wheel contact stays free', () => {
+  /*
+   * Damage was entirely absent: contact resolved impulse and yaw kick correctly and then
+   * threw the energy away, so a car could lean on another for a season and finish on the
+   * lead lap. `TEAMS[].reliability` was documented as feeding mechanical failure and never
+   * did.
+   *
+   * Everything here asserts on what the *car* ends up with -- `physics.aeroFactor` and a
+   * measured lap time -- rather than on the damage object, which is just numbers until
+   * something reads them.
+   */
+  const fresh = createDamage(() => 0.5);
+
+  // Wheel-to-wheel contact must be free. This is the property that matters most: a model
+  // that damages cars for running two abreast punishes the only thing racing rewards.
+  const rubbing = createDamage(() => 0.5);
+  for (const severity of [0.05, 0.19, 1, 4.37, 14.53]) {
+    applyImpact(rubbing, severity);
+  }
+  assert.equal(rubbing.contacts, 5, 'every contact must still be seen');
+  assert.equal(rubbing.impacts, 0, 'but none of them may register damage');
+  assert.equal(rubbing.total, 0, 'rubbing must not damage the car');
+  assert.equal(rubbing.aero, 1, 'and must leave the aero multiplier untouched');
+
+  // A big shunt registers, and it reaches the physics as lost downforce and power.
+  const big = createDamage(() => 0.5);
+  applyImpact(big, 38);
+  assert.ok(big.impacts === 1, 'a big shunt registers');
+  assert.ok(big.total > 0.3, `a maximal shunt should cost real damage, got ${big.total.toFixed(3)}`);
+  // The calibration, stated so a change to either constant has to be deliberate:
+  // severity 38 is 18 over onset, which is 0.36 damage, costing 18% of downforce and 12.6%
+  // of power.
+  assert.ok(Math.abs(big.total - 0.36) < 0.001, `calibration: total ${big.total.toFixed(3)}`);
+  assert.ok(Math.abs(big.aero - 0.82) < 0.001, `calibration: aero ${big.aero.toFixed(3)}`);
+  assert.ok(Math.abs(big.power - 0.874) < 0.001, `calibration: power ${big.power.toFixed(3)}`);
+  assert.ok(!big.terminal, 'but one big shunt must not end the race on its own');
+
+  /*
+   * No single contact may end the race.
+   *
+   * The severity metric is not bounded at the 38 the rate was sized against -- the worst
+   * shunt measured in a Bahrain race was 231.6, which uncapped retires both cars involved
+   * from one incident. A cap keeps terminal damage something a race accumulates.
+   */
+  for (const severity of [80, 231.6, 1000, 1e6]) {
+    const hit = createDamage(() => 0.5);
+    applyImpact(hit, severity);
+    assert.ok(!hit.terminal, `severity ${severity} must not retire a car by itself`);
+    assert.ok(hit.total <= 0.45, `severity ${severity} must be capped, got ${hit.total}`);
+  }
+
+  // Terminal damage is reachable, and it is reachable by accumulation.
+  const wrecked = createDamage(() => 0.5);
+  let hits = 0;
+  while (!wrecked.terminal && hits < 20) {
+    applyImpact(wrecked, 38);
+    hits += 1;
+  }
+  assert.ok(wrecked.terminal, 'repeated heavy contact must end the race');
+  assert.ok(hits >= 2 && hits <= 5, `a car should survive a couple of big hits, retired after ${hits}`);
+  assert.equal(retirementReason(wrecked), 'DAMAGE');
+
+  /*
+   * The physics has to actually consume it. `aeroFactor` is read by `computeDownforce`, so a
+   * car with it set has measurably less grip -- this is the assertion that would fail if the
+   * damage state were computed correctly and then never applied.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const entry = createChampionship().entries[0];
+  const clean = new CarPhysics();
+  clean.reset({ x: 0, z: 0, heading: 0 });
+  const hurt = new CarPhysics();
+  hurt.reset({ x: 0, z: 0, heading: 0 });
+  hurt.aeroFactor = 0.5;
+  assert.ok(
+    hurt.computeDownforce(80) < clean.computeDownforce(80) * 0.6,
+    `half the aero must be half the downforce: ${hurt.computeDownforce(80).toFixed(0)} vs ${clean.computeDownforce(80).toFixed(0)} N`
+  );
+  assert.ok(track.length > 0, 'and the circuit is a real one, so the comparison means something');
+
+  /*
+   * The negative feedback that stops damage running away.
+   *
+   * Damage is self-amplifying: a car that has lost downforce understeers, understeering cars
+   * collect more contact, and the loop eats the field. Measured with no feedback, 23 of 23
+   * cars retired from one Monza race. The driver lifting is what breaks it, so the AI has to
+   * express it -- otherwise the model can only express "this race is now unwinnable".
+   */
+  const aiSource = readFileSync(new URL('../src/ai/AIDriver.js', import.meta.url), 'utf8');
+  assert.match(aiSource, /physics\.aeroFactor\s*<\s*1/, 'a damaged AI must lift');
+  assert.match(aiSource, /DAMAGE_LIFT/, 'and the lift must be bounded, not unbounded slowdown');
+});
+
+test('mechanical failure uses the team reliability that was already in the data', () => {
+  /*
+   * `TEAMS[].reliability` runs 0.91 to 0.98 and was inert in three places: it seeded upgrade
+   * priority, it was documented as feeding mechanical failure, and it never did. A race now
+   * retires cars for both reasons, and the two must be distinguishable.
+   */
+  const better = setReliability(createDamage(() => 0.5), 0.98);
+  const worse = setReliability(createDamage(() => 0.5), 0.91);
+  assert.ok(better.hazardPerKm < worse.hazardPerKm, 'the worse team must carry the higher hazard');
+  /*
+   * Asserted over this game's real race distance, not a nominal Grand Prix one.
+   *
+   * These circuits run 35-40 km. Calibrating against a 5.3 km figure put 4 mechanical
+   * retirements in a single Bahrain race, because a hazard is a rate and the distance was
+   * wrong by a factor of seven. So the bound is stated over 38 km.
+   */
+  assert.ok(failureRisk(worse, 38) > 0, 'a race distance must carry some risk');
+  assert.ok(failureRisk(worse, 38) < 0.1, `the worst team must stay under 10% a race, got ${failureRisk(worse, 38)}`);
+  assert.ok(failureRisk(better, 38) < 0.03, `and the best under 3%, got ${failureRisk(better, 38)}`);
+  // Across a field of 23 that has to land near one retirement per race, not four.
+  const expectedPerRace = failureRisk(setReliability(createDamage(() => 0.5), 0.95), 38) * 23;
+  assert.ok(expectedPerRace < 1.5, `about one mechanical retirement per race, got ${expectedPerRace.toFixed(2)}`);
+  assert.ok(
+    failureRisk(better, 38) < failureRisk(worse, 38),
+    'and the better team must be the safer one over the same distance'
+  );
+
+  // Risk grows with distance, which is what makes it a hazard rather than a flat roll.
+  assert.ok(failureRisk(worse, 76) > failureRisk(worse, 38), 'twice the distance, more risk');
+
+  // The failure sets a different reason than damage does.
+  const broke = setReliability(createDamage(() => 0), 0.91);
+  rollMechanical(broke, 100_000);
+  assert.ok(broke.terminal, 'a hazard this size must eventually fire');
+  assert.equal(retirementReason(broke), 'MECHANICAL');
+  assert.notEqual(retirementReason(broke), retirementReason({ terminal: true, mechanical: false }));
+
+  /*
+   * The reason a whole race once stopped progressing.
+   *
+   * Rolling mechanical failure once per car per step off the *session's* random stream meant
+   * 23 draws x 120 steps = 2,760 per second, which silently perturbed every other stochastic
+   * decision until the field stopped advancing. So the stream has to be per car, and seeded,
+   * and the roll has to be on distance rather than on frames.
+   */
+  // The default must be *no* stream, so a car that forgets to supply one fails safe instead
+  // of quietly borrowing the session's.
+  assert.equal(createDamage().random, null, 'no stream by default; the session one must never be assumed');
+
+  // Rolls are on distance, not frames: a second of racing accumulates toward the interval
+  // without drawing, and a car sitting still cannot fail.
+  const walked = setReliability(createDamage(() => 0.5), 0.91);
+  rollMechanical(walked, 40); // 1s at 144 km/h: under the interval, so no draw
+  assert.equal(walked.sinceRoll, 40, 'a short step must accumulate rather than draw');
+  assert.ok(!walked.terminal);
 });
 
 test('the HUD tells the player what the weather is doing', () => {

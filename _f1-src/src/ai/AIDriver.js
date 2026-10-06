@@ -194,6 +194,14 @@ const ADAPTIVE_RANGE = 0.07;
  * moment they run wide. Adjusting quickly turns a marginal car into a car that
  * oscillates between too fast and too slow and never finds either.
  */
+
+/**
+ * Fraction of target speed a fully damaged car gives up, and by extension the fraction of a
+ * car at any damage level. See the note at the lift: enough to break the cascade, not enough
+ * to turn a damaged car into a lapper.
+ */
+const DAMAGE_LIFT = 0.12;
+
 const ADAPTIVE_RATE = 0.06;
 
 /** Override the pace safety factor. Used by the sweep bench; not called by the game. */
@@ -364,6 +372,22 @@ export class AIDriver {
      */
     const wearPenalty = tyreManagement(physics, skill);
     targetSpeed *= 1 - wearPenalty;
+
+    /*
+     * Damage management.
+     *
+     * Damage is self-amplifying -- a car that has lost downforce understeers, an
+     * understeering car collects more contact, and the loop runs away. Measured with no
+     * feedback at all, 23 of 23 cars retired from one Monza race.
+     *
+     * The negative feedback is the driver, and in real F1 so is it: a team with a damaged car
+     * stops chasing and starts protecting what is left. Capped at 12% because a driver
+     * managing a car still wants points, and a car parked at the back scores none -- so this
+     * trades pace for survival without turning every damaged car into a lapper.
+     */
+    if (physics.aeroFactor < 1) {
+      targetSpeed *= 1 - DAMAGE_LIFT * (1 - physics.aeroFactor);
+    }
 
     // A car that has run wide has already lost time; rejoining slowly beats
     // rejoining at a speed that puts it into the barrier.

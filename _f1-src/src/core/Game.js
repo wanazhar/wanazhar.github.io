@@ -33,8 +33,10 @@ export class Game {
     this.onMinimap = options.onMinimap ?? null;
     this.onMinimapFrame = options.onMinimapFrame ?? null;
     this.onImpact = options.onImpact ?? (() => {});
+    this.onRetire = options.onRetire ?? (() => {});
     this.onSessionEnd = options.onSessionEnd ?? (() => {});
-    this.random = createRandom(options.seed ?? 20240218);
+    this.seed = options.seed ?? 20240218;
+    this.random = createRandom(this.seed);
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
@@ -383,10 +385,12 @@ export class Game {
       totalLaps,
       gridOrder: gridOrder ?? entries.map((entry, index) => ({ entry, grid: index })),
       random: this.random,
+      seed: this.seed,
       conditions
     });
     this.#applyConditions();
     this.session.onImpact = this.onImpact;
+    this.session.onRetire = this.onRetire;
 
     this.#buildCarMeshes();
     this.rig.setMode(this.rig.mode);
@@ -703,6 +707,10 @@ export class Game {
       finished: this.session.finished,
       // Weather, so the HUD can say what the track is doing. Without this the forecast
       // arrives and the player just starts sliding with nothing to explain it.
+      // Damage, so the player can see the car going off rather than only feel it. `reason`
+      // is null while the car is still running.
+      damage: damageFraction(this.session.player.damage),
+      retireReason: this.session.player.retirementReason ?? null,
       weather: this.session.weatherState?.id ?? 'clear',
       weatherPhase: this.session.weatherPhase ?? 1,
       cameraMode: this.rig.mode

@@ -8,12 +8,14 @@
 
 import { CarPhysics } from '../physics/CarPhysics.js';
 import { AIDriver } from '../ai/AIDriver.js';
-import { skillFor } from '../physics/drivers.js';
+import { skillFor, teamFor } from '../physics/drivers.js';
+import { createRandom } from '../util/math.js';
 import { gridSlot, locateOnTrack, racingLineAt } from '../track/trackGeometry.js';
 import { LapTimer, RaceOrder } from './LapTimer.js';
 import { setupForEntry } from '../championship/ChampionshipManager.js';
 import { getCompound, getWeather } from '../physics/compounds.js';
 import { inContact, resolveCarContacts } from './collision.js';
+import { applyImpact, createDamage, retirementReason, rollMechanical, setReliability } from './damage.js';
 import { StartSequence } from './startSequence.js';
 import { weatherAt, weatherPlan, weatherProgress } from './weather.js';
 import {
@@ -91,6 +93,7 @@ export class RaceSession {
     totalLaps,
     gridOrder = null,
     random = Math.random,
+    seed = null,
     conditions = null,
     contacts = true
   }) {
@@ -140,6 +143,17 @@ export class RaceSession {
     this.type = type;
     this.totalLaps = totalLaps;
     this.random = random;
+    /*
+     * Seed for the per-car damage streams.
+     *
+     * Separate from `random` on purpose. The session's own stream has to stay untouched by
+     * anything that only needs *a* random number, because every consumer downstream of it --
+     * AI decisions, strategy -- is reproducible only while that stream advances in step. A
+     * subsystem that borrows it changes the whole race merely by existing: an earlier version
+     * rolled mechanical failure once per car per step off this stream, 2,760 draws a second,
+     * and the field stopped progressing.
+     */
+    this.seed = seed ?? 0x5eed1a;
     this.time = 0;
     this.finished = false;
     this.finishOrder = [];
@@ -187,6 +201,18 @@ setup.lapMetres = track.length;
         finished: false,
         finishTime: Infinity,
         retired: false,
+        /*
+         * Damage, per car rather than per entry: two cars in the same team do not share a
+         * nose. `hazardPerKm` comes from the team's real reliability rating, which until
+         * now was documented as feeding mechanical failure and never did.
+         */
+        // A stream per car, derived from the session seed and the grid slot, so a replay
+        // reproduces the same failures without this subsystem consuming the session's shared
+        // random state.
+        damage: setReliability(
+          createDamage(createRandom((this.seed ^ (grid * 2654435761)) >>> 0)),
+          teamFor(entry.team).reliability
+        ),
         pitStops: 0,
         maxStops: 1,
         pitRequested: false,
@@ -311,6 +337,23 @@ setup.lapMetres = track.length;
     if (this.contacts) resolveCarContacts(this.cars);
 
     /*
+     * Damage.
+     *
+     * Driven off `car.contact`, which `collision.js` already collapses a sustained overlap
+     * into a single event -- so a shunt is counted once, not once per frame for as long as
+     * the two cars grind together.
+     */
+    for (const car of this.cars) {
+      if (car.retired) continue;
+      // Mechanical failure accrues with distance covered, so it is rolled every step from
+      // the travel already integrated -- `rollMechanical` only draws once per 100 m.
+      rollMechanical(car.damage, car.physics.speedKph * dt / 3.6);
+      if (!car.contact || car.contact.counted) continue;
+      car.contact.counted = true;
+      applyImpact(car.damage, car.contact.severity);
+    }
+
+    /*
      * Advance the weather.
      *
      * Driven by how far through the *race* the field is rather than by lap count, so a longer
@@ -325,6 +368,8 @@ setup.lapMetres = track.length;
       }
       this.weatherPhase = weatherProgress(this.weatherPlan, progress);
     }
+
+    this.#applyDamage();
 
     this.#updateRaceDistance();
     this.#updateStrategy();
@@ -641,6 +686,33 @@ setup.lapMetres = track.length;
         // Telemetry. A car that needs rescuing repeatedly is a different problem
         // from one that beaches once, and only the count tells them apart.
         car.rescues = (car.rescues ?? 0) + 1;
+      }
+    }
+  }
+
+  /**
+   * Move damage from the car's state onto the car, and retire anything terminal.
+   *
+   * Asserting on `physics.aeroFactor` rather than on the damage object is the point: the
+   * damage state is a number until the physics reads it, and this repo has a habit of
+   * computing a correct value and leaving nothing to consume it.
+   */
+  #applyDamage() {
+    for (const car of this.cars) {
+      const d = car.damage;
+      // Cars already retired keep their last-known state so the HUD can still show it.
+      if (!d) continue;
+      car.physics.aeroFactor = d.aero;
+      car.physics.powerFactor = d.power;
+      car.physics.steerPull = d.pull;
+
+      if (d.terminal && !car.retired && !car.finished) {
+        car.retired = true;
+        car.retirementReason = retirementReason(d);
+        car.physics.vLong = 0;
+        car.physics.vLat = 0;
+        car.physics.yawRate = 0;
+        if (car.isPlayer) this.onRetire?.(car.retirementReason);
       }
     }
   }
