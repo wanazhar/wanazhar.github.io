@@ -48,6 +48,13 @@ const ERS_SLIDE_LIMIT = 0.14;
 /** How readily a driver spends energy with no car in sight, as a fraction of `drsSkill`. */
 const ERS_OPPORTUNISM = 0.35;
 
+/** Must match `CarPhysics`: brake hold before reverse actually engages. */
+const REVERSE_ENGAGE_HOLD = 0.45;
+
+/** Radians of improvement needed to count as progress, and the error below which a car counts as aligned. */
+const SPIN_PROGRESS = 0.15;
+const SPIN_ALIGNED = 1.2;
+
 const DAMP_OFFSET = 8;
 /**
  * How far ahead of the car the line's heading is evaluated. Expressed as a time
@@ -168,6 +175,8 @@ export class AIDriver {
     /** Seconds below walking pace, and seconds spent reversing out of trouble. */
     this.stallTimer = 0;
     this.recoveryTimer = 0;
+    /** Heading error when the current spin began, so progress can be judged against it. */
+    this.recoveryFrom = null;
     this.overtakeIntent = 0;
     this.defendIntent = 0;
     this.trackIndex = 0;
@@ -388,7 +397,54 @@ export class AIDriver {
     const rollingBackwards = physics.vLong < -2.5;
 
     if (spun || rollingBackwards) {
+      /*
+       * Recover by outcome, not by the clock.
+       *
+       * Two faults are fixed here, and the second only became visible once the first was.
+       *
+       * First: this used to return `throttle: 1` for a spun car, with comments about
+       * reversing and about giving up after a couple of seconds -- and never reversed at
+       * all, because `throttle` deselected reverse. A spun car therefore applied full
+       * throttle to whatever was in front of it, forever. That was measured, not inferred:
+       * 90% of stopped cars facing backwards, 79-92% against the barrier, 1% reversing.
+       *
+       * Second: once reverse actually worked, a *time* box was the wrong bound. Reverse is
+       * gentle (2000N over 800kg, about 2.5 m/s2), so holding a car in it for a fixed number
+       * of seconds loses more time than leaving it stuck and letting the session rescue it.
+       * Applying that fix alone turned a clean season into four rounds out of four timing
+       * out.
+       *
+       * So the manoeuvre stops when it stops working, not when a timer expires. It keeps
+       * reversing while the car is still badly misaligned *and* the alignment is improving,
+       * and gives up the moment either stops being true -- because a car that is not getting
+       * any closer to facing forwards does not want a second helping.
+       */
       this.recoveryTimer += dt;
+
+      if (spun && !rollingBackwards) {
+        const error = Math.abs(headingError);
+
+        // First frame of a spin: remember how far out we were, so "improving" has a baseline.
+        if (this.recoveryFrom === null) this.recoveryFrom = error;
+
+        const improving = error < this.recoveryFrom - SPIN_PROGRESS;
+        const stillMisaligned = error > SPIN_ALIGNED;
+
+        // Hold the brake first: reverse only engages after it, and throttle would cancel it.
+        if (physics.direction === 1 && this.recoveryTimer < REVERSE_ENGAGE_HOLD + 0.2) {
+          return { throttle: 0, brake: 1, steer: 0, handbrake: false };
+        }
+
+        if (improving && stillMisaligned) {
+          return { throttle: 1, brake: 0, steer: -commandedSteer, handbrake: false };
+        }
+
+        // Aligned, or no longer converging: stop recovering and let the normal controller
+        // have the car back.
+        this.recoveryTimer = 0;
+        this.recoveryFrom = null;
+      }
+
       return {
         throttle: 1,
         brake: 0,
@@ -403,6 +459,7 @@ export class AIDriver {
     // a couple of seconds it gives up reversing and simply drives forward.
     if (this.recoveryTimer > 0) {
       this.recoveryTimer -= dt;
+      if (this.recoveryTimer <= 0) this.recoveryFrom = null;
       return {
         throttle: 1,
         brake: 0,

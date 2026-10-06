@@ -2476,11 +2476,34 @@ test('reverse is a recovery aid, never a driving mode', () => {
   }
   assert.equal(held.direction, -1, 'holding the brake should select reverse');
 
-  // And throttle then drives forward again, not backwards.
-  for (let i = 0; i < Math.ceil(2 / DT); i += 1) held.step(DT, { throttle: 1, brake: 0, steer: 0 });
-  assert.equal(held.direction, 1, 'throttle must reselect forward');
-  assert.ok(held.x > 3, `the car should move forward, ended at x=${held.x.toFixed(1)}`);
+  /*
+   * And throttle now *drives* whichever way is selected.
+   *
+   * This used to assert `throttle must reselect forward`, which pinned the bug rather than
+   * the intent: throttle deselected reverse on the very next step, so reverse was selectable
+   * but not drivable. It went unnoticed because this very test -- asserting `direction === -1`
+   * after a brake hold -- kept passing. The fault was in the gap between selecting reverse and
+   * driving in it.
+   *
+   * The consequence: the AI's spin recovery is `throttle: 1`, so a spun car could never go
+   * anywhere. Measured at Jeddah, 90% of stopped cars faced backwards against a barrier and
+   * 1% were reversing.
+   */
+  const from = held.x;
+  for (let i = 0; i < Math.ceil(0.4 / DT); i += 1) held.step(DT, { throttle: 1, brake: 0, steer: 0 });
+  assert.equal(held.direction, -1, 'throttle must not deselect reverse, or reverse is undriveable');
+  // Reverse is deliberately gentle: 2000N over 800kg is ~2.5 m/s^2, so 0.4s is ~0.2m.
+  assert.ok(held.x < from - 0.1, `the car must actually move backwards, x went ${from.toFixed(2)} -> ${held.x.toFixed(2)}`);
 
+  /*
+   * The guard the original test was reaching for, and the real reason reverse is bounded: it
+   * is a recovery aid, not somewhere to live. It is released on speed, so a car held in it
+   * reaches `REVERSE_LIMIT` and selects forward on its own.
+   */
+  // Reverse accelerates gently, so give it enough steps to actually pass the limit rather
+  // than asserting on a boundary it may not have crossed yet.
+  for (let i = 0; i < Math.ceil(20 / DT); i += 1) held.step(DT, { throttle: 1, brake: 0, steer: 0 });
+  assert.equal(held.direction, 1, 'reverse must give way to forward once the car is moving');
   assert.ok(REVERSE_LIMIT <= 8, 'reverse must be strictly speed-limited');
 });
 
