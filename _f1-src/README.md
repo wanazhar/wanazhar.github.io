@@ -360,6 +360,56 @@ each other and identical lanes from their immediate neighbour.
 `mid` -- now 3.4 s/lap off the field median -- wins 10 of 12 as well. Contact was a real fault and
 this fixes it, but it was not what was stopping pace from becoming position.
 
+### Are positions won on pace?
+
+Whether a race result means anything depends on one property: **should being faster get you
+past?** If track position is uncorrelated with pace, then winning does not require driving
+better, and every headline figure derived from results -- including "the player wins 24 of 24" --
+is measuring the grid slot rather than the driving.
+
+Nothing else in the suite would catch it. A season completes cleanly, races are won, points are
+scored, and every number looks plausible. The fault is only visible in the *relationship* between
+two things that are individually fine. `scripts/measure-passes.mjs` watches every position change
+at the lead and asks, of the car that gained the place, whether it was faster than the car it
+took the place from:
+
+    circuit     swaps  faster wins   slower wins   slower deficit   contact
+    monza         76      32 (42%)      44 (58%)         4.18s        24s
+    sepang        80      33 (41%)      47 (59%)         5.75s        28s
+    spa           53      27 (51%)      26 (49%)         4.58s        15s
+
+    overall: 44% of positions won by the faster car
+
+Cars 4-6 seconds a lap slower are overtaking faster cars routinely. The two distributions have
+near-identical shape, which is the signature of position being uncorrelated with pace rather than
+of one driver being unlucky. Real F1 does not look like that: the faster car takes the place, and
+the exception is a genuine error or a tyre situation, not a routine pass.
+
+This is also why a `human` driver finishes P1 in 10 of 12 rounds while `mid` -- several seconds a
+lap off the field median -- wins 10 of 12 as well. Winning does not require being faster.
+
+#### Why nothing has fixed it yet
+
+The pass decision is gated on closing rate, road shape and aggression. None of those says whether
+this car is faster than the one in front. Three attempts, each improving one number and breaking
+another:
+
+| attempt | faster car wins | cost |
+|---|---|---|
+| pace gate on the pass | 42% -> 53% | a driver that cannot pass has nothing to do but follow, and the field queues: Sepang failed outright |
+| separate `avoiding` from `overtakeIntent` | 42% -> 47% | contact 24s -> 34s per car |
+| all three together | 42% -> 50% | contact 24s -> 37s, and still one failed round |
+
+The second of those is worth recording because it is a fault introduced here: `overtakeIntent`
+means "committed to a pass" *and* exempts the driver from the car-ahead speed limit, and the lateral
+avoidance was setting it. So a car moving aside to avoid contact stopped leaving room for the car it
+was moving aside for.
+
+Neither is a threshold. What is missing is **traffic management**: a driver who cannot pass should
+use the slipstream, pick where to try, defend when overtaken, and manage the car in front rather
+than parking in its gearbox. That is a subsystem rather than a constant, and `measure-passes.mjs`
+is the number it has to move.
+
 ### Reaction time, and what the balance question actually is
 
 `reactionMs` used to be a sample-and-hold on the **entire control loop**, re-issued every
