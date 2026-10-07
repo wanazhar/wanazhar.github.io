@@ -3183,6 +3183,44 @@ test('the AI has a distinct behaviour for rejoining a car that left the road', (
   assert.match(aiSource, /offTrack && offTrackDistance > OFF_TRACK_REJOIN/);
 });
 
+test('an AI that commits to a pass moves far enough to clear the car', () => {
+  /*
+   * Contact was 13-18% of a race per car, against single-digit seconds in real F1, and it is
+   * why race results were incident-dominated: the fastest car at Bahrain lapped 16.4s quicker
+   * than the median and finished fifth.
+   *
+   * `scripts/measure-contact.mjs` splits it by geometry, and 95% of it was **lateral** -- cars
+   * side by side, not nose to tail. So the follow logic was never the problem. (The closing-
+   * rate hypothesis was tested and made it worse: removing the 2m/s margin floor took the Monza
+   * median from 231s to 317s, because matching the leader's speed exactly parks the follower on
+   * its gearbox.)
+   *
+   * The cause was the offset itself. `budget * aggression * commitment` is always a fraction of
+   * the available room -- on a 14m track a committed aggressive pass asked for 2.3m and a `mid`
+   * driver 1.5m -- and two cars are 2.0m wide. The AI was steering *into* the car it was
+   * overtaking.
+   */
+  const aiSource = readFileSync(new URL('../src/ai/AIDriver.js', import.meta.url), 'utf8');
+
+  // The clearance must be derived from the collision box, not guessed.
+  assert.match(
+    aiSource,
+    /const CAR_CLEARANCE = 2\.3/,
+    'the clearance must be stated, since it comes from a 2.0m-wide collision box'
+  );
+  // And it must floor the requested offset, rather than only scaling it down.
+  assert.match(
+    aiSource,
+    /clamp\(wanted, Math\.min\(CAR_CLEARANCE, budget\), budget\)/,
+    'a committed pass must never request less than the clearance'
+  );
+  assert.match(
+    aiSource,
+    /if \(Math\.abs\(target\) < Math\.min\(CAR_CLEARANCE, budget\)\)/,
+    'and a defence must clear the car behind too, not merely lean towards it'
+  );
+});
+
 test('there is a human driver to calibrate balance against, and a known reaction-model error', () => {
   /*
    * Every skill preset in this file is a model of *the AI's* idea of a driver, and none of them

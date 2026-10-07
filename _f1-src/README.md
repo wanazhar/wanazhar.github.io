@@ -250,6 +250,48 @@ itself. Those are the circuits. What is still guarded is a lap that folds *throu
 itself, which is what the radial generator could produce and what a failed
 medial-axis reduction produces.
 
+### Contact: what it actually is, and where it comes from
+
+The median car spent **13-18% of a race in contact** — 160s at Bahrain, 231s at Monza, against
+single-digit seconds in real F1. That is why results are incident-dominated rather than
+pace-dominated: the fastest car at Bahrain lapped 16.4s quicker than the median and finished
+fifth.
+
+"Too much contact" splits into two faults needing opposite fixes, so
+`scripts/measure-contact.mjs` measures them separately by the geometry of each touching pair —
+longitudinal (nose to tail) or lateral (side by side):
+
+    circuit   median   max   lateral%   longitudinal%
+    bahrain    160s   272s       95%             5%
+    monza      231s   402s       94%             6%
+    spa        220s   347s       96%             4%
+
+**95% lateral.** So the follow logic was never the problem, which was worth testing rather than
+assuming: the closing-rate hypothesis said the `2 m/s` margin floor kept followers closing, and
+removing it made contact *worse* — Monza median 231s to 317s, cars over a quarter of the race
+2 to 6 — because matching the leader's speed exactly parks the follower on its gearbox.
+
+The cause was the offset. It was always a fraction of the available room —
+`budget * aggression * commitment`, so on a 14m track a committed aggressive pass asked for 2.3m
+and a `mid` driver 1.5m — and **two cars are 2.0m wide**. The AI was steering *into* the car it
+was overtaking. Aggression now sits on top of clearing the car rather than in place of it.
+
+| | before | after |
+|---|---|---|
+| Bahrain median | 160 s | **124 s** |
+| Monza median | 231 s | **141 s** |
+| Spa median | 220 s | **127 s** |
+| cars over 25% of a race | 2 (Monza) | **0** |
+
+Race times dropped with it (Monza 1285s to 1167s), which is the point: contact was costing the
+field time that was not pace.
+
+This is a 22-42% reduction, not a fix — 124-141s is still well above real F1. And the balance
+measurement has not yet moved: a `human` driver still finishes P1 in 10 of 12 rounds, with the
+pace margin shifting from -0.55s to +3.09s off the field median. Pace still is not converting
+into position, so there is more to find. `measure-contact.mjs`, `measure-balance.mjs` and
+`measure-drivers.mjs` all exist to make that measurable rather than arguable.
+
 ### Reaction time, and what the balance question actually is
 
 `reactionMs` used to be a sample-and-hold on the **entire control loop**, re-issued every

@@ -100,6 +100,15 @@ function tyreManagement(physics, skill) {
 
 
 
+/**
+ * Lateral separation two cars need before they stop touching, metres.
+ *
+ * `race/collision.js` represents a car as a box 2.0m wide, so two of them stop overlapping once
+ * their centres are 2.0m apart. A small margin on top, because at the moment a driver decides
+ * to move over the other car is still completing the move.
+ */
+const CAR_CLEARANCE = 2.3;
+
 const DAMP_OFFSET = 8;
 /**
  * How far ahead of the car the line's heading is evaluated. Expressed as a time
@@ -693,7 +702,22 @@ export class AIDriver {
       // closer it gets.
       const side = ahead.lateral > 0 ? -1 : 1;
       const commitment = clamp(1 - ahead.gap / 16, 0, 1);
-      target = side * budget * skill.aggression * commitment;
+      /*
+       * The offset has to clear the car, not merely lean towards it.
+       *
+       * Scaling the whole budget by `aggression * commitment` means the requested offset is
+       * always a fraction of the available room -- on a 14m track, `budget` is 3.15m and even a
+       * committed aggressive pass asks for 3.15 * 0.72 = 2.3m while a `mid` driver asks for
+       * 1.5m. Two cars are 2.0m wide, so 1.5m of separation means they overlap: the AI was
+       * steering *into* the car it was trying to pass.
+       *
+       * Measured with `scripts/measure-contact.mjs`: contact was 13-18% of the race per car,
+       * against single-digit seconds in real F1, and **95% of it lateral** -- side by side,
+       * not nose to tail. So this is the fault, and aggression belongs on top of clearing the
+       * car rather than in place of it.
+       */
+      const wanted = budget * skill.aggression * commitment;
+      target = side * clamp(wanted, Math.min(CAR_CLEARANCE, budget), budget);
       this.overtakeIntent = 1;
     } else {
       this.overtakeIntent = damp(this.overtakeIntent, 0, 1.2, dt);
@@ -701,8 +725,12 @@ export class AIDriver {
 
     const behind = context.opponentBehind;
     if (behind && behind.gap < 8 && !onStraight) {
+      // Same floor as above: a defence that does not clear the car behind is not a defence.
       const side = behind.lateral > 0 ? -1 : 1;
       target = clamp(target + side * budget * 0.3, -budget, budget);
+      if (Math.abs(target) < Math.min(CAR_CLEARANCE, budget)) {
+        target = side * Math.min(CAR_CLEARANCE, budget);
+      }
       this.defendIntent = 1;
     } else {
       this.defendIntent = damp(this.defendIntent, 0, 1.2, dt);
