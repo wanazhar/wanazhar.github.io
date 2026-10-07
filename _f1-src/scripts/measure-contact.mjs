@@ -86,6 +86,26 @@ for (const id of CIRCUITS) {
   player.ai.reset();
 
   const seconds = new Map(session.cars.map((car) => [car.entry.short, { any: 0, lateral: 0, longitudinal: 0 }]));
+
+  /*
+   * Episodes: a contact is not a rate, it is a sequence of events.
+   *
+   * The total says a car spends far too long in contact. It cannot say whether that is *racing*
+   * -- two cars side by side through a sequence of corners, which is the whole point of the
+   * sport -- or cars wedged abreast because neither can complete a pass, which is a bug. The
+   * two are indistinguishable in a total and need opposite responses: one is correct and must be
+   * left alone, the other has to be fixed.
+   *
+   * The discriminator is whether the relative order changes. A real pass ends with the overtaker
+   * ahead; a stuck battle never resolves. Episodes are tracked per ordered pair, closed when the
+   * pair separates, and classified by what happened.
+   *
+   * A real wheel-to-wheel battle runs a corner or two -- single-digit seconds. Episodes running
+   * to tens of seconds are the stuck case.
+   */
+  const episodes = new Map();
+  let nextEpisode = 0;
+  const open = new Map();
   const budget = Math.ceil(track.lapRecord * circuit.laps * 4 * 120);
 
   for (let step = 0; step < budget && !session.finished; step += 1) {
@@ -134,6 +154,48 @@ for (const id of CIRCUITS) {
       record.any += dt;
       if (bestLateral) record.lateral += dt;
       else record.longitudinal += dt;
+
+      /*
+       * Episode bookkeeping against the car this one is deepest in.
+       */
+      let partner = null;
+      let partnerDepth = -Infinity;
+      for (let j = 0; j < cars.length; j += 1) {
+        if (i === j) continue;
+        const b = cars[j];
+        if (!b.touching) continue;
+        const pb = b.physics;
+        const dx = pb.x - pa.x;
+        const dz = pb.z - pa.z;
+        const depth = Math.max(
+          HALF_LENGTH - Math.abs(dx * cos + dz * sin),
+          HALF_WIDTH - Math.abs(-dx * sin + dz * cos)
+        );
+        if (depth > partnerDepth) { partnerDepth = depth; partner = b; }
+      }
+      if (partner) {
+        const key = [a, partner].map((c) => c.entry.short).sort().join('|');
+        if (!open.has(key)) {
+          open.set(key, { id: nextEpisode++, started: step * dt, a: a.entry.short, b: partner.entry.short });
+        }
+        open.get(key).lateral += dt;
+      }
+    }
+
+    // Close any episode whose pair has separated this step.
+    for (const [key, ep] of [...open]) {
+      const [sa, sb] = key.split('|');
+      const ca = session.cars.find((c) => c.entry.short === sa);
+      const cb = session.cars.find((c) => c.entry.short === sb);
+      if (!ca || !cb || (ca.touching && cb.touching)) continue;
+      ep.ended = step * dt;
+      // Did the order change while they were in contact? A real pass resolves; a battle does not.
+      const orderNow = session.order.entries.map((e) => e.id);
+      const before = ep.a < ep.b ? -1 : 1;
+      const after = orderNow.indexOf(ep.a) < orderNow.indexOf(ep.b) ? -1 : 1;
+      ep.swapped = before !== after;
+      episodes.set(ep.id, ep);
+      open.delete(key);
     }
   }
 
@@ -146,5 +208,16 @@ for (const id of CIRCUITS) {
   console.log(
     `${id.padEnd(10)} ${session.time.toFixed(0).padStart(5)}s  ${median.toFixed(0).padStart(5)}s ${any[any.length - 1].toFixed(0).padStart(5)}s  ` +
     `${(lateralShare * 100).toFixed(0).padStart(7)}% ${((1 - lateralShare) * 100).toFixed(0).padStart(7)}%  ${heavy}/${any.length}`
+  );
+
+  const done = [...episodes.values()];
+  const lengths = done.map((e) => e.ended - e.started).sort((a, b) => a - b);
+  const swapped = done.filter((e) => e.swapped).length;
+  const long = done.filter((e) => e.ended - e.started > 10);
+  const longSwapped = long.filter((e) => e.swapped).length;
+  console.log(
+    `           episodes ${done.length}, median ${lengths[Math.floor(lengths.length / 2)].toFixed(1)}s, ` +
+    `p90 ${lengths[Math.floor(lengths.length * 0.9)].toFixed(1)}s, resolved by a pass ${swapped}/${done.length}` +
+    (long.length ? `  |  >10s: ${long.length} of which resolved ${longSwapped}` : '')
   );
 }
