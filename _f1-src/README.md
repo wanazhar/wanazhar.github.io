@@ -292,6 +292,40 @@ pace margin shifting from -0.55s to +3.09s off the field median. Pace still is n
 into position, so there is more to find. `measure-contact.mjs`, `measure-balance.mjs` and
 `measure-drivers.mjs` all exist to make that measurable rather than arguable.
 
+### What the residual contact actually is
+
+Contact was cut 22-42% by the clearance fix, but ~130s per car remained. That is still far above
+real F1, and a total cannot say whether it is *racing* -- two cars side by side through a
+sequence of corners, which is the point of the sport -- or cars wedged abreast because neither
+can complete a pass, which is a bug. The two need opposite responses.
+
+The discriminator is whether the relative order changes: a real pass resolves with the overtaker
+ahead, a stuck battle never resolves. `measure-contact.mjs` now tracks contact as episodes per
+pair and classifies them.
+
+**It is neither. It is ~6,500 clips of a tenth of a second.**
+
+| circuit | episodes | median | p90 | resolved by a pass | episodes > 10 s |
+|---|---|---|---|---|---|
+| bahrain | 6791 | **0.1 s** | 0.7 s | 3993/6791 | 41 |
+| monza | 6533 | **0.1 s** | 0.9 s | 4327/6533 | 47 |
+| spa | 6176 | **0.1 s** | 0.8 s | 4048/6176 | 36 |
+
+So the field is not stuck together in long battles -- it is grinding, constantly and briefly.
+Barely 0.7% of episodes last longer than ten seconds. And **59% of them end with the order
+changed**, which is churn rather than racing: positions are being swapped thousands of times a
+race between cars that are only briefly alongside each other.
+
+The pack is not all on one line -- measured at Monza the field occupies 10.0m of lateral spread
+across a 13m road, using 5.1 of the ~6 available 2m lanes. It is simply too dense: 23 cars in six
+lanes is nearly four abreast, so overlap within a lane is close to unavoidable and a car changing
+lane brushes whoever is there.
+
+That is the mechanism behind all three symptoms at once -- contact a quarter of the race, results
+that are incident-dominated, and a pace advantage that does not become track position. Not fixed
+here: the levers are field density and how readily a car changes lane, and both want measuring
+before touching.
+
 ### Reaction time, and what the balance question actually is
 
 `reactionMs` used to be a sample-and-hold on the **entire control loop**, re-issued every
