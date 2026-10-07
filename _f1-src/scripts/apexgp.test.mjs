@@ -2800,11 +2800,24 @@ test('a pit stop actually happens, and it actually costs time', () => {
   // A real championship field, not hand-rolled entries: the AI's skill preset and the cars'
   // setups both come from the entry, and a stub entry produces a field that does not race.
   const entries = createChampionship().entries;
+  /*
+   * Twelve laps, not six.
+   *
+   * Six laps on softs brings wear to about 0.27, which crosses the `pitWhen` cliff of 0.2 at
+   * roughly lap 5 -- and `shouldPit` refuses when a lap or less remains. So at six laps the stop
+   * was a coin toss decided by a few tenths of a percent of wear, and changing the AI's reaction
+   * model was enough to flip it. A test whose premise is a near miss is not testing the pit
+   * mechanic.
+   *
+   * Twelve laps puts the cliff in the middle of the race with laps to spare, so what is being
+   * measured is the mechanic rather than the tyre arithmetic.
+   */
+  const RACE_LAPS = 12;
   const session = new RaceSession({
     track,
     entries,
     type: SESSION_TYPE.race,
-    totalLaps: 6,
+    totalLaps: RACE_LAPS,
     random: createRandom(4242),
     conditions: { compound: 'soft', weather: 'clear' }
   });
@@ -2814,13 +2827,40 @@ test('a pit stop actually happens, and it actually costs time', () => {
   let laneSteps = 0;
   const lapEnd = new Map();
 
-  for (let i = 0; i < 120 * 60 * 14 && !session.finished; i += 1) {
+  /*
+   * Budget derived from the circuit, not a fixed number of minutes.
+   *
+   * It was `120 * 60 * 14`, a hand-picked 14 minutes that the AI happened to fit inside. Any
+   * change to how fast the field laps -- which is exactly what fixing the reaction model did --
+   * pushed the race past it, the tyres never reached the cliff that triggers a stop, and the
+   * test failed on "no driver pitted" rather than on anything to do with the pit mechanic.
+   * A budget that encodes a hidden assumption about driver pace is a landmine.
+   */
+  const budget = Math.ceil(track.lapRecord * RACE_LAPS * 4 * 120);
+  const inBox = new Map();
+  const wearAfterStop = [];
+  for (let i = 0; i < budget && !session.finished; i += 1) {
     session.update(FIXED_TIMESTEP, idle);
     for (const car of session.cars) {
       if (car.pitStopTime > 0) boxSteps += 1;
       if (car.inPitLane) laneSteps += 1;
       const prev = lapEnd.get(car.entry.short) ?? 0;
       if (car.timer.lap > prev) { lapEnd.set(car.entry.short, car.timer.lap); }
+
+      /*
+       * Sample the tyres at the instant a stop completes, not at the end of the race.
+       *
+       * This used to find the first car that ever pitted and check its wear once the session
+       * finished. Over a twelve-lap race that car has long since driven on the fresh rubber and
+       * worn it back out, so the assertion was reporting 26% for tyres that were replaced
+       * several laps earlier -- measuring the rest of the race rather than the pit stop.
+       */
+      const wasInBox = inBox.get(car.entry.short) ?? false;
+      const nowInBox = car.pitStopTime > 0;
+      if (wasInBox && !nowInBox && (car.pitStops ?? 0) > 0) {
+        wearAfterStop.push(car.physics.frontWear);
+      }
+      inBox.set(car.entry.short, nowInBox);
     }
   }
 
@@ -2832,8 +2872,12 @@ test('a pit stop actually happens, and it actually costs time', () => {
   // The stop has to cost time. This is the whole point: a stop whose only cost were the two
   // seconds in the box would never be worth taking, so nobody would stop and the tyre model
   // would stay decorative.
-  const stopped = session.cars.find((car) => (car.pitStops ?? 0) > 0);
-  assert.ok(stopped.physics.frontWear < 0.2, `fresh rubber, got ${(stopped.physics.frontWear * 100).toFixed(0)}% wear`);
+  assert.ok(wearAfterStop.length > 0, 'at least one stop must have completed, to sample its tyres');
+  const worstFreshRubber = Math.max(...wearAfterStop);
+  assert.ok(
+    worstFreshRubber < 0.2,
+    `a stop must leave fresh rubber, worst sample ${(worstFreshRubber * 100).toFixed(0)}% wear`
+  );
 });
 
 test('the pit lane is a lane, not most of the circuit', () => {
@@ -3175,22 +3219,36 @@ test('there is a human driver to calibrate balance against, and a known reaction
   );
 
   /*
-   * `reactionMs` is applied as a sample-and-hold on the whole control loop, which is not what
+   * `reactionMs` used to be a sample-and-hold on the whole control loop, which is not what
    * reaction time is. At 90ms that is an 11Hz steering input, and at 83m/s each steering
-   * decision covers 7.5m of travel. Measured cost of 80ms: 2.4-14.0s a lap.
+   * decision covers 7.5m of travel. Measured cost of 80ms: 2.4-14.0s a lap, and up to 8.9s of
+   * run-to-run scatter on one flying lap, which is what made the field unbalanceable -- the
+   * noise was larger than the difference between drivers.
    *
-   * Two fixes were built and measured. A transport delay on material changes was much worse
-   * (up to +39s a lap -- it latches a stale *brake* through a braking zone). A first-order lag
-   * was right in kind and cut seed-to-seed scatter on an ace from 1.95s to 0.28s at Monza,
-   * but cost about 7% of pace overall, which pushes a 6-lap race past the pit-stop test's
-   * fixed 840s budget. Both were reverted rather than shipped half-verified; this assertion
-   * is here so the next attempt starts from the measurement instead of rediscovering it.
+   * Two wrong answers were tried first. A transport delay on material changes was much worse
+   * (up to +39s a lap: it latches a stale *brake* through a braking zone). Lagging steering as
+   * well as the pedals was right in kind but cost ~7% of pace, enough to push a 6-lap race
+   * past the pit-stop test's fixed budget.
+   *
+   * What shipped lags the pedals only. Reaction time delays the response to a *change* -- lift,
+   * brake, swerve -- and steering while tracking a line is continuous feedback a human is
+   * already inside. That separates the two problems: the noise came from quantising steering,
+   * and the pace cost from quantising throttle mid-braking-zone.
    */
   assert.match(
     aiSource,
+    /1 - Math\.exp\(-dt \/ lag\)/,
+    'reaction must be a first-order response, not a sample-and-hold on the loop'
+  );
+  assert.match(
+    aiSource,
+    /steer: fresh\.steer/,
+    'steering must not be lagged: it is continuous tracking, not a decision'
+  );
+  assert.doesNotMatch(
+    aiSource,
     /reactionDelay >= lag/,
-    'KNOWN DEFECT: reactionMs is a sample-and-hold on the control loop, not a lag. ' +
-    'Replace it with a first-order response and retune the pit-stop budget alongside it.'
+    'the old sample-and-hold on the whole control loop must stay gone'
   );
 });
 
