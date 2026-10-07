@@ -3183,6 +3183,40 @@ test('the AI has a distinct behaviour for rejoining a car that left the road', (
   assert.match(aiSource, /offTrack && offTrackDistance > OFF_TRACK_REJOIN/);
 });
 
+test('lateral avoidance is measured from the car being avoided, not from the racing line', () => {
+  /*
+   * The clearance floor in the test above raised a car's offset *from the centreline*. It could
+   * not stop two cars driving into each other, because it never looked at where the other car
+   * was: two drivers solving the same problem got the same answer and drove into each other.
+   *
+   * Measured at the moment of contact over 87,559 samples: the median pair was **0.10m apart
+   * laterally**, overlapping by 0.93m of a 2.0m car, with 63% of contacts deeper than 0.8m.
+   * That is not wheel-to-wheel racing -- two cars a metre apart brushing wheels -- it is two
+   * cars in the same place, thousands of times a race in clips of a tenth of a second.
+   *
+   * Measured after: contact per car 124s to 24s at Bahrain, 141s to 24s at Monza, 127s to 15s at
+   * Spa, and contact episodes down about three quarters.
+   */
+  const aiSource = readFileSync(new URL('../src/ai/AIDriver.js', import.meta.url), 'utf8');
+
+  // The target line must be set relative to the opponent's own lateral position.
+  assert.match(
+    aiSource,
+    /aheadCar\.lateral \+ Math\.sign\(lineOffset - aheadCar\.lateral \|\| 1\) \* CAR_CLEARANCE/,
+    'the line has to be placed relative to the car ahead, not to the ideal line'
+  );
+  assert.match(aiSource, /const AVOID_GAP = 18/, 'and only while the car is close enough to matter');
+  assert.match(aiSource, /aheadCar\.gap < AVOID_GAP/);
+
+  // It must widen an existing avoidance rather than pick a side from the road's centre, which
+  // is what let two cars choose the same side of the circuit at the same moment.
+  assert.doesNotMatch(
+    aiSource,
+    /const side = ahead\.lateral > 0 \? -1 : 1;\s*\n\s*const commitment[\s\S]{0,200}target = side \* clamp\(wanted/,
+    'the overtake offset must not still be chosen from which side of the road the car is on'
+  );
+});
+
 test('an AI that commits to a pass moves far enough to clear the car', () => {
   /*
    * Contact was 13-18% of a race per car, against single-digit seconds in real F1, and it is
