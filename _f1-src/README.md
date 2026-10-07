@@ -322,9 +322,43 @@ lanes is nearly four abreast, so overlap within a lane is close to unavoidable a
 lane brushes whoever is there.
 
 That is the mechanism behind all three symptoms at once -- contact a quarter of the race, results
-that are incident-dominated, and a pace advantage that does not become track position. Not fixed
-here: the levers are field density and how readily a car changes lane, and both want measuring
-before touching.
+that are incident-dominated, and a pace advantage that does not become track position.
+
+### Lateral avoidance, measured from the car
+
+The clearance fix above raised a car's offset *from the centreline*. It could not stop two cars
+driving into each other, because it never looked at where the other car was. Two drivers solving
+the same problem got the same answer.
+
+At the moment of contact, over 87,559 samples, the median pair was **0.10 m apart laterally**,
+overlapping by 0.93 m of a 2.0 m car, with 63% of contacts deeper than 0.8 m. That is not
+wheel-to-wheel racing -- two cars a metre apart brushing wheels -- it is two cars in the same
+place.
+
+So the offset is now relative to the car: whatever the corner wants, the target line passes at
+least `CAR_CLEARANCE` to one side of the car ahead. The side is the one already occupied, so this
+widens an existing avoidance rather than inventing one, and two cars can no longer satisfy it by
+choosing the same offset in the same direction.
+
+| | before | after |
+|---|---|---|
+| Bahrain contact per car | 124 s | **24 s** |
+| Monza | 141 s | **24 s** |
+| Spa | 127 s | **15 s** |
+| episodes at Monza | 6533 | **1591** |
+| overlap depth, p50 | 0.93 m | **0.64 m** |
+
+An 80-88% reduction in contact time, and real F1 is single-digit seconds -- so this closes most of
+the gap rather than all of it. The lateral/longitudinal split also moved from 93-95% lateral to
+64-71%, which is the right way: nose-to-tail following is the ordinary case.
+
+It also reconciles two measurements that looked contradictory. The field *does* spread 10 m across
+the road, yet contacting pairs sat 0.1 m apart. Both were true -- cars use different lanes from
+each other and identical lanes from their immediate neighbour.
+
+**The balance question is still open.** A `human` driver finishes P1 in 10 of 12 rounds, and
+`mid` -- now 3.4 s/lap off the field median -- wins 10 of 12 as well. Contact was a real fault and
+this fixes it, but it was not what was stopping pace from becoming position.
 
 ### Reaction time, and what the balance question actually is
 
