@@ -595,18 +595,65 @@ export class AIDriver {
     }
 
     const controls = { throttle, brake, steer: commandedSteer, handbrake: false };
+    return this.#applyReaction(controls, skill.reactionMs / 1000, dt);
+  }
 
-    // Reaction delay: a slower driver acts on a stale picture of the track.
-    const lag = skill.reactionMs / 1000;
-    if (lag > 0) {
-      this.reactionDelay += dt;
-      if (this.reactionDelay >= lag) {
-        this.reactionDelay = 0;
-        this.pendingControls = controls;
-      }
-      return this.pendingControls;
-    }
-    return controls;
+  /**
+   * Reaction time, applied to decisions and not to tracking.
+   *
+   * ## What was wrong
+   *
+   * This held the entire control loop and re-issued it every `reactionMs`. At 90ms that is an
+   * 11Hz steering input, and at 83m/s each steering decision covers 7.5m of travel. Two
+   * consequences, both measured:
+   *
+   *   - an 80ms difference between two presets cost **2.4 to 14.0 seconds a lap**, roughly a
+   *     hundred times what reaction time should cost
+   *   - the same driver produced a flying lap varying by up to **8.9s** run to run, against a
+   *     real-world 0.1-0.3s, which is what made the field impossible to balance against: the
+   *     noise was larger than the difference between drivers
+   *
+   * A transport delay on material changes was tried and was much worse -- up to +39s a lap,
+   * because it latches a stale *brake* value through a braking zone, which is backwards.
+   *
+   * ## What reaction time actually applies to
+   *
+   * Not to everything. A human does not re-decide their steering every 200ms -- steering while
+   * tracking a racing line is continuous feedback they are already inside. What reaction time
+   * delays is the *response to a change*: lifting, braking harder, deciding to swerve for a car.
+   *
+   * So the lag goes on the pedals and steering passes straight through. That is both the
+   * physiologically honest model and the one that separates the two measured problems: the
+   * noise was injected by quantising steering, and the cost was mostly paid by quantising
+   * throttle during a braking zone.
+   *
+   * A first-order response rather than a delay line, so it cannot latch a stale input and its
+   * cost does not depend on the step size. Exact exponential step, so the response is identical
+   * at any timestep.
+   *
+   * @param {{throttle: number, brake: number, steer: number}} fresh
+   * @param {number} lag seconds
+   * @param {number} dt step length
+   */
+  #applyReaction(fresh, lag, dt) {
+    if (!(lag > 0)) return fresh;
+    const alpha = 1 - Math.exp(-dt / lag);
+    const held = this.pendingControls;
+    const next = {
+      throttle: held.throttle + (fresh.throttle - held.throttle) * alpha,
+      brake: held.brake + (fresh.brake - held.brake) * alpha,
+      // Deliberately not lagged: see the note above.
+      steer: fresh.steer
+    };
+    /*
+     * Lagging the pedals makes a rising throttle overlap a decaying brake, and the AI must
+     * never ask for both: commanding throttle while braking is how a car ends up doing
+     * neither. The brake wins, because it is the command being *removed* and releasing it late
+     * is the safe direction to err in.
+     */
+    if (next.brake > 0.01) next.throttle = 0;
+    this.pendingControls = next;
+    return next;
   }
 
   /**

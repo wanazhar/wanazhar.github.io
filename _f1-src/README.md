@@ -250,6 +250,62 @@ itself. Those are the circuits. What is still guarded is a lap that folds *throu
 itself, which is what the radial generator could produce and what a failed
 medial-axis reduction produces.
 
+### Reaction time, and what the balance question actually is
+
+`reactionMs` used to be a sample-and-hold on the **entire control loop**, re-issued every
+`reactionMs`. At 90ms that is an 11Hz steering input, and at 83m/s each steering decision covers
+7.5m of travel. Two measured consequences:
+
+- an 80ms difference between two presets cost **2.4 to 14.0 seconds a lap**
+- one flying lap varied by up to **8.9s run to run**, against a real-world 0.1-0.3s
+
+That second number is why balance could not be answered: **the noise was larger than the
+difference between drivers.**
+
+Two wrong answers came first. A transport delay on material changes was much worse (+39s/lap) —
+it latches a stale *brake* value through a braking zone, which is backwards. Lagging steering as
+well as the pedals was right in kind but cost ~7% of pace, enough to push a 6-lap race past a
+test's fixed budget.
+
+What shipped lags **the pedals only**. Reaction time delays the response to a *change* — lift,
+brake, swerve — and steering while tracking a line is continuous feedback a human is already
+inside. That separates the two problems exactly: the noise came from quantising steering, the
+pace cost from quantising throttle mid-braking-zone.
+
+Measured over five circuits, flying lap (lap 2) averaged over five seeds, no traffic:
+
+| | before | after |
+|---|---|---|
+| worst run-to-run scatter | **8.93 s** | **2.75 s** |
+| Silverstone `ace` | ±0.45 s | **±0.08 s** |
+| Spa `human` | ±7.53 s | **±0.10 s** |
+| `human` gap to `ace` | +2.7 to +19.5 s | +2.7 to +6.8 s |
+| `backmarker` gap to `ace` | +14 to +28.6 s | +8.0 to +17.6 s |
+
+`scripts/measure-drivers.mjs` and `scripts/measure-balance.mjs` reproduce these.
+
+### The balance answer
+
+`measure-balance.mjs` runs the same rounds three times, changing only who is in the player's
+seat. Best lap of the player's car, against the field median on the same circuit:
+
+| driver in the seat | wins | podiums | pace vs field median |
+|---|---|---|---|
+| `ace` | 10/12 | 12/12 | −5.14 s/lap |
+| `human` | 10/12 | 12/12 | −0.55 s/lap |
+| `mid` | 10/12 | 12/12 | +1.30 s/lap |
+
+**The player's result is insensitive to a 6.4 s/lap swing in driver pace.** `mid` is over a
+second a lap slower than the field median and still wins 10 of 12 and never finishes outside the
+podium. So the wins come from the grid slot and not from the driving, which is why the original
+"the player wins 24/24" figure never meant anything: it was true of the autopilot, and it is
+equally true of a deliberately mediocre one.
+
+Overtaking does happen -- 46 to 89 position changes at the lead across three circuits -- so this
+is not a field frozen solid. What the measurement shows is that a pace advantage is not being
+converted into track position, and that is the thing to investigate next. It needs its own
+measurement-first change; it is not fixed here.
+
 ### Elevation: 22 of 24 circuits
 
 The DEM source was the problem, not the code. Open-Meteo's elevation endpoint rate-limits, and
