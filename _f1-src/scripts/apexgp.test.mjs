@@ -3694,6 +3694,65 @@ test('a race session runs, classifies and returns results', async () => {
   assert.equal(fastest.time, 90, 'the quickest lap should win');
 });
 
+test('a race is classified in finishing order, not grid order', () => {
+  /*
+   * The per-car step loop only skipped retired cars, so `#finishCar` ran again for every
+   * already-finished car on every step. It pushed the car onto `finishOrder` again, and it
+   * rewrote `finishTime` to the current step, so every finisher ended the race on the same
+   * time -- which made `results()` sort by nothing and classify the field in grid order.
+   * Rewriting the leader's time also left the "12 seconds after the winner" rule comparing
+   * the clock with itself, so it never fired and the race ran until the last car finished.
+   *
+   * One idle car on pole is the whole test: it never completes a lap, so the only way the
+   * session can end is the 12s rule.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const entries = [
+    { ...DRIVERS[0], isPlayer: false, upgrades: {} },
+    { ...DRIVERS[1], isPlayer: false, upgrades: {} }
+  ];
+  const session = new RaceSession({
+    track,
+    entries,
+    type: SESSION_TYPE.race,
+    totalLaps: 1,
+    random: () => 0.5
+  });
+
+  // The second car has no AI and no input, so it never completes a lap and cannot retire.
+  const leader = session.cars[0];
+  session.cars[1].ai = null;
+
+  const idle = { throttle: 0, brake: 0, steer: 0, handbrake: false };
+  let leaderFinishTime = null;
+
+  for (let i = 0; i < 120 * 400 && !session.finished; i += 1) {
+    session.update(DT, idle);
+    if (leader.finished) {
+      if (leaderFinishTime === null) leaderFinishTime = leader.finishTime;
+      assert.equal(leader.finishTime, leaderFinishTime, 'a finisher\'s time must not be rewritten');
+    }
+  }
+
+  assert.ok(leader.finished, 'the AI car should complete the lap');
+  assert.ok(session.finished, 'the session must end 12s after the winner');
+  assert.ok(
+    session.time - leaderFinishTime >= 12 && session.time - leaderFinishTime < 14,
+    `session ran ${(session.time - leaderFinishTime).toFixed(1)}s past the winner`
+  );
+  assert.equal(
+    session.finishOrder.length,
+    1,
+    'the winner is recorded once, not once per step'
+  );
+
+  const results = session.results();
+  assert.equal(results[0].short, leader.entry.short, 'the winner is classified first');
+  assert.equal(results[0].position, 1, 'the winner takes P1');
+  assert.equal(results[1].totalTime, null, 'a car that never took the flag has no total time');
+  assert.ok(results[0].totalTime < results[1].totalTime || results[1].totalTime === null);
+});
+
 test('the starting grid is staggered and inside the track', () => {
   const track = buildTrack(getCircuit('suzuka'));
   assert.ok(track.grid.length >= 10);

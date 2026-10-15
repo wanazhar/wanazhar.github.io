@@ -297,6 +297,20 @@ setup.lapMetres = track.length;
       this.#resolveBarriers(car, dt);
       this.#updateProgress();
 
+      /*
+       * A finished car keeps driving -- it is on its cool-down lap, and a car frozen at the
+       * line is an obstacle for everyone behind it -- but its timing is over. The finish
+       * check used to run every step for every finished car, which did three separate kinds
+       * of damage: `#finishCar` pushed the car onto `finishOrder` again (419 entries for a
+       * two-car race), it rewrote `finishTime` to the current step so every finisher ended
+       * on the same time, and that in turn made the "classify the field 12s after the
+       * winner" rule compare the clock with itself and never fire.
+       *
+       * Falling through to the timer had its own cost: a qualifying car could improve its
+       * grid time after taking the flag.
+       */
+      if (car.finished) continue;
+
       const result = car.timer.update(car.physics.x, car.physics.z, dt, this.totalLaps);
       car.lastLapTime = car.timer.lastLap;
       car.bestLapTime = car.timer.bestLap;
@@ -738,6 +752,7 @@ setup.lapMetres = track.length;
   }
 
   #finishCar(car) {
+    if (car.finished) return;
     car.finished = true;
     car.finishTime = this.time + car.penaltySeconds;
     this.finishOrder.push(car);
