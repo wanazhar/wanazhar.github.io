@@ -56,6 +56,8 @@ export function segmentName(index) {
 export function createQualifying(entries) {
   return {
     segment: 0,
+    /** The full field that took part, kept so the grid can name an eliminated driver. */
+    field: entries.slice(),
     /** Entries still in, in championship order. */
     remaining: entries.slice(),
     /** Best lap per entry short code, across every segment so far. */
@@ -145,7 +147,20 @@ export function classification(qualifying) {
  *
  * Eliminated drivers still have a time from an earlier segment and still start -- that is
  * the whole point of knocking people out rather than disqualifying them.
+ *
+ * The shape is the one `RaceSession` consumes -- `{ entry, grid }` per slot, pole first --
+ * because a grid of short codes is not something the session can build a car from. That
+ * mismatch is not hypothetical: it made the race impossible to start after qualifying
+ * until the handoff was given a test of its own.
+ *
+ * @returns {{entry: object, grid: number}[]}
  */
 export function gridFrom(qualifying) {
-  return classification(qualifying).map((row) => row.short);
+  const byShort = new Map(qualifying.field.map((entry) => [entry.short, entry]));
+  const grid = [];
+  for (const row of classification(qualifying)) {
+    const entry = byShort.get(row.short);
+    if (entry) grid.push({ entry, grid: grid.length });
+  }
+  return grid;
 }

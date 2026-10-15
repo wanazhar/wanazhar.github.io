@@ -375,7 +375,8 @@ export class Game {
    * @param {Array} options.entries championship entries
    * @param {'qualifying'|'race'} options.type
    * @param {number} options.totalLaps
-   * @param {Array<number>} [options.gridOrder] entry index per grid position
+   * @param {Array<{entry: object, grid: number}>} [options.gridOrder] grid slot per car,
+   *   pole first (`gridFrom` output)
    */
   startSession({ entries, type, totalLaps, gridOrder = null, conditions = null }) {
     this.session = new RaceSession({

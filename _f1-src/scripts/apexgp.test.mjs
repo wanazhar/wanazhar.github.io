@@ -70,7 +70,8 @@ import {
   applySegment,
   entriesForSegment,
   isComplete,
-  classification
+  classification,
+  gridFrom
 } from '../src/race/qualifying.js';
 import { SESSION_TYPE, RaceSession, FIXED_TIMESTEP } from '../src/race/RaceSession.js';
 import { UPGRADES, applyUpgrades, developmentPointsFor, upgradeCost } from '../src/physics/upgrades.js';
@@ -1144,6 +1145,55 @@ test('qualifying is a knockout, not a time trial', () => {
     stalled.history[0].eliminated.includes(entries[22].short),
     'a car that never ran must be eliminated'
   );
+});
+
+test('the qualifying grid is what the race session starts from', () => {
+  /*
+   * `gridFrom` returned short codes while `RaceSession` destructured `{ entry, grid }` slots,
+   * so "To the race" after qualifying threw and the championship could not get past Q3.
+   *
+   * Nothing covered the seam: the qualifying module was tested and the session was tested,
+   * but the handoff between them was not, which is exactly where the two conventions had
+   * drifted apart.
+   */
+  const entries = Array.from({ length: 6 }, (_, i) => ({
+    short: `Q${i}`, name: `Driver ${i}`, team: 'T', colour: 0, upgrades: {}
+  }));
+
+  const q = createQualifying(entries);
+  while (!isComplete(q)) {
+    applySegment(q, entriesForSegment(q).map((entry, i) => ({ entry, bestLap: 80 + i })));
+  }
+
+  const grid = gridFrom(q);
+  assert.deepEqual(
+    grid.map((slot) => slot.grid),
+    grid.map((_, index) => index),
+    'grid slots are pole first'
+  );
+  assert.deepEqual(
+    grid.map((slot) => slot.entry.short),
+    entries.map((entry) => entry.short),
+    'a clean sweep leaves the field in entry order'
+  );
+
+  const track = buildTrack(getCircuit('monza'));
+  const session = new RaceSession({
+    track,
+    entries,
+    type: SESSION_TYPE.race,
+    totalLaps: 1,
+    gridOrder: grid
+  });
+
+  assert.deepEqual(
+    session.cars.map((car) => car.entry.short),
+    entries.map((entry) => entry.short),
+    'the race starts in qualifying order'
+  );
+  for (const car of session.cars) {
+    assert.equal(car.gridPosition, session.cars.indexOf(car), 'grid position matches the slot');
+  }
 });
 
 test('qualifying never eliminates the field down to nothing', () => {
