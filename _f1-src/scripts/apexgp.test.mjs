@@ -1121,8 +1121,28 @@ test('qualifying is a knockout, not a time trial', () => {
   }
 
   assert.deepEqual(ran, [23, 18, 13], 'five out of Q1, five out of Q2, thirteen fight for pole');
-  assert.equal(classification(q).length, 18, 'everyone who set a time is classified, knockouts included');
+  assert.equal(classification(q).length, 23, 'everyone who set a time is classified, knockouts included');
   assert.equal(classification(q)[0].short, 'D0', 'fastest lap takes pole');
+
+  /*
+   * The five knocked out in Q1 still start the race. Keeping them out of `best` -- which is
+   * what the grid is built from -- turned 23 qualifiers into an 18-car grid.
+   */
+  const outInQ1 = q.history[0].eliminated;
+  assert.equal(outInQ1.length, 5, `five eliminated in Q1, got ${outInQ1.length}`);
+  for (const short of outInQ1) {
+    assert.ok(q.best.has(short), `${short} was eliminated in Q1 but must still be classified`);
+  }
+
+  /*
+   * A driver's result is their *best* lap across every segment, so a quick Q1 lap survives a
+   * slow Q2 rather than being overwritten by the later one.
+   */
+  const bestLapFor = (short) => classification(q).find((row) => row.short === short)?.lap;
+  for (let i = 0; i < 23; i += 1) {
+    const expected = 80 + i * 0.5;
+    assert.equal(bestLapFor(`D${i}`), expected, `D${i} must keep the best of their segment times`);
+  }
 
   /*
    * A driver knocked out in Q2 keeps the time they set in Q1, which is what makes the

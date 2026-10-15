@@ -117,7 +117,21 @@ export function applySegment(qualifying, results) {
   const surviving = ranked.slice(0, cut);
   const eliminated = ranked.slice(cut);
 
-  for (const row of surviving) qualifying.best.set(row.entry.short, row.lap);
+  /*
+   * Fold in everyone who ran, not just the survivors, and keep the fastest lap rather than
+   * the latest one.
+   *
+   * Two bugs lived in one line here. Only the survivors were written, so the five drivers
+   * knocked out in Q1 never appeared in `best` and the race grid silently lost them: 23
+   * qualifiers became an 18-car grid. And `Map.set` overwrote, so a driver who set 70.0 in
+   * Q1 and 99.0 in Q2 was classified on the 99.0 -- the module's own doc says the result is
+   * the *best* lap across every segment.
+   */
+  for (const row of ranked) {
+    if (!Number.isFinite(row.lap)) continue;
+    const held = qualifying.best.get(row.entry.short);
+    if (held === undefined || row.lap < held) qualifying.best.set(row.entry.short, row.lap);
+  }
 
   const eliminatedNames = eliminated.map((r) => r.entry.short);
   qualifying.remaining = surviving.map((r) => r.entry);
