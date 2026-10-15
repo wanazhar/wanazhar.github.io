@@ -3323,6 +3323,49 @@ test('the AI scan-ahead speed plan brakes in time for the slowest corner', () =>
   assert.doesNotMatch(aiSource, /targetSpeed = racingLineAt\(track, brakeLookAhead\)/);
 });
 
+test('DRS is a decision the AI makes once per straight, not a per-step coin flip', () => {
+  /*
+   * `#shouldUseDrs` re-rolled `random() < drsSkill` on every call, and it is called once per
+   * physics step. At 120 steps a second a driver with 0.7 skill had the flap open on roughly
+   * 70% of frames: the wing strobed, the drag was the average of the two states, and "skill"
+   * became a duty cycle rather than a decision. The roll is latched now, and released when
+   * the gate closes.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  // The flattest sample on the lap: a straight, which is where the DRS gate is open.
+  const straight = track.samples.reduce(
+    (best, s) => (Math.abs(s.curvature) < Math.abs(best.curvature) ? s : best),
+    track.samples[0]
+  );
+  const behind = { gap: 40, lateral: 0 };
+
+  const car = new CarPhysics();
+  car.reset(straight.x, straight.z, straight.heading, 90);
+  // An alternating roll: under the old code half the frames deploy and half do not.
+  let roll = 0;
+  const alternating = () => (roll++ % 2 === 0 ? 0.5 : 0.95);
+  const driver = new AIDriver(car, SKILL_PRESETS.strong, { track, random: alternating });
+
+  let transitions = 0;
+  let wasOpen = false;
+  for (let i = 0; i < 240; i += 1) {
+    driver.update(FIXED_TIMESTEP, { opponentBehind: behind });
+    if (car.drsOpen !== wasOpen) transitions += 1;
+    wasOpen = car.drsOpen;
+  }
+  assert.equal(transitions, 1, `the flap changed state ${transitions} times on one straight`);
+  assert.equal(car.drsOpen, true, 'a driver who deploys keeps it open for the straight');
+
+  // The latch has to be released when the gate closes, or the next straight is not a decision.
+  for (let i = 0; i < 5; i += 1) driver.update(FIXED_TIMESTEP, { opponentBehind: null });
+  assert.equal(car.drsOpen, false, 'no car within range means no DRS');
+
+  // And a driver with no DRS skill never opens it at all.
+  const rookie = new AIDriver(car, { ...SKILL_PRESETS.strong, drsSkill: 0 }, { track, random: () => 0.5 });
+  for (let i = 0; i < 20; i += 1) rookie.update(FIXED_TIMESTEP, { opponentBehind: behind });
+  assert.equal(car.drsOpen, false, 'a driver with no DRS skill must not deploy');
+});
+
 test('a spin requires the car to be facing backwards AND stopped', () => {
   // Testing the heading alone reverses the car mid-corner, where a large angle to
   // the track is normal, and it drives away down the escape road.

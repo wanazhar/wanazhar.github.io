@@ -48,6 +48,13 @@ const ERS_CURVATURE = 0.0035;
 const ERS_SLIDE_LIMIT = 0.14;
 /** How readily a driver spends energy with no car in sight, as a fraction of `drsSkill`. */
 const ERS_OPPORTUNISM = 0.35;
+/**
+ * DRS: flat enough for the flap, and a car close enough behind to make it worth using.
+ *
+ * The gate is the input to a decision, not the decision itself -- see `#shouldUseDrs`.
+ */
+const DRS_CURVATURE = 0.003;
+const DRS_GAP = 140;
 
 /**
  * Is the pit entry coming up?
@@ -251,6 +258,16 @@ export class AIDriver {
     this.defendIntent = 0;
     this.trackIndex = 0;
     this.offTrackTimer = 0;
+    /**
+     * Whether this driver has committed to DRS for the stretch of straight it is on.
+     *
+     * The decision is a roll against `drsSkill` and it was re-rolled on every call, which is
+     * every physics step: at 120 steps a second a driver with 0.7 skill had the flap open on
+     * 70% of frames instead of either using it or not. The drag became the average of the two
+     * states, the wing strobed, and "skill" turned into a duty cycle. It is latched here
+     * instead, and released when the gate closes.
+     */
+    this.drsLatch = false;
   }
 
   /**
@@ -823,12 +840,24 @@ export class AIDriver {
     return { targetSpeed };
   }
 
+  /**
+   * Whether to open the DRS flap, as a decision rather than a per-step coin flip.
+   *
+   * The gate is a straight with a car within `DRS_GAP` behind. While it holds, the driver
+   * rolls once and then lives with the answer, because that is what a driver does: DRS is
+   * deployed for a straight, not modulated at 120 Hz. The latch is dropped the moment the
+   * gate fails, so the next straight is a fresh decision.
+   */
   #shouldUseDrs(context, sample) {
     if (!this.skill.drsSkill) return false;
-    if (Math.abs(sample.curvature) > 0.003) return false;
     const behind = context.opponentBehind;
-    if (!behind || behind.gap > 140) return false;
-    return this.random() < this.skill.drsSkill;
+    const open = Math.abs(sample.curvature) <= DRS_CURVATURE && behind && behind.gap <= DRS_GAP;
+    if (!open) {
+      this.drsLatch = false;
+      return false;
+    }
+    if (!this.drsLatch) this.drsLatch = this.random() < this.skill.drsSkill;
+    return this.drsLatch;
   }
 
   /**
@@ -947,6 +976,7 @@ export class AIDriver {
     this.offTrackTimer = 0;
     this.trackIndex = 0;
     this.pendingControls = { throttle: 0, brake: 0, steer: 0 };
+    this.drsLatch = false;
     this.physics.drsOpen = false;
     this.physics.direction = 1;
   }
