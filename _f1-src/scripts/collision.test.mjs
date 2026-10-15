@@ -127,6 +127,30 @@ console.log('\npunt down the side');
     `yawRate ${a.physics.yawRate.toFixed(3)}`);
 }
 
+console.log('\nthe direction of the rotation, not just its size');
+{
+  /*
+   * A shove on a car's front-right corner must swing its nose left, away from the car that
+   * shoved it. The sign of that kick is what makes contact a deflection rather than a
+   * magnet, and it is the one thing an |yawRate| > 0.05 assertion cannot see: with the
+   * normal passed in the a-to-b direction instead of the direction of the push, every
+   * collision rotated both cars *into* each other and the bounds check above still passed.
+   */
+  const victim = carAt(0, 0, 0, 30);
+  const striker = carAt(1.2, 1.6, 0, 30); // ahead and to the victim's right
+  resolveCarContacts([victim, striker]);
+  check(
+    'a rub on the front-right rotates the victim away from the striker',
+    victim.physics.yawRate < 0,
+    `yawRate ${victim.physics.yawRate.toFixed(3)}`
+  );
+  check(
+    'and the lateral push agrees with the rotation',
+    victim.physics.vLat < 0,
+    `vLat ${victim.physics.vLat.toFixed(3)}`
+  );
+}
+
 console.log('\ndegenerate overlap');
 {
   // Exactly the same point: no separation vector can be derived from position.

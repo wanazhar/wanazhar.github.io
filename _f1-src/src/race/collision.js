@@ -273,8 +273,8 @@ function resolvePair(a, b) {
   recordContact(a, b, magnitude);
   recordContact(b, a, magnitude);
 
-  applyYawKick(a, dx, dz, nx, nz, magnitude);
-  applyYawKick(b, -dx, -dz, -nx, -nz, magnitude);
+  applyYawKick(a, dx, dz, -nx, -nz, magnitude);
+  applyYawKick(b, -dx, -dz, nx, nz, magnitude);
 }
 
 /**
@@ -296,9 +296,15 @@ function resolvePair(a, b) {
  * @param {object} struck the car taking the hit
  * @param {number} ox offset from struck to striker, along struck's heading, metres
  * @param {number} oz offset from struck to striker, across struck's heading, metres
- * @param {number} nx contact normal, pointing into `struck`
+ * @param {number} nx direction the impulse *pushes* `struck` -- which is the contact normal
+ *   for the other car and its negation for this one, because the pair is equal and opposite
  * @param {number} nz
  * @param {number} magnitude impulse magnitude in N*s
+ *
+ * The normal is passed in the direction of the push, not in the a-to-b direction the caller
+ * happens to have: that sign is what makes a side rub rotate a car *away* from the car it
+ * touched. Passing the wrong one applies a rear-corner shunt as though it were a front-corner
+ * one, so every collision steers both cars into each other.
  */
 function applyYawKick(struck, ox, oz, nx, nz, magnitude) {
   if (magnitude <= 0) return;
