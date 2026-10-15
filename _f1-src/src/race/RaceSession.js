@@ -221,6 +221,18 @@ setup.lapMetres = track.length;
         inPitLane: false,
         lastPitLap: 0,
         distance: 0,
+        /**
+         * Watchdog references, initialised here rather than left undefined.
+         *
+         * `car.bestDistance ?? distance` made the reference follow the car: on a fresh car
+         * the stored value is absent on every call, so `distance > reference + 20` can never
+         * be true, `noProgressFor` accumulates from the first step, and every AI car is
+         * rescued for "going nowhere" about 25 seconds into every race while running at race
+         * speed. The car only heals after that first free teleport, which is why it looked
+         * like a one-off in the middle of the field.
+         */
+        bestDistance: 0,
+        noProgressFor: 0,
         speed: 0,
         lateral: located.lateral,
         onTrack: true,
@@ -657,7 +669,7 @@ setup.lapMetres = track.length;
        * thing it is meant to: a car that is genuinely going nowhere.
        */
       const distance = car.distance ?? 0;
-      const reference = car.bestDistance ?? distance;
+      const reference = car.bestDistance;
       if (distance < reference - this.track.length * 0.5) {
         car.bestDistance = distance;
         car.noProgressFor = 0;
@@ -684,6 +696,12 @@ setup.lapMetres = track.length;
       if (car.isPlayer) {
         // The player is told rather than moved behind their back: they have a
         // manual recovery key for this.
+        //
+        // The watchdog is reset first. Without it `goingNowhere` latched true for the rest
+        // of the race and the offer re-fired every RESCUE_DELAY seconds, which is a prompt
+        // nobody can answer rather than a prompt.
+        car.noProgressFor = 0;
+        car.bestDistance = car.distance;
         this.onStranded?.(car);
       } else if (car.ai) {
         car.ai.rescue(car.physics, this.track);

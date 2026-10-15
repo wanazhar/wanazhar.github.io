@@ -1377,6 +1377,35 @@ test('a car that stops making progress is recovered, even while still moving', (
     session.update(FIXED_TIMESTEP, { throttle: 0, brake: 0, steer: 0, handbrake: false });
   }
   assert.equal(movingRescues, 0, 'a car making progress must not be rescued');
+
+  /*
+   * The same check on a *fresh* car, which is the case that was broken.
+   *
+   * `car.bestDistance ?? car.distance` made the reference follow the car whenever the stored
+   * value was absent, so the improvement branch could never be true on a car that had never
+   * been rescued: `noProgressFor` accumulated from the first step, and every AI car was
+   * teleported back to the racing line around 25 seconds into every race, at racing speed.
+   * The car only healed after that first free rescue, which is why the loop above -- reusing
+   * a car that had already been rescued -- did not catch it.
+   */
+  const fresh = new RaceSession({
+    track,
+    entries: [entry],
+    type: SESSION_TYPE.race,
+    totalLaps: 1,
+    random: () => 0.5
+  });
+  const driven = fresh.cars[0];
+  let freshRescues = 0;
+  driven.ai.rescue = () => {
+    freshRescues += 1;
+  };
+  const startOdometer = driven.physics.odometer;
+  for (let step = 0; step < seconds(35); step += 1) {
+    fresh.update(FIXED_TIMESTEP, { throttle: 0, brake: 0, steer: 0, handbrake: false });
+  }
+  assert.equal(freshRescues, 0, 'a fresh car running at race speed must not be rescued');
+  assert.ok(driven.physics.odometer > startOdometer + 500, 'the car must actually have made progress');
 });
 
 test('the start lights hold every car until they go out', () => {
