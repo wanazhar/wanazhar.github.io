@@ -51,21 +51,10 @@ export const LINE_RELAX_ITERATIONS = 1400;
  * always above the target it is aiming at, so corrections stay small.
  */
 const PROFILE_MU = 0.95;
-const PROFILE_BRAKE = 9.5;
+export const PROFILE_BRAKE = 9.5;
 const PROFILE_ACCEL = 5.4;
 /** ~340 km/h, an upper bound for the profile even on the fastest circuits. */
 const PROFILE_TOP_SPEED = 94;
-/**
- * Floor on the profile, as a fraction of the corner speed rather than an
- * absolute value.
- *
- * An absolute floor is a trap here. It silently overrides the corners that
- * genuinely need to be taken slower, so the AI is told to carry 60 km/h through
- * a hairpin it can only take at 35, arrives far too fast, runs wide, and never
- * recovers. Scaling from the corner's own speed keeps the floor out of the way
- * of tight corners while still preventing absurdly slow ones.
- */
-const PROFILE_MIN_FRACTION = 0.72;
 /**
  * Curvature smoothing window for the speed profile, in samples.
  *
@@ -75,6 +64,7 @@ const PROFILE_MIN_FRACTION = 0.72;
  * distinct.
  */
 const PROFILE_CURVATURE_WINDOW = 18;
+export { PROFILE_CURVATURE_WINDOW };
 
 /** Half the width of the local window a car is searched for when tracking progress. */
 const LOCATE_WINDOW = 44;
@@ -335,7 +325,7 @@ function resampleClosed(points, spacing) {
 }
 
 /** Circular box blur over a Float64Array, used to tame finite-difference noise. */
-function smoothCircular(values, window) {
+export function smoothCircular(values, window) {
   const n = values.length;
   const half = Math.max(1, Math.floor(window / 2));
   const span = half * 2 + 1;
@@ -508,9 +498,22 @@ function buildSpeedProfile(curvatures, step, topSpeed) {
     }
   }
 
-  for (let i = 0; i < n; i += 1) {
-    speeds[i] = Math.max(gripSpeeds[i] * PROFILE_MIN_FRACTION, speeds[i]);
-  }
+  /*
+   * There is deliberately no floor on the result.
+   *
+   * A floor expressed as a fraction of the corner's own grip speed used to be applied here,
+   * after the passes, to stop the profile becoming "absurdly slow". It cannot do that job
+   * from this position: the passes are the braking and acceleration reachability of the
+   * corners ahead and behind, so raising a sample back up to 0.72 of its grip speed puts
+   * back exactly the speed the passes had just ruled out. The visible effect was a plateau
+   * at 0.72 of top speed in every braking zone -- up to 703 samples per circuit -- followed
+   * by a jump to the corner it was supposed to be braking for, demanding up to 486 m/s^2 of
+   * deceleration from a profile whose own reference is 9.5.
+   *
+   * Nothing else is needed. `speeds` starts at the grip limit and the passes only ever lower
+   * it, so the only places the profile is slow are places a corner or a braking zone makes
+   * slow -- which is the floor's stated purpose, achieved by construction.
+   */
   return speeds;
 }
 
