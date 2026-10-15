@@ -36,7 +36,10 @@ import {
   CLOSURE_TOLERANCE,
   CHECKPOINT_COUNT,
   LINE_RELAX_ITERATIONS,
-  SAMPLE_SPACING
+  PROFILE_BRAKE,
+  PROFILE_CURVATURE_WINDOW,
+  SAMPLE_SPACING,
+  smoothCircular
 } from '../src/track/trackGeometry.js';
 import { profileFromPins, radialLoop } from '../src/track/circuitShapes.js';
 import {
@@ -2623,21 +2626,73 @@ test('the racing line stays inside the kerbs and is actually driveable', () => {
 test('the speed profile asks for less grip than the car has', () => {
   for (const circuit of CIRCUITS) {
     const track = buildTrack(circuit);
-    for (const s of track.samples) {
-      const kappa = Math.abs(s.lineCurvature);
-      if (kappa < 1e-4) continue;
-      const implied = (s.targetSpeed * s.targetSpeed) / (1 / kappa);
+    /*
+     * Checked against the curvature the profile was *built from*, not the raw curvature of
+     * the sampled points. The profile smooths it over PROFILE_CURVATURE_WINDOW samples
+     * precisely because finite differences oscillate -- the test below this one exists for
+     * the same reason -- so a sample-by-sample check against the raw value is asking the
+     * profile to honour a limit it deliberately does not use. (With the raw value it also
+     * fails: Bahrain's sample 183 demands 1.77g against a smoothed bound of 0.95g.)
+     */
+    const kappa = smoothCircular(
+      track.samples.map((s) => s.lineCurvature),
+      PROFILE_CURVATURE_WINDOW
+    );
+    track.samples.forEach((s, i) => {
+      const implied = s.targetSpeed * s.targetSpeed * Math.abs(kappa[i]);
       // The profile must sit below what the car can actually hold *with* downforce.
       // A bare friction coefficient is the wrong bound: at speed the aero load
       // multiplies available grip several times over, and a profile checked
       // against it would be rejected for being achievable.
       const downforce = 0.5 * 1.225 * DEFAULT_GEOMETRY.downforceArea * s.targetSpeed * s.targetSpeed;
       const grip = (TYRE.peakGrip * (DEFAULT_GEOMETRY.mass * GRAVITY + downforce)) / DEFAULT_GEOMETRY.mass;
+      /*
+       * Both sides are accelerations in m/s^2, and `grip` already contains gravity.
+       *
+       * The extra `* GRAVITY` that used to be here turned the bound into roughly
+       * 9.8 x 0.85 x 9.8 m/s^2 -- about 8.5g of grip, or several times what the car has
+       * even at speed. The assertion could not fail for any positive speed, which is how
+       * a speed profile demanding 486 m/s^2 of braking passed a test whose whole subject
+       * was "the profile asks for less than the car has".
+       */
       assert.ok(
-        implied < grip * GRAVITY * 0.85,
+        implied < grip * 0.85,
         `${circuit.id} profile demands ${(implied / GRAVITY).toFixed(2)}g at sample ${s.index}`
       );
+    });
+  }
+});
+
+test('the speed profile only asks for braking the profile itself allows', () => {
+  /*
+   * The profile carries its own reference braking, well under what the car can do, and its
+   * backwards pass is built on it: between two adjacent samples the profile can therefore
+   * never demand more deceleration than that reference. It did. A floor of 0.72 of the
+   * corner speed was applied *after* the reachability passes, so a sample in the middle of a
+   * braking zone was raised back up to the floor and then dropped to the corner speed one
+   * sample later -- up to 486 m/s^2 between samples four metres apart, in a profile whose
+   * own reference is 9.5. Nothing in the suite looked at the difference between adjacent
+   * samples, so the profile was undriveable and the tests agreed it was fine.
+   */
+  for (const circuit of CIRCUITS) {
+    const track = buildTrack(circuit);
+    let worst = 0;
+    let at = 0;
+    for (let i = 0; i < track.count; i += 1) {
+      const from = track.samples[i].targetSpeed;
+      const to = track.samples[(i + 1) % track.count].targetSpeed;
+      if (to >= from) continue;
+      const demand = (from * from - to * to) / (2 * track.step);
+      if (demand > worst) {
+        worst = demand;
+        at = track.samples[i].index;
+      }
     }
+    assert.ok(
+      worst <= PROFILE_BRAKE * 1.05,
+      `${circuit.id} asks for ${worst.toFixed(1)} m/s^2 between samples at ${at}; ` +
+        `the profile's own reference is ${PROFILE_BRAKE}`
+    );
   }
 });
 
