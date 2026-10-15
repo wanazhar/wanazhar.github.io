@@ -3323,6 +3323,42 @@ test('the AI scan-ahead speed plan brakes in time for the slowest corner', () =>
   assert.doesNotMatch(aiSource, /targetSpeed = racingLineAt\(track, brakeLookAhead\)/);
 });
 
+test('off the line is measured to the line, on either side of the centreline', () => {
+  /*
+   * The off-track distance was `|lateral| - |lineOffset|`, which is the distance to the line
+   * only while the car and the line are on the same side of the centreline. On the other side
+   * it under-reports by twice the line's own offset -- and the run-off speed cap and the
+   * rejoin behaviour both key off that number, so a car 13m from the line was measured at 10m
+   * and left to race on at full speed while the same departure on the line's own side of the
+   * centreline read as a trip through the gravel.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  // A straight where the racing line sits well to the left of the centreline.
+  const candidates = track.samples.filter(
+    (s) => s.lineOffset < -1.5 && Math.abs(s.curvature) < 0.002 && s.width > 8
+  );
+  assert.ok(candidates.length > 0, 'precondition: monza has a straight with the line left of centre');
+  const sample = candidates.reduce((a, b) => (Math.abs(b.curvature) < Math.abs(a.curvature) ? b : a));
+
+  // Ten metres past the line, which puts the car right of the centreline with the line to its left.
+  const lateral = Math.abs(sample.lineOffset) + 10;
+  const car = new CarPhysics();
+  car.reset(sample.x + sample.rightX * lateral, sample.z + sample.rightZ * lateral, sample.heading, 40);
+  const driver = new AIDriver(car, SKILL_PRESETS.strong, { track, random: () => 0.5 });
+  driver.update(FIXED_TIMESTEP, {});
+
+  assert.ok(
+    track.samples[driver.trackIndex].lineOffset < 0,
+    'precondition: the line is still left of centre where the car was placed'
+  );
+  assert.ok(
+    driver.offTrackDistance > 12,
+    `10m past the line, on the far side of the centreline, measured ` +
+      `${driver.offTrackDistance.toFixed(2)}m; under the old formula it was 10.00m and the ` +
+      `12m rejoin threshold (OFF_TRACK_REJOIN) never fired`
+  );
+});
+
 test('DRS is a decision the AI makes once per straight, not a per-step coin flip', () => {
   /*
    * `#shouldUseDrs` re-rolled `random() < drsSkill` on every call, and it is called once per

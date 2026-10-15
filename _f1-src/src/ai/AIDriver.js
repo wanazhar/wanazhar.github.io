@@ -268,6 +268,8 @@ export class AIDriver {
      * instead, and released when the gate closes.
      */
     this.drsLatch = false;
+    /** Distance from the racing line, mirrored for telemetry. */
+    this.offTrackDistance = 0;
   }
 
   /**
@@ -326,9 +328,21 @@ export class AIDriver {
         this.overtakeIntent = 1;
       }
     }
-    const offTrackDistance = Math.max(0, Math.abs(located.lateral) - Math.abs(lineOffset));
+    /*
+     * How far the car is from the line it is trying to drive, on either side of the centreline.
+     *
+     * This was `|lateral| - |lineOffset|`, which is the distance to the line only when the car
+     * happens to be on the same side of the centreline as the line is. On the other side it
+     * under-reports by twice the line's own offset, and this number is not cosmetic: the
+     * run-off speed cap and the rejoin behaviour both key off it, so a car 13m from the line
+     * measured 7m and drove on at racing speed, while on the same side of the line the
+     * softest departure from it read as a trip through the gravel.
+     */
+    const offTrackDistance = Math.abs(located.lateral - lineOffset);
     const offTrack = offTrackDistance > OFF_TRACK_DISTANCE;
     this.offTrackTimer = offTrack ? this.offTrackTimer + dt : 0;
+    /** Mirrored for telemetry, and for the test that pins the measurement. */
+    this.offTrackDistance = offTrackDistance;
 
     // --- Steering ------------------------------------------------------------
     // Both controller terms are measured at the car's *own* position on the
