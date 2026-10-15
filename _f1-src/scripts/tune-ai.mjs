@@ -39,7 +39,8 @@ function drive(car, track, gains) {
     const damping = gains.stanley / (1 + car.speed * gains.dampRate);
     const correction = Math.atan2(crossTrack * damping, Math.max(car.speed, 6));
     let steer = clamp(headingError * gains.headingGain + correction, -1, 1);
-    steer -= car.rearSlipAngle * gains.counterSteer;
+    // Counter-steer keeps the slide's own sign; see the note in `AIDriver`.
+    steer += car.rearSlipAngle * gains.counterSteer;
 
     // speed plan
     const lookAhead = gains.brakeMin + car.speed * car.speed * gains.brakeV2;

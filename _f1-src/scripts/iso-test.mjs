@@ -57,7 +57,8 @@ function run(circuitId, options = {}) {
     const headingError = wrapAngle(sample.lineHeading + leadHeading - car.heading);
     const correction = Math.atan2(crossTrack * stanleyGain, Math.max(car.speed, 4) + 8);
 
-    const steer = clamp(headingError * headingGain + correction - car.rearSlipAngle * 1.4, -1, 1);
+    // Counter-steer keeps the slide's own sign; see the note in `AIDriver`.
+    const steer = clamp(headingError * headingGain + correction + car.rearSlipAngle * 1.4, -1, 1);
 
     // Speed: slowest allowed speed within the braking window.
     const lookAhead = 40 + car.speed * car.speed * 0.05;

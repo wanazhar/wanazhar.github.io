@@ -361,9 +361,19 @@ export class AIDriver {
     // below full lock so there is always authority left in the other.
     const headingTerm = softLimit(headingError * HEADING_GAIN, STEER_LIMIT * 0.62);
     const crossTerm = softLimit(correction, STEER_LIMIT * 0.34);
-    // Counter-steer against a slide so the AI catches its own oversteer.
+    /*
+     * Counter-steer against a slide so the AI catches its own oversteer.
+     *
+     * The sign is the easy thing to get wrong, and it was: `rearSlipAngle` is the slip of
+     * the rear axle in the direction the car is sliding, so the correction points the same
+     * way -- *into* the direction of travel, not into the rotation. Subtracting the term
+     * steers the way the car is already yawing, which is exactly the input that grows the
+     * slide: measured on the car model, from a right-hand slide at 50 m/s, 0.25 s of
+     * `-0.15` of steering (the correct direction) settles the slide, while `+0.15` -- what
+     * this line used to command -- grows both the slip and the yaw rate.
+     */
     const slide = softLimit(physics.rearSlipAngle * COUNTER_STEER, STEER_LIMIT * 0.4);
-    const steer = clamp(headingTerm + crossTerm - slide, -STEER_LIMIT, STEER_LIMIT);
+    const steer = clamp(headingTerm + crossTerm + slide, -STEER_LIMIT, STEER_LIMIT);
 
     // --- Speed target ---------------------------------------------------------
     // Speed target.

@@ -38,7 +38,9 @@ function check(track) {
     const lh = clamp(wrapAngle(ahead.heading - smp.lineHeading), -0.32, 0.32);
     const he = wrapAngle(smp.lineHeading + lh - car.heading);
     const corr = Math.atan2(cross * 3.0, Math.max(car.speed, 4) + 8);
-    const steer = clamp(he * 1.6 + corr - car.rearSlipAngle * 1.4, -1, 1);
+    // The counter-steer term keeps the slide's own sign: it steers into the direction of
+    // travel, which is what catches a slide. See the note in `AIDriver`.
+    const steer = clamp(he * 1.6 + corr + car.rearSlipAngle * 1.4, -1, 1);
 
     // Track the profile exactly: aim for the profile speed at this point.
     const target = smp.targetSpeed;
