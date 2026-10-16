@@ -2164,15 +2164,25 @@ test('elevation is real data, and the gradient stays driveable', () => {
    * circuit gives 11.1m -- an underestimate by about 6x. Re-smoothing does not recover it
    * (+/-3 points still gives 1.6m), so the trace itself is flat, not the smoothing.
    *
+   * `vegas` is the other absence: the Strip circuit is mapped in fragments, so only 4 of the
+   * 240 profile buckets fill and there is no trace worth sampling. Both are recorded in
+   * `scripts/fetch-elevation.mjs`'s refusal list with the measurement that refuses them.
+   *
    * A wrong profile is worse than a missing one: a missing circuit renders flat *honestly*,
    * while a wrong one renders a real circuit incorrectly, and at Silverstone that silently
    * removes the Chapel and Maggotts/Becketts elevation changes.
+   *
+   * The set is asserted exactly rather than counted. "At least 22 of 24" also passes when one
+   * of these two gains a profile and a different circuit loses its own: the count is identical
+   * either way, but the second file has a circuit nobody decided to drop.
    */
-  const refused = Object.keys(ELEVATION).filter((id) => id === 'silverstone');
-  assert.deepEqual(refused, [], 'silverstone must be refused, not published from a wrong trace');
-  assert.ok(
-    withData.length >= CIRCUITS.length - 2,
-    `expected at least ${CIRCUITS.length - 2} of ${CIRCUITS.length} circuits to have elevation, got ${withData.length}`
+  const withoutProfile = CIRCUITS.map((circuit) => circuit.id)
+    .filter((id) => !ELEVATION[id])
+    .sort();
+  assert.deepEqual(
+    withoutProfile,
+    ['silverstone', 'vegas'],
+    'only circuits refused with a measurement may be missing a profile'
   );
 
   for (const [id, entry] of withData) {

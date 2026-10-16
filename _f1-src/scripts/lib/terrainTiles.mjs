@@ -187,8 +187,13 @@ export function elevationFromTile(tile, latitude, longitude, zoom) {
 
   // `at` clamps to the tile, so a sample on the boundary degrades gracefully to its edge
   // pixel instead of reading out of bounds. No special case is needed for that.
+  //
+  // Four corners, each read once. `bottom` interpolated between `(fx, fy)` and `(fx, fy + 1)`
+  // -- the same left edge `top` had already read -- so the horizontal term disappeared below
+  // the first row of pixels and every sample below it was pulled towards the column to its
+  // left. Nothing threw, nothing looked wrong, and the profiles were built from it.
   const top = lerp(at(fx, fy), at(fx + 1, fy), tx);
-  const bottom = lerp(at(fx, fy), at(fx, fy + 1), tx);
+  const bottom = lerp(at(fx, fy + 1), at(fx + 1, fy + 1), tx);
   return lerp(top, bottom, ty);
 }
 

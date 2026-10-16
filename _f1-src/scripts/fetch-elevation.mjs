@@ -129,7 +129,12 @@ const OVERPASS_MIRRORS = [
  * on", and `verifyLapLength` is the backstop for everything that slips through.
  */
 /**
- * Circuits whose traced geometry does not match the circuit, measured and refused.
+ * Circuits refused a profile, with the measurement that refuses them.
+ *
+ * A wrong profile is worse than a missing one: a missing circuit renders flat *honestly* while
+ * a wrong one renders a real circuit incorrectly. An absence in here is therefore a decision
+ * with numbers behind it rather than a gap waiting to be filled, and the coverage test asserts
+ * the absent set is exactly these two, so a third cannot appear quietly.
  *
  * `silverstone`: the 95 `highway=raceway` ways within 2km of the Grand Prix circuit include
  * enough of the rest of the Silverstone estate to pass the extent check, and the resulting
@@ -138,14 +143,18 @@ const OVERPASS_MIRRORS = [
  * relief by roughly 6x. Smoothing is not the cause: re-smoothing the profile at +/-3 points
  * still only gives 1.6m, so the trace itself is flat.
  *
- * Refused rather than shipped. A wrong profile is worse than a missing one, because a missing
- * circuit renders flat *honestly* while a wrong one renders a real circuit incorrectly -- and
- * at Silverstone that silently removes the Chapel and Maggotts/Becketts changes of elevation.
- *
  * To restore it, the geometry needs to come from a trace that is actually the Grand Prix loop
  * (a relation rather than a bag of ways, or a manual way id list), not from a proximity query.
+ *
+ * `vegas`: the Strip circuit threads between buildings and OSM has it in fragments, so the
+ * proximity query fills 4 of the 240 profile buckets -- far under the 12 that make a profile
+ * more than interpolation between neighbours. There is no trace to sample, so the circuit is
+ * recorded as refused rather than left to the bucket count to reject.
  */
-const REFUSED = new Set(['silverstone']);
+const REFUSED = new Map([
+  ['silverstone', 'traced geometry does not match the circuit'],
+  ['vegas', 'only 4 of 240 profile buckets are mapped']
+]);
 
 const RACEWAY_QUERIES = [
   '["highway"="raceway"]',
@@ -332,7 +341,7 @@ async function buildProfile(id, centre, points, force) {
    * otherwise return the stale profile and quietly stay in the output.
    */
   if (REFUSED.has(id)) {
-    console.log(`  ${id.padEnd(14)} refused: traced geometry does not match the circuit`);
+    console.log(`  ${id.padEnd(14)} refused: ${REFUSED.get(id)}`);
     return null;
   }
 
