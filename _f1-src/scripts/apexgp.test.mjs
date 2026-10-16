@@ -3359,6 +3359,54 @@ test('off the line is measured to the line, on either side of the centreline', (
   );
 });
 
+test('a recovered car gets the normal controller back, not a stale recovery command', () => {
+  /*
+   * `recoveryTimer` meant two things at once. Inside the spin manoeuvre it accumulated the
+   * seconds spent recovering -- that is what the reverse-engage hold is measured against --
+   * while a leftover "recovery is time-boxed" block further down still read it as a countdown
+   * of how long to hold *full throttle with the steering inverted*, and nothing reset it when
+   * the car recovered. A driver who spun for three seconds therefore got three seconds of
+   * full throttle fighting the line once the car was already back up to racing speed: the
+   * ghost of the spin, lasting exactly as long as the spin did.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const candidates = track.samples.filter(
+    (s) => s.lineOffset < -1.5 && Math.abs(s.curvature) < 0.002 && s.width > 8
+  );
+  const sample = candidates.reduce((a, b) => (Math.abs(b.curvature) < Math.abs(a.curvature) ? b : a));
+  const x = sample.x + sample.rightX * 4;
+  const z = sample.z + sample.rightZ * 4;
+
+  // What a driver with no history commands, driving this exact state.
+  const clean = new CarPhysics();
+  clean.reset(x, z, sample.heading, 40);
+  const cleanDriver = new AIDriver(clean, SKILL_PRESETS.strong, { track, random: () => 0.5 });
+  const expected = cleanDriver.update(FIXED_TIMESTEP, {});
+
+  // Now a driver that has just spent a second and a half facing the wrong way. Those 180
+  // frames are what the old code banked into `recoveryTimer`.
+  const car = new CarPhysics();
+  car.reset(sample.x, sample.z, sample.heading + Math.PI, 0);
+  const driver = new AIDriver(car, SKILL_PRESETS.strong, { track, random: () => 0.5 });
+  for (let i = 0; i < 180; i += 1) {
+    car.step(FIXED_TIMESTEP, driver.update(FIXED_TIMESTEP, {}), { grip: 1 });
+  }
+  assert.equal(car.direction, -1, 'precondition: the recovery engaged reverse');
+
+  car.reset(x, z, sample.heading, 40);
+  const afterSpin = driver.update(FIXED_TIMESTEP, {});
+
+  assert.ok(
+    Math.abs(afterSpin.steer - expected.steer) < 0.15,
+    `a recovered car must steer like a fresh one: ${afterSpin.steer.toFixed(3)} vs ` +
+      `${expected.steer.toFixed(3)} -- the stale countdown returned ${(-expected.steer).toFixed(3)}`
+  );
+  assert.ok(
+    afterSpin.throttle < 0.5,
+    `and must not be handed full throttle once it is moving again (got ${afterSpin.throttle.toFixed(2)})`
+  );
+});
+
 test('DRS is a decision the AI makes once per straight, not a per-step coin flip', () => {
   /*
    * `#shouldUseDrs` re-rolled `random() < drsSkill` on every call, and it is called once per

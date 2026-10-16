@@ -251,7 +251,10 @@ export class AIDriver {
     this.pendingControls = { throttle: 0, brake: 0, steer: 0 };
     /** Seconds below walking pace, and seconds spent reversing out of trouble. */
     this.stallTimer = 0;
-    this.recoveryTimer = 0;
+    /** Seconds the current recovery manoeuvre has been running. Reset when it starts. */
+    this.recoveryElapsed = 0;
+    /** Whether the car is currently in a spin/reverse manoeuvre. */
+    this.recovering = false;
     /** Heading error when the current spin began, so progress can be judged against it. */
     this.recoveryFrom = null;
     this.overtakeIntent = 0;
@@ -598,8 +601,23 @@ export class AIDriver {
        * reversing while the car is still badly misaligned *and* the alignment is improving,
        * and gives up the moment either stops being true -- because a car that is not getting
        * any closer to facing forwards does not want a second helping.
+       *
+       * Third, and only visible once the second was in: `recoveryTimer` was left meaning two
+       * things at once. Here it accumulated the seconds spent in the manoeuvre, and that is
+       * what the reverse-engage hold is measured against. But a leftover "recovery is
+       * time-boxed" block further down still read it as a *countdown* of how long to hold full
+       * throttle with the steering inverted, and nothing reset it when the car recovered. A
+       * driver who spun for three seconds therefore got three seconds of full throttle with
+       * the steering fighting the line, once the car was already back up to racing speed --
+       * and the longer the spin, the longer the ghost. That block is gone: the elapsed clock is
+       * what this manoeuvre needs, and the manoeuvre ends on the outcome.
        */
-      this.recoveryTimer += dt;
+      if (!this.recovering) {
+        this.recovering = true;
+        this.recoveryElapsed = 0;
+        this.recoveryFrom = null;
+      }
+      this.recoveryElapsed += dt;
 
       if (spun && !rollingBackwards) {
         const error = Math.abs(headingError);
@@ -611,7 +629,7 @@ export class AIDriver {
         const stillMisaligned = error > SPIN_ALIGNED;
 
         // Hold the brake first: reverse only engages after it, and throttle would cancel it.
-        if (physics.direction === 1 && this.recoveryTimer < REVERSE_ENGAGE_HOLD + 0.2) {
+        if (physics.direction === 1 && this.recoveryElapsed < REVERSE_ENGAGE_HOLD + 0.2) {
           return { throttle: 0, brake: 1, steer: 0, handbrake: false };
         }
 
@@ -621,7 +639,8 @@ export class AIDriver {
 
         // Aligned, or no longer converging: stop recovering and let the normal controller
         // have the car back.
-        this.recoveryTimer = 0;
+        this.recovering = false;
+        this.recoveryElapsed = 0;
         this.recoveryFrom = null;
       }
 
@@ -633,20 +652,11 @@ export class AIDriver {
       };
     }
 
-    // Recovery is time-boxed. Reversing is a manoeuvre for getting out of one
-    // specific situation, not a driving mode: left to itself the AI holds reverse
-    // and drives steadily away from the circuit. If it has not recovered within
-    // a couple of seconds it gives up reversing and simply drives forward.
-    if (this.recoveryTimer > 0) {
-      this.recoveryTimer -= dt;
-      if (this.recoveryTimer <= 0) this.recoveryFrom = null;
-      return {
-        throttle: 1,
-        brake: 0,
-        steer: rollingBackwards ? commandedSteer : -commandedSteer,
-        handbrake: false
-      };
-    }
+    // Out of trouble. The next spin starts its own manoeuvre with its own clock, rather than
+    // inheriting the last one's elapsed seconds and skipping the reverse-engage hold.
+    this.recovering = false;
+    this.recoveryElapsed = 0;
+    this.recoveryFrom = null;
 
     // --- Well off the road ---------------------------------------------------
     // A car that has left the track entirely and is heading away from it cannot
@@ -972,7 +982,9 @@ export class AIDriver {
     this.paceAdaptation = 1;
     this.offsetBias = 0;
     this.mistakeTimer = 0;
-    this.recoveryTimer = 0;
+    this.recovering = false;
+    this.recoveryElapsed = 0;
+    this.recoveryFrom = null;
     this.stallTimer = 0;
     this.offTrackTimer = 0;
   }
@@ -986,7 +998,9 @@ export class AIDriver {
     this.mistakeTimer = 0;
     this.reactionDelay = 0;
     this.stallTimer = 0;
-    this.recoveryTimer = 0;
+    this.recovering = false;
+    this.recoveryElapsed = 0;
+    this.recoveryFrom = null;
     this.offTrackTimer = 0;
     this.trackIndex = 0;
     this.pendingControls = { throttle: 0, brake: 0, steer: 0 };
