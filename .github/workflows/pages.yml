@@ -91,6 +91,13 @@ jobs:
       # unit-level control coverage lives in scripts/movement-direction.test.js
       # and runs as part of "npm test" above.
 
+      # Apex GP has no dev-only runtime harness beyond node:test, but the suite is
+      # the only thing standing between a generated-centrelines change and a circuit
+      # that no longer closes, so it gates the deploy rather than running after it.
+      #
+      # Its build and its install are the pair near the top of this job, with the other
+      # projects. Both used to be listed a second time down here, which ran `npm ci`,
+      # the build and the whole suite twice on every push for the same answer.
       - name: Test Apex GP
         working-directory: _f1-src
         run: |
@@ -100,20 +107,6 @@ jobs:
         working-directory: _kualalumpur-src
         run: |
           npm run validate:budget
-
-      - name: Build Apex GP
-        working-directory: _f1-src
-        run: |
-          npm ci
-          npm run build
-
-      # Apex GP has no dev-only runtime harness beyond node:test, but the suite is
-      # the only thing standing between a generated-centrelines change and a circuit
-      # that no longer closes, so it gates the deploy rather than running after it.
-      - name: Test Apex GP
-        working-directory: _f1-src
-        run: |
-          npm test
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
