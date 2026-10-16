@@ -601,8 +601,19 @@ const roadMaterial = new THREE.MeshStandardMaterial({
   );
   const startSample = samples[0];
   line.rotation.x = -Math.PI / 2;
-  line.rotation.z = -startSample.heading;
-  line.position.set(startSample.x, 0.03, startSample.z);
+  /*
+   * The same 90-degree offset as the start gantry, and for the same reason.
+   *
+   * The plane is `track.width` across its local X, and the track's heading describes travel as
+   * `(cos h, sin h)` in world (x, z), so the line has to be turned by `pi/2 - h` to lie *across*
+   * the road. With `-h` it stood along it: a 15m stripe painted down the middle of the main
+   * straight instead of a line to cross, and on a circuit whose start straight does not run
+   * north-south, mirrored away from the road as well.
+   */
+  line.rotation.z = Math.PI / 2 - startSample.heading;
+  // On the road surface at the start line rather than at sea level: this was `0.03` absolute,
+  // which is 2.2km underground at Mexico City.
+  line.position.set(startSample.x, startSample.y + 0.03, startSample.z);
   group.add(line);
 
   return group;

@@ -3088,6 +3088,47 @@ test('a pit stop actually happens, and it actually costs time', () => {
   );
 });
 
+test('the start line is painted across the road, on the road', () => {
+  /*
+   * The line is a plane `track.width` wide and 1.6m deep, and it was turned by `-heading`. The
+   * track's heading describes travel as `(cos h, sin h)` in world (x, z), so `-h` puts the line's
+   * *width* along the direction of travel: a 15m stripe painted down the middle of the start
+   * straight rather than a line across it, mirrored off the road entirely wherever the straight
+   * does not happen to run at a heading of 0. It was also placed at an absolute y of 0.03, which
+   * is 2.2km under the road at Mexico City.
+   */
+  for (const id of ['bahrain', 'monza', 'mexico', 'silverstone']) {
+    const track = buildTrack(getCircuit(id));
+    const group = buildTrackMesh(track);
+    let line = null;
+    group.traverse((node) => {
+      if (node.isMesh && node.geometry.type === 'PlaneGeometry') line = node;
+    });
+    assert.ok(line, `${id}: no start line`);
+
+    const start = track.samples[0];
+    const lateral = new THREE.Vector3(start.rightX, 0, start.rightZ).normalize();
+    const forward = new THREE.Vector3(Math.cos(start.heading), 0, Math.sin(start.heading));
+    const across = new THREE.Vector3(1, 0, 0).applyQuaternion(line.quaternion).normalize();
+    const along = new THREE.Vector3(0, 1, 0).applyQuaternion(line.quaternion).normalize();
+    const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(line.quaternion).normalize();
+
+    assert.ok(
+      Math.abs(across.dot(lateral)) > 0.99,
+      `${id}: the line runs at ${across.dot(lateral).toFixed(3)} to the road's width`
+    );
+    assert.ok(
+      Math.abs(along.dot(forward)) > 0.99,
+      `${id}: the line's 1.6m depth must follow the direction of travel, not cross it`
+    );
+    assert.ok(normal.y > 0.99, `${id}: the line must lie flat, facing up`);
+    assert.ok(
+      Math.abs(line.position.y - (start.y + 0.03)) < 1e-6,
+      `${id}: the line is at ${line.position.y.toFixed(1)}m, the road is at ${start.y.toFixed(1)}m`
+    );
+  }
+});
+
 test('the barriers are on both sides of the circuit, facing it', () => {
   /*
    * `side` was computed in the barrier loop and then never used: both walls were built at the
