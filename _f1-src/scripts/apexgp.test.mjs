@@ -2944,6 +2944,39 @@ test('reverse is a recovery aid, never a driving mode', () => {
   assert.ok(REVERSE_LIMIT <= 8, 'reverse must be strictly speed-limited');
 });
 
+test('engine braking is a force at the wheels, not a torque', () => {
+  /*
+   * `ax` is assembled from forces, and every drivetrain term goes through `thrustFromTorque`,
+   * which divides by the wheel radius. Engine braking did not: it added `peakTorque *
+   * engineBrake * gearRatio` straight into the sum -- a torque in newtons, 2.8x too small
+   * (radius 0.36m) -- so lifting off slowed the car as if the clutch were in. Checked here
+   * against the model's own constants, because the error is in the units and only arithmetic
+   * can see it.
+   */
+  const car = new CarPhysics({ grip: 1 });
+  car.reset(0, 0, 0, 60);
+  for (let i = 0; i < 240; i += 1) car.step(DT, { throttle: 0, brake: 0, steer: 0 }, { grip: 1 });
+
+  const ratio = (POWERTRAIN.gearRatios[car.gear] ?? 1) * POWERTRAIN.finalDrive;
+  const radius = POWERTRAIN.wheelDiameter / 2;
+  const engineForce = (POWERTRAIN.peakTorque * POWERTRAIN.engineBrake * ratio) / radius;
+  const drag = 0.5 * 1.225 * DEFAULT_GEOMETRY.dragArea * car.vLong * Math.abs(car.vLong);
+  const rolling = 0.4 * car.vLong;
+  const expected = (engineForce + drag + rolling) / DEFAULT_GEOMETRY.mass;
+
+  assert.ok(
+    Math.abs(-car.longitudinalG - expected) < 0.05,
+    `coasting at ${car.speed.toFixed(1)} m/s in gear ${car.gear} decelerates at ` +
+      `${(-car.longitudinalG).toFixed(2)} m/s^2, the model's own terms give ${expected.toFixed(2)}`
+  );
+  // And the version that was missing the wheel radius would be nowhere near it.
+  const withoutRadius = (POWERTRAIN.peakTorque * POWERTRAIN.engineBrake * ratio) / DEFAULT_GEOMETRY.mass;
+  assert.ok(
+    Math.abs(-car.longitudinalG - withoutRadius) > 0.3,
+    'a torque added to a sum of forces must not pass this test'
+  );
+});
+
 test('a pit stop actually happens, and it actually costs time', () => {
   /*
    * `car.pitStop` used to be a boolean that was initialised and never read. Now that compounds

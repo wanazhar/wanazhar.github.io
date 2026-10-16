@@ -560,9 +560,18 @@ export class CarPhysics {
 
     // Engine braking opposes motion but must never push the car the wrong way,
     // and is suppressed entirely in reverse.
+    //
+    // It is a torque off the crank, so it goes through the same `thrustFromTorque` every
+    // drivetrain term does. Without the division by wheel radius it was a torque added to a sum
+    // of forces -- 2.8x too small (the wheel radius is 0.36m), which is the difference between
+    // coasting like a car with an engine and coasting as if the clutch were in.
     const engineBraking = reversing
       ? 0
-      : -Math.sign(this.vLong) * POWERTRAIN.peakTorque * POWERTRAIN.engineBrake * Math.abs(gearRatio) * (1 - throttle);
+      : -Math.sign(this.vLong) *
+        thrustFromTorque(
+          POWERTRAIN.peakTorque * POWERTRAIN.engineBrake * (1 - throttle),
+          Math.abs(gearRatio)
+        );
     // Braking force is capped by what the tyres can actually take. Weight moves
     // forward under braking, so the front axle is the one that limits total
     // deceleration -- which is why the bias is set rearward to keep it stable.
