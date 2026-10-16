@@ -1971,6 +1971,29 @@ test('the HUD tells the player what the weather is doing', () => {
   assert.match(uiSource, /e\.weather\.hidden = !changeable/);
 });
 
+test('a deleted lap is reported once, not once per frame', () => {
+  /*
+   * `invalidLap` stays set for the rest of a deleted lap, and the HUD drove `alert()` straight
+   * from the flag on every frame. `alert()` deliberately restarts its animation on every call
+   * (it exists to be noticed), so being driven from a state rather than an event meant the
+   * message never got past the first frames of its pop: unreadable for the whole lap, sitting
+   * in the one alert slot the HUD has, and blocking the messages that matter more -- damage and
+   * weather. The flag is a state; the alert belongs to the transition into it, which is how
+   * `#setDamage` and `#setWeather` are already written.
+   */
+  assert.match(uiSource, /this\.alert\('INVALID LAP'/, 'a deleted lap must still be reported');
+  assert.doesNotMatch(
+    uiSource,
+    /if \(telemetry\.invalidLap\) this\.alert/,
+    'the state must not be re-reported every frame'
+  );
+  assert.match(
+    uiSource,
+    /Boolean\(telemetry\.invalidLap\) !== this\.lastInvalidLap/,
+    'the transition is what arms the alert, and the flag going false is what re-arms it'
+  );
+});
+
 test('no two HUD regions can overlap, at any viewport', () => {
   /*
    * A structural check rather than a screenshot.

@@ -555,7 +555,19 @@ export class UIManager {
     this.#setTyreBar(e.tyreFront, telemetry.frontTemp, telemetry.frontWear);
     this.#setTyreBar(e.tyreRear, telemetry.rearTemp, telemetry.rearWear);
 
-    if (telemetry.invalidLap) this.alert('INVALID LAP', 'bad');
+    /*
+     * Said once, on the way into a deleted lap rather than for the whole of it.
+     *
+     * `invalidLap` stays set for the rest of the lap, and `alert()` restarts its animation every
+     * time it is called -- it exists to be read, and it cannot be read if it is restarted sixty
+     * times a second: the message sat at the first frames of its pop for a full lap and held the
+     * HUD's one alert slot against everything that matters more. The flag is state; the alert
+     * belongs to the transition into it, which is how the damage and weather alerts are written.
+     */
+    if (Boolean(telemetry.invalidLap) !== this.lastInvalidLap) {
+      this.lastInvalidLap = Boolean(telemetry.invalidLap);
+      if (this.lastInvalidLap) this.alert('INVALID LAP', 'bad');
+    }
     this.#setWeather(telemetry.weather, telemetry.weatherPhase);
     this.#setDamage(telemetry.damage, telemetry.retireReason);
   }
