@@ -25,6 +25,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../src/render/TrackMesh.js';
 import { buildSurrounds } from '../src/render/Surrounds.js';
+import { disposeTree } from '../src/core/Game.js';
 
 import { CIRCUITS, getCircuit } from '../src/track/circuits.js';
 import {
@@ -3087,6 +3088,51 @@ test('a pit stop actually happens, and it actually costs time', () => {
     worstFreshRubber < 0.2,
     `a stop must leave fresh rubber, worst sample ${(worstFreshRubber * 100).toFixed(0)}% wear`
   );
+});
+
+test('a circuit that is replaced is released, textures and all', () => {
+  /*
+   * Two leaks, neither visible in a frame time.
+   *
+   * The surroundings were never cleared: `loadCircuit` and `prepareCircuit` removed and released
+   * the track and the venue, then assigned a fresh set of surroundings on top of the old ones, so
+   * the scene accumulated a full set of trees, buildings, barriers and treeline per circuit
+   * loaded -- all of it still drawn, behind the current ones.
+   *
+   * And nothing released a texture. `disposeTree` disposed geometries and materials, and in
+   * Three.js a material owns its textures: a circuit's road, run-off, walls, ground and treeline
+   * are all canvas textures uploaded to the GPU, so every load left the previous set behind.
+   */
+  const canvas = document.createElement('canvas');
+  const texture = new THREE.CanvasTexture(canvas);
+  const geometry = new THREE.BoxGeometry(1, 1, 1);
+  const material = new THREE.MeshBasicMaterial({ map: texture });
+  const mesh = new THREE.Mesh(geometry, material);
+  const released = [];
+  for (const target of [geometry, material, texture]) {
+    const original = target.dispose.bind(target);
+    target.dispose = () => {
+      released.push(target);
+      original();
+    };
+  }
+  disposeTree(mesh);
+  assert.ok(released.includes(geometry), 'the geometry is released');
+  assert.ok(released.includes(material), 'the material is released');
+  assert.ok(released.includes(texture), "and the texture its map points at");
+
+  // The track, the venue and the surroundings are one unit, released at every site that builds a
+  // circuit: the definition plus `loadCircuit`, `prepareCircuit` and `destroy`.
+  assert.ok(
+    (gameSource.match(/#clearCircuitGroups\(\)/g) ?? []).length >= 4,
+    'a circuit is cleared as one unit, not group by group'
+  );
+  assert.equal(
+    (gameSource.match(/#clearGroup\('surroundsGroup'\)/g) ?? []).length,
+    1,
+    'nothing clears a partial set of the groups'
+  );
+  assert.ok(/disposeTree\(this\.rain\)/.test(gameSource), 'the rain owns geometry and a texture too');
 });
 
 test('the city stands on its foundations, at the height it is drawn', () => {

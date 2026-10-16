@@ -119,8 +119,7 @@ export class Game {
     const circuit = getCircuit(circuitId);
     this.track = buildTrack(circuit);
 
-    this.#clearGroup('trackGroup');
-    this.#clearGroup('environmentGroup');
+    this.#clearCircuitGroups();
     this.#clearCars();
 
     this.trackGroup = buildTrackMesh(this.track);
@@ -170,8 +169,7 @@ export class Game {
 
     onProgress('mesh', 'Laying the tarmac');
     await nextPaint();
-    this.#clearGroup('trackGroup');
-    this.#clearGroup('environmentGroup');
+    this.#clearCircuitGroups();
     this.#clearCars();
     this.trackGroup = buildTrackMesh(this.track);
     this.scene.add(this.trackGroup);
@@ -443,6 +441,21 @@ export class Game {
     this.scene.remove(group);
     disposeTree(group);
     this[key] = null;
+  }
+
+  /**
+   * Drop everything the current circuit owns.
+   *
+   * The track, the venue and the place it is in are one unit: they are built together on every
+   * load and none of them survives into the next race, so they are released together. Listing
+   * them at each call site instead is how the surroundings came to be missing from every one of
+   * them -- the scene quietly accumulated a full set of trees, buildings and barriers per
+   * circuit loaded, drawn behind the current ones, with their textures never released.
+   */
+  #clearCircuitGroups() {
+    this.#clearGroup('trackGroup');
+    this.#clearGroup('environmentGroup');
+    this.#clearGroup('surroundsGroup');
   }
 
   start() {
@@ -736,10 +749,14 @@ export class Game {
     window.removeEventListener('resize', this.onResize);
     this.input.destroy();
     this.#clearCars();
-    this.#clearGroup('trackGroup');
-    this.#clearGroup('environmentGroup');
+    this.#clearCircuitGroups();
     this.envMap?.dispose();
     this.pmrem?.dispose();
+    if (this.rain) {
+      this.scene.remove(this.rain);
+      disposeTree(this.rain);
+      this.rain = null;
+    }
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -759,13 +776,31 @@ function nextPaint() {
   });
 }
 
-/** Recursively release GPU memory for a subtree. */
-function disposeTree(root) {
+/**
+ * Recursively release GPU memory for a subtree.
+ *
+ * A material owns its textures and `material.dispose()` does not release them, so this has to
+ * walk the material's own properties: a circuit's road, run-off, walls, ground and treeline are
+ * all canvas textures uploaded to the GPU, and releasing only geometries and materials left one
+ * full set of them behind on every circuit load.
+ *
+ * Scanning the properties rather than listing the map slots by name is deliberate. The list of
+ * maps Three.js materials carry grows with every release (`sheenColorMap`, `iridescenceMap`,
+ * `anisotropyMap`), and a missing entry is a leak nobody will ever see in a frame time.
+ *
+ * Textures shared between materials -- a clone, or an instanced mesh's material reused by
+ * several nodes -- are disposed more than once, which Three.js treats as a no-op.
+ */
+export function disposeTree(root) {
   root.traverse((node) => {
     if (node.geometry) node.geometry.dispose();
-    if (node.material) {
-      const materials = Array.isArray(node.material) ? node.material : [node.material];
-      for (const material of materials) material.dispose();
+    if (!node.material) return;
+    const materials = Array.isArray(node.material) ? node.material : [node.material];
+    for (const material of materials) {
+      for (const value of Object.values(material)) {
+        if (value && value.isTexture) value.dispose();
+      }
+      material.dispose();
     }
   });
 }
