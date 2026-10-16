@@ -60,7 +60,7 @@ import {
   temperatureGrip
 } from '../src/physics/CarPhysics.js';
 import { AIDriver } from '../src/ai/AIDriver.js';
-import { LapTimer } from '../src/race/LapTimer.js';
+import { LapTimer, RaceOrder } from '../src/race/LapTimer.js';
 import { BOX_PROGRESS, inPitLane, laneProgress, PIT_LANE_WIDTH, PIT_WINDOW_END, PIT_WINDOW_START, shouldPit } from '../src/race/pit.js';
 import { weatherAt, weatherPlan } from '../src/race/weather.js';
 import {
@@ -93,11 +93,13 @@ import {
 import { centrelineFor } from '../src/track/circuitData.js';
 import { driverAvatar, teamBadge } from '../src/ui/avatars.js';
 import { TrackProjection, cachedTrackMapPath, trackMapPath } from '../src/ui/trackMap.js';
+import { UIManager } from '../src/ui/UIManager.js';
 import { StartSequence } from '../src/race/startSequence.js';
 import { SETTING, environmentFor, isStreet } from '../src/track/environments.js';
 import { ELEVATION, PROFILE_POINTS, elevationAt } from '../src/track/elevationData.js';
 import { ACTIONS, InputController } from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
+
 import { createRandom } from '../src/util/math.js';
 import {
   DRIVERS,
@@ -1969,6 +1971,34 @@ test('the HUD tells the player what the weather is doing', () => {
   // The chip is hidden on a circuit that cannot change, so a dry race does not spend a
   // HUD region promising something that will not happen.
   assert.match(uiSource, /e\.weather\.hidden = !changeable/);
+});
+
+test('the timing tower shows a gap in seconds, which is what a tower shows', () => {
+  /*
+   * `RaceOrder` computes both readings and its own comment says which is which -- `secondsToAhead`
+   * is "a gap in seconds, from the distance gap divided by the speed of the car behind, which is
+   * how a timing tower shows it" -- and the tower printed the distance instead, with an "s" on
+   * it. A car eighty metres back showed as "+82.4s". The player's own gap readout reads the
+   * seconds, so the tower's looked plausible; `gapToAhead` and `secondsToAhead` being one word
+   * apart is the trap that produced it.
+   */
+  const cars = [
+    { id: 'VER', distance: 1000, speed: 50, retired: false },
+    { id: 'NOR', distance: 900, speed: 50, retired: false },
+    { id: 'LEC', distance: 880, speed: 40, retired: false }
+  ];
+  const order = new RaceOrder().update(cars);
+
+  // The two readings, from the same pair of cars: 100m behind, two seconds behind.
+  assert.equal(order[1].gapToAhead, 100, 'the distance gap is in metres');
+  assert.equal(order[1].secondsToAhead, 2, 'and the time gap is that distance over the speed');
+
+  const ui = { elements: { standings: { innerHTML: '' } } };
+  UIManager.prototype.updateStandings.call(ui, order, 'NOR', 4);
+  const html = ui.elements.standings.innerHTML;
+  assert.match(html, /LEADER/, 'the leader leads');
+  assert.match(html, /\+2\.000/, 'two seconds behind is shown as two seconds');
+  assert.doesNotMatch(html, /\+100\.0/, 'not as a hundred');
 });
 
 test('a deleted lap is reported once, not once per frame', () => {

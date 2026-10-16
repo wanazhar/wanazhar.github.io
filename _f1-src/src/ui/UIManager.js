@@ -633,11 +633,21 @@ export class UIManager {
     if (!order?.length) return;
     const rows = order.slice(0, 5).map((entry) => {
       const isPlayer = entry.id === playerShort;
+      /*
+       * The gap to the car ahead, in seconds.
+       *
+       * `gapToAhead` is a distance in metres and `secondsToAhead` is that distance divided by
+       * the speed of the car behind it, and the tower printed the first one with an "s" on it:
+       * a car eighty metres back showed as "+82.4s". The player's own gap readout reads the
+       * second one, which is what made the tower's look plausible -- and the two fields being
+       * one word apart is the trap that produced it.
+       */
+      const gap = formatGap(entry.secondsToAhead);
       return `
         <div class="hud-standing${isPlayer ? ' is-player' : ''}">
           <span class="hud-standing-pos">${entry.position}</span>
           <span class="hud-standing-name">${entry.id}</span>
-          <span class="hud-standing-gap">${entry.position === 1 ? 'LEADER' : `+${(entry.gapToAhead ?? 0).toFixed(1)}s`}</span>
+          <span class="hud-standing-gap">${entry.position === 1 ? 'LEADER' : gap}</span>
         </div>
       `;
     });
