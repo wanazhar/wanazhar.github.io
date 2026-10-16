@@ -375,25 +375,22 @@ export class InputController {
       brake: clamp(Math.max(digitalBrake, touchBrake, gamepad.brake), 0, 1),
       steer: clamp(this.steerValue + gamepad.steer, -1, 1),
       handbrake: gamepad.handbrake,
-      drs:
-        this.isDown(ACTIONS.drs) ||
-        this.touchButtons.has(ACTIONS.drs) ||
-        this.pressed.has(ACTIONS.drs) ||
-        gamepad.drs,
       /*
-       * Both halves of this were crossed.
+       * `ers` and `drs` are held controls, read as levels by `Game`.
        *
-       * ERS was bound as a held button, which writes to `touchButtons`, but
-       * `Game.frame` deploys it via `input.consume()`, which reads `pressed`. DRS
-       * was bound as a toggle, which writes to `pressed`, but it is read from
-       * `controls.drs`, which consults `touchButtons`. Neither worked from touch,
-       * and both worked from the keyboard, which is the only way this went
-       * unnoticed.
+       * Both halves of this were crossed once already. ERS is bound as a held button, which
+       * writes to `touchButtons`, while `Game.frame` deployed it through `consume()`, which
+       * reads the one-shot `pressed` queue. DRS was bound as a toggle, which writes to
+       * `pressed`, while it was read from `touchButtons`. Neither worked from touch, and both
+       * worked from the keyboard, which is the only way this went unnoticed.
        *
-       * Both are now reported as held booleans from both sets, so the binding mode
-       * and the read path cannot disagree again. `Game` uses `controls.ers` for
-       * symmetry with `controls.drs`.
+       * The reading is now the binding -- held -- from every source. `pressed` is deliberately
+       * not consulted: it is the one-shot queue, emptied only by `consume()`, and nothing
+       * consumes DRS. Reporting a level from it meant one tap of the button left
+       * `controls.drs` true for the rest of the race, and the DRS then deployed itself at
+       * every zone without the driver touching it again.
        */
+      drs: this.isDown(ACTIONS.drs) || this.touchButtons.has(ACTIONS.drs) || gamepad.drs,
       ers: this.isDown(ACTIONS.ers) || this.touchButtons.has(ACTIONS.ers) || gamepad.ers
     };
   }
@@ -427,9 +424,16 @@ export class InputController {
     return result;
   }
 
-  /** Clear the digital state, used when the game is paused. */
+  /**
+   * Clear the digital state, used when the game is paused.
+   *
+   * The one-shot queue goes with it. An action queued before the pause -- a press of the pause
+   * key, a tap of the reset button -- would otherwise be consumed on the first frame after it
+   * and act on a car the player has just come back to.
+   */
   clear() {
     this.keys.clear();
+    this.pressed.clear();
     this.releaseHeld();
     this.touch.throttle = 0;
     this.touch.brake = 0;

@@ -797,6 +797,37 @@ function fakeWindow({ supported = false, angle = 0, requestPermission = null, se
 }
 
 /**
+ * A stand-in for an on-screen control, for exercising `bindButton` without a DOM.
+ *
+ * Only what the binding touches: listeners to fire, a class list to check, and no pointer
+ * capture -- which the code treats as optional, so leaving it out is the case worth covering.
+ */
+function fakeButton() {
+  const listeners = new Map();
+  return {
+    classList: {
+      classes: new Set(),
+      add(name) {
+        this.classes.add(name);
+      },
+      remove(name) {
+        this.classes.delete(name);
+      },
+      contains(name) {
+        return this.classes.has(name);
+      }
+    },
+    addEventListener(type, handler) {
+      listeners.set(type, handler);
+    },
+    /** Fire one listener, with the event fields the handlers read. */
+    emit(type, fields = {}) {
+      listeners.get(type)?.({ preventDefault() {}, pointerId: 1, ...fields });
+    }
+  };
+}
+
+/**
  * A started, calibrated motion controller.
  *
  * Going through `start()` rather than poking `active` matters: the event listener is
@@ -1103,6 +1134,51 @@ test('the input controller uses motion only when it is the chosen scheme', async
   let counter = 0;
   for (let i = 0; i < 60; i += 1) counter = input.read(1 / 60).steer;
   assert.ok(Math.abs(counter) > Math.abs(steer), 'the keyboard should still override motion');
+});
+
+test('a button pressed once is not still pressed a lap later', () => {
+  /*
+   * `read()` reported DRS from the `pressed` set as well as from the held ones, and `pressed`
+   * is the one-shot queue that only `consume()` empties -- and nothing consumes DRS, because
+   * it is a level the physics reads rather than an event to be handled. So a single tap of the
+   * DRS key added `drs` to the queue and it never left: from the next frame to the end of the
+   * race `controls.drs` was true, and the DRS deployed itself at every zone without the driver
+   * touching the button again.
+   */
+  const input = new InputController(fakeWindow());
+  const press = (code) => input.onKeyDown({ code, repeat: false, preventDefault() {} });
+  const release = (code) => input.onKeyUp({ code });
+
+  press('ShiftLeft');
+  assert.equal(input.read(1 / 60).drs, true, 'holding the button must ask for DRS');
+  release('ShiftLeft');
+  assert.equal(input.read(1 / 60).drs, false, 'and releasing it must stop asking');
+  for (let i = 0; i < 10; i += 1) {
+    assert.equal(input.read(1 / 60).drs, false, 'a tap must not leave DRS asking for the rest of the race');
+  }
+
+  // ERS is the same kind of control and is read the same way, so it is asserted with it.
+  press('Space');
+  assert.equal(input.read(1 / 60).ers, true, 'holding the button must deploy ERS');
+  release('Space');
+  assert.equal(input.read(1 / 60).ers, false, 'and releasing it must stop');
+
+  /*
+   * The one-shot queue is a queue, and pausing empties it.
+   *
+   * `reset` is bound on screen as a toggle, so it writes to `pressed`, and queued actions used
+   * to survive a pause: the frame after the player unpaused, the car they had just come back to
+   * respawned on the track.
+   */
+  press('KeyR');
+  assert.equal(input.consume(ACTIONS.reset), true, 'a queued action fires once');
+  press('KeyR');
+  input.clear();
+  assert.equal(
+    input.consume(ACTIONS.reset),
+    false,
+    'a press from before the pause must not act after it'
+  );
 });
 
 test('qualifying is a knockout, not a time trial', () => {
