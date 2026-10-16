@@ -626,7 +626,18 @@ export function buildEnvironment(track, theme) {
   // Floodlight pylons at the widest points.
   const pylonStride = Math.max(1, Math.floor(count / 8));
   const pylonPlacements = [];
-  const bulbPlacements = [];
+  /*
+   * The five lamps of a rig are the same five offsets on every rig, so they belong in the
+   * placement's *local* space, not in world space.
+   *
+   * They were pushed as world transforms -- the same five for every pylon -- and then handed
+   * to `addInstanced` with an *empty* offset list, which multiplies out to zero instances. So
+   * the floodlights were not misplaced, they were never drawn at all: the rig heads were dark
+   * bars lit only by the sun, on every circuit, and the geometry sat in the group with a
+   * count of zero.
+   */
+  const bulbOffsets = [];
+  for (let lamp = -2; lamp <= 2; lamp += 1) bulbOffsets.push([lamp * 1.3, 26, -0.7]);
   for (let i = 0; i < count; i += pylonStride) {
     const s = samples[i];
     const half = s.width * 0.5 + 40;
@@ -640,15 +651,6 @@ export function buildEnvironment(track, theme) {
       quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw + Math.PI);
       const matrix = new THREE.Matrix4().compose(position, quaternion, new THREE.Vector3(1, 1, 1));
       pylonPlacements.push(matrix);
-      for (let lamp = -2; lamp <= 2; lamp += 1) {
-        bulbPlacements.push(
-          new THREE.Matrix4().compose(
-            new THREE.Vector3(lamp * 1.3, 26, -0.7),
-            new THREE.Quaternion(),
-            new THREE.Vector3(1, 1, 1)
-          )
-        );
-      }
     }
   }
   addInstanced(group, new THREE.CylinderGeometry(0.5, 0.7, 26, 8), pylonMaterial, pylonPlacements, [
@@ -663,8 +665,8 @@ export function buildEnvironment(track, theme) {
     group,
     new THREE.BoxGeometry(1.1, 0.9, 0.3),
     bulbMaterial,
-    bulbPlacements,
-    [],
+    pylonPlacements,
+    bulbOffsets,
     { castShadow: false }
   );
 

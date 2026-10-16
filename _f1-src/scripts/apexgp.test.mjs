@@ -23,7 +23,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { buildCarMesh, syncCarMesh } from '../src/render/TrackMesh.js';
+import { buildCarMesh, buildEnvironment, syncCarMesh } from '../src/render/TrackMesh.js';
 
 import { CIRCUITS, getCircuit } from '../src/track/circuits.js';
 import {
@@ -3670,6 +3670,65 @@ test('the AI never commands throttle and brake together', () => {
       'throttle and brake must never be applied together'
     );
     car.step(DT, controls, { grip: 1 });
+  }
+});
+
+test('the floodlights are on the pylons, and on every pylon', () => {
+  /*
+   * The five lamps of a rig were pushed as *world* transforms -- the same five for every
+   * pylon -- and then passed to the instancing helper with an empty offset list, which
+   * multiplies the instance count to zero. The floodlights were not misplaced, they were
+   * never drawn at all: every pylon head on every circuit was a dark bar lit only by the sun.
+   */
+  const circuit = getCircuit('monza');
+  const track = buildTrack(circuit);
+  const environment = buildEnvironment(track, circuit.theme);
+
+  const matricesOf = (mesh) => {
+    const out = [];
+    for (let i = 0; i < mesh.count; i += 1) {
+      out.push(new THREE.Matrix4().fromArray(mesh.instanceMatrix.array, i * 16));
+    }
+    return out;
+  };
+
+  const meshes = [];
+  environment.traverse((node) => {
+    if (node.isMesh) meshes.push(node);
+  });
+  // The rig head is the 7m box at the top of the mast; the lamps are the only unlit
+  // (basic-material) geometry up there.
+  const heads = meshes.find(
+    (mesh) => mesh.isInstancedMesh && mesh.geometry.parameters?.width === 7 && mesh.geometry.parameters?.height === 2.4
+  );
+  const bulbs = meshes.find((mesh) => mesh.isInstancedMesh && mesh.material.isMeshBasicMaterial);
+  assert.ok(heads && bulbs, 'the venue must have floodlights at all');
+
+  const headPositions = matricesOf(heads).map((matrix) => new THREE.Vector3().setFromMatrixPosition(matrix));
+  const bulbPositions = matricesOf(bulbs).map((matrix) => new THREE.Vector3().setFromMatrixPosition(matrix));
+
+  assert.equal(bulbPositions.length, headPositions.length * 5, 'five lamps per rig');
+  const span = new THREE.Box3().setFromPoints(headPositions).getSize(new THREE.Vector3());
+  assert.ok(Math.hypot(span.x, span.z) > 400, `the rigs are spread round the lap, not stacked (${span.toArray()})`);
+
+  for (const bulb of bulbPositions) {
+    let nearest = Infinity;
+    let lift = Infinity;
+    for (const head of headPositions) {
+      const distance = Math.hypot(bulb.x - head.x, bulb.z - head.z);
+      if (distance < nearest) {
+        nearest = distance;
+        lift = bulb.y - head.y;
+      }
+    }
+    assert.ok(
+      nearest < 4,
+      `a lamp ${nearest.toFixed(1)}m from the nearest pylon head is not on a pylon`
+    );
+    assert.ok(
+      Math.abs(lift) < 2,
+      `the lamps belong in the rig head, not ${lift.toFixed(1)}m away from it`
+    );
   }
 });
 
