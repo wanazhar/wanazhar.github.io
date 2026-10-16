@@ -393,6 +393,7 @@ export class Game {
 
     this.#buildCarMeshes();
     this.rig.setMode(this.rig.mode);
+    this.#syncCockpit();
     this.raceTime = 0;
     this.newLapFlash = 0;
     this.greenShown = false;
@@ -483,7 +484,7 @@ export class Game {
 
     if (this.input.consume(ACTIONS.camera)) {
       this.rig.cycleMode();
-      if (this.cockpit) this.cockpit.visible = this.rig.mode === 'cockpit';
+      this.#syncCockpit();
     }
     if (this.input.consume(ACTIONS.reset)) this.respawnPlayer();
     if (this.input.consume(ACTIONS.pause)) this.onPause?.();
@@ -597,6 +598,22 @@ export class Game {
       cars: this.session.cars.map((car) => ({ isPlayer: car.isPlayer })),
       name: this.track.circuit.name
     });
+  }
+
+  /**
+   * Show the cockpit interior when the camera is in it, building it the first time it is needed.
+   *
+   * Nothing ever called `#ensureCockpit`, and nothing else built the interior either, so
+   * `this.cockpit` was undefined for the life of the game: the visibility line in the frame loop
+   * was a no-op, `steerCockpit` never ran, and the cockpit camera -- the one view with the player
+   * inside the car -- looked out through a car that had no wheel, no dash and no halo.
+   *
+   * Built on demand rather than at startup, because a chase-camera race should not pay for a
+   * wheel it never sees.
+   */
+  #syncCockpit() {
+    if (this.rig.mode !== 'cockpit' && !this.cockpit) return;
+    this.#ensureCockpit().visible = this.rig.mode === 'cockpit';
   }
 
   /**
@@ -750,6 +767,12 @@ export class Game {
     this.input.destroy();
     this.#clearCars();
     this.#clearCircuitGroups();
+    if (this.cockpit) {
+      // It hangs off the camera, not off a group, so it is not in the circuit's teardown.
+      this.camera.remove(this.cockpit);
+      disposeTree(this.cockpit);
+      this.cockpit = null;
+    }
     this.envMap?.dispose();
     this.pmrem?.dispose();
     if (this.rain) {

@@ -24,6 +24,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../src/render/TrackMesh.js';
+import { buildCockpit, steerCockpit } from '../src/render/Cockpit.js';
 import { buildSurrounds } from '../src/render/Surrounds.js';
 import { disposeTree } from '../src/core/Game.js';
 
@@ -3088,6 +3089,44 @@ test('a pit stop actually happens, and it actually costs time', () => {
     worstFreshRubber < 0.2,
     `a stop must leave fresh rubber, worst sample ${(worstFreshRubber * 100).toFixed(0)}% wear`
   );
+});
+
+test('the cockpit view has a cockpit in it', () => {
+  /*
+   * `#ensureCockpit` was defined, documented at length, and never called. Nothing else built the
+   * interior either, so `this.cockpit` was undefined for the life of the game: the visibility
+   * line in the frame loop was a no-op, `steerCockpit` never ran, and the cockpit camera -- the
+   * one view with the player inside the car -- looked out through a car with no wheel, no dash
+   * and no halo. It is the one place the interior is ever seen, and it was empty.
+   */
+  const cockpit = buildCockpit();
+  let parts = 0;
+  cockpit.traverse((node) => {
+    if (node.isMesh) parts += 1;
+  });
+  assert.ok(parts >= 8, `an interior to sit in, not ${parts} parts`);
+
+  const wheel = cockpit.userData.wheel;
+  assert.ok(wheel, 'the interior has a steering wheel');
+  steerCockpit(cockpit, 1);
+  assert.ok(wheel.rotation.z < -0.05, `the wheel turns with the input (${wheel.rotation.z})`);
+  steerCockpit(cockpit, -1);
+  assert.ok(wheel.rotation.z > 0.05, 'and turns the other way');
+  steerCockpit(cockpit, 0);
+  assert.ok(Math.abs(wheel.rotation.z) < 1e-9, 'and centres');
+
+  // And the game wires it up: built on demand when the camera enters it, and steered from the
+  // player's own input rather than left locked straight.
+  assert.ok(/this\.#syncCockpit\(\)/.test(gameSource), 'the camera mode syncs the interior');
+  assert.ok(
+    /this\.rig\.cycleMode\(\);\s*\n\s*this\.#syncCockpit\(\)/.test(gameSource),
+    'including at the moment the mode changes'
+  );
+  assert.ok(
+    /this\.#ensureCockpit\(\)\.visible/.test(gameSource),
+    'something has to actually build it'
+  );
+  assert.ok(/steerCockpit\(this\.cockpit, controls\.steer\)/.test(gameSource), 'the wheel follows the input');
 });
 
 test('a circuit that is replaced is released, textures and all', () => {
