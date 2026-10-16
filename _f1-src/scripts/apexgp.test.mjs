@@ -2501,6 +2501,41 @@ test('every element toggled via [hidden] also has a [hidden] display rule', () =
       `.${name} is a full-screen overlay with a display rule and no [hidden] counterpart`
     );
   }
+
+  /*
+   * And every element the HUD itself hides, taken from its own markup.
+   *
+   * The check above only looks at full-screen overlays, which is the shape the first two
+   * instances happened to have. The damage bar and the conditions chip are not full-screen --
+   * they sit bottom-centre and top-left, they set `display: flex`, and they are toggled with
+   * `hidden` like the rest. A guard that only recognises the shape of the last bug is how the
+   * next one survives: the damage bar was meant to be invisible below 2% and the chip absent on
+   * a circuit that cannot change weather, and neither of them ever hid.
+   */
+  const toggledInMarkup = [...uiSource.matchAll(/<div class="([^"]*)"[^>]*\bhidden\b/g)].map(([, classes]) => classes);
+  assert.ok(toggledInMarkup.length >= 5, `expected to find the HUD's hidden elements, found ${toggledInMarkup.length}`);
+  for (const classes of toggledInMarkup) {
+    assert.ok(
+      classes
+        .split(/\s+/)
+        .some((name) => new RegExp(`\\.${name}\\[hidden\\]`).test(css)),
+      `${classes} is hidden by the HUD and has no [hidden] display rule against its display`
+    );
+  }
+});
+
+test('the start lights are ready for the next race', () => {
+  /*
+   * `is-go` is what holds the green GO on screen instead of letting the next state the session
+   * reports replace it -- and it was added and never taken off. The flash is timed and the panel
+   * is hidden at the end of it, so in the first race nothing looked wrong; from the second race
+   * of a championship onwards, `setStartLights` refused to touch the caption, and the countdown
+   * showed a green GO for its whole length: GET READY and HOLD never appeared again.
+   */
+  const flash = uiSource.match(/greenTimer = setTimeout\(\(\) => \{([\s\S]*?)\}, (\d+)\)/);
+  assert.ok(flash, 'the GO flash must still be timed rather than cleared on the next frame');
+  assert.match(flash[1], /classList\.remove\('is-go'\)/, 'and it must clear its own class when it ends');
+  assert.match(uiSource, /classList\.add\('is-go'\)/, 'while still marking the flash as the flash');
 });
 
 test('Vite app targets the /f1/ GitHub Pages subpath', () => {

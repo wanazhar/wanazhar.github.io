@@ -584,6 +584,20 @@ body {
   color: #4aa3ff;
 }
 
+/*
+ * The damage bar and the conditions chip are toggled with the `hidden` property, and both set
+ * `display: flex` -- an author `display` beats the user-agent `[hidden] { display: none }` rule,
+ * so setting `hidden` left both of them on screen for the whole race. The damage bar is meant to
+ * be invisible below 2% ("where it is all noise") and the chip is meant to be absent on a
+ * circuit whose weather cannot change, and neither of those ever happened.
+ *
+ * Same mistake as `.loading` and `.overlay`, which already have their own `[hidden]` rules.
+ */
+.hud-damage[hidden],
+.hud-weather[hidden] {
+  display: none;
+}
+
 /* Transient messages */
 .hud-alert {
   position: absolute;

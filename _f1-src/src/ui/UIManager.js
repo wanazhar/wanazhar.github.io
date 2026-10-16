@@ -426,6 +426,15 @@ export class UIManager {
     clearTimeout(this.greenTimer);
     this.greenTimer = setTimeout(() => {
       if (this.lights) this.lights.hidden = true;
+      /*
+       * And the caption goes back under the session's control.
+       *
+       * `is-go` is what stops `setStartLights` replacing the flash with whatever state arrives
+       * next, and it was added and never taken off. From the second race of a championship
+       * onwards the caption was still green and still read GO through the whole countdown: GET
+       * READY and HOLD never appeared again. The flash is timed, so its class comes off with it.
+       */
+      this.lightCaption?.classList.remove('is-go');
     }, 1400);
   }
 
