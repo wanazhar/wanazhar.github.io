@@ -84,12 +84,12 @@ function addInstances(parent, geometry, material, placements) {
   return mesh;
 }
 
-/** Compose a transform from a position, a yaw and a uniform-ish scale. */
-function place(x, y, z, yaw, scale = 1, scaleY = scale) {
+/** Compose a transform from a position, a yaw and a non-uniform scale. */
+function place(x, y, z, yaw, scale = 1, scaleY = scale, scaleZ = scale) {
   return new THREE.Matrix4().compose(
     new THREE.Vector3(x, y, z),
     new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw),
-    new THREE.Vector3(scale, scaleY, scale)
+    new THREE.Vector3(scale, scaleY, scaleZ)
   );
 }
 
@@ -204,12 +204,31 @@ export function buildSurrounds(track, theme, circuitId) {
       const s = samples[i];
       for (const side of [1, -1]) {
         const distance = barrierOffset(s) + 9 + random() * 26;
-        const height = 8 + random() * (street ? 26 : 14);
         const yaw = -s.heading + (side > 0 ? Math.PI / 2 : -Math.PI / 2);
+        /*
+         * One draw of the height, used for both the position and the scale.
+         *
+         * The geometry is a 1m-tall box scaled up to the building's height, so the placement has
+         * to sit at half of *that* height or the building floats. It was placed at half of one
+         * draw and scaled by a second, independent one: on a street circuit, where heights run
+         * from 8m to 34m, two buildings in three stood clear of the ground or buried to their
+         * windows, by up to 13m either way. The width is a separate draw and deliberately so --
+         * it is a scale about the building's own centre, which moves nothing.
+         */
+        const height = 8 + random() * (street ? 26 : 14);
         buildingPlacements.push(
-          place(s.x + s.rightX * distance * side, s.y + height * 0.5, s.z + s.rightZ * distance * side, yaw)
+          place(
+            s.x + s.rightX * distance * side,
+            s.y + height * 0.5,
+            s.z + s.rightZ * distance * side,
+            yaw,
+            1 + random() * 0.6,
+            height,
+            1
+          )
         );
-        // A band of windows, so the facade is not a blank slab.
+        // A band of windows, so the facade is not a blank slab. Placed against the same height,
+        // so it lands on the building rather than across the sky above it.
         windowPlacements.push(
           place(s.x + s.rightX * (distance - 0.6) * side, s.y + height * 0.55, s.z + s.rightZ * (distance - 0.6) * side, yaw)
         );
@@ -219,26 +238,8 @@ export function buildSurrounds(track, theme, circuitId) {
       group,
       new THREE.BoxGeometry(9, 1, 12),
       new THREE.MeshStandardMaterial({ color: 0xb9b2a4, roughness: 0.95 }),
-      buildingPlacements.map((matrix) => {
-        const scale = new THREE.Vector3().setFromMatrixScale(matrix);
-        return matrix.clone().multiply(new THREE.Matrix4().makeScale(1, 1, 1));
-      })
+      buildingPlacements
     );
-    // Buildings need varied heights, which a single instanced mesh cannot do, so they
-    // are scaled into the matrix rather than rebuilt as separate meshes.
-    const buildingMesh = group.children[group.children.length - 1];
-    for (const [index, matrix] of buildingPlacements.entries()) {
-      const position = new THREE.Vector3();
-      const quaternion = new THREE.Quaternion();
-      const scale = new THREE.Vector3();
-      matrix.decompose(position, quaternion, scale);
-      const height = 8 + random() * (street ? 26 : 14);
-      buildingMesh.setMatrixAt(
-        index,
-        new THREE.Matrix4().compose(position, quaternion, new THREE.Vector3(1 + random() * 0.6, height, 1))
-      );
-    }
-    buildingMesh.instanceMatrix.needsUpdate = true;
     addInstances(
       group,
       new THREE.BoxGeometry(9.3, 1, 3.2),

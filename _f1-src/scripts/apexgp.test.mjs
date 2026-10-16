@@ -24,6 +24,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../src/render/TrackMesh.js';
+import { buildSurrounds } from '../src/render/Surrounds.js';
 
 import { CIRCUITS, getCircuit } from '../src/track/circuits.js';
 import {
@@ -3086,6 +3087,56 @@ test('a pit stop actually happens, and it actually costs time', () => {
     worstFreshRubber < 0.2,
     `a stop must leave fresh rubber, worst sample ${(worstFreshRubber * 100).toFixed(0)}% wear`
   );
+});
+
+test('the city stands on its foundations, at the height it is drawn', () => {
+  /*
+   * Buildings are one instanced mesh of a 1m-tall box, scaled up to each building's height, so
+   * the transform carries the height twice: in the scale, and in the position, which has to be
+   * at half of it. The two came from separate draws of the random number generator -- one for
+   * the position, another for the scale -- so on a street circuit, where heights run from 8m to
+   * 34m, a building stood up to 13m clear of the ground or buried to its windows, and the band
+   * of windows on its facade was placed against the first height while the building was scaled
+   * by the second.
+   */
+  for (const id of ['monaco', 'singapore']) {
+    const circuit = getCircuit(id);
+    const track = buildTrack(circuit);
+    const group = buildSurrounds(track, circuit.theme, id);
+    const meshes = [];
+    group.traverse((node) => {
+      if (node.isMesh && node.isInstancedMesh) meshes.push(node);
+    });
+    const buildings = meshes.find(
+      (mesh) => mesh.geometry.parameters?.width === 9 && mesh.geometry.parameters?.depth === 12
+    );
+    assert.ok(buildings && buildings.count > 50, `${id}: a street circuit is buildings`);
+
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const scale = new THREE.Vector3();
+    const heights = track.samples.map((sample) => sample.y);
+    const bases = [];
+    for (let i = 0; i < buildings.count; i += 1) {
+      new THREE.Matrix4().fromArray(buildings.instanceMatrix.array, i * 16).decompose(position, quaternion, scale);
+      const base = position.y - scale.y * 0.5;
+      /*
+       * The base has to be a ground height: the circuit's own surface at the sample the building
+       * was placed from. Which sample that is cannot be recovered from the x/z alone -- the
+       * streets of Monaco run within metres of each other 37m apart in height -- so the assertion
+       * is that the base is the height of *some* sample, exactly. Under the double draw it was a
+       * height between two of them, which is not a surface anything can stand on.
+       */
+      assert.ok(
+        heights.some((y) => Math.abs(y - base) < 0.05),
+        `${id}: a building stands at ${base.toFixed(2)}m, which is not the ground anywhere`
+      );
+      // The 1m box is the unit: the scale *is* the height.
+      assert.ok(scale.y > 8 && scale.y < 34.001, `${id}: a building ${scale.y.toFixed(1)}m tall`);
+      bases.push(base);
+    }
+    assert.ok(new Set(bases.map((base) => base.toFixed(0))).size > 1, `${id}: the city follows the terrain`);
+  }
 });
 
 test('the start line is painted across the road, on the road', () => {
