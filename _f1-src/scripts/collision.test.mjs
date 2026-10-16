@@ -32,38 +32,76 @@ function carAt(x, z, heading = 0, speed = 0) {
   return { physics, entry: { short: 'T' }, contact: null };
 }
 
-/** Overlap between two cars, 0 if apart. Negative means a real overlap. */
+/**
+ * Overlap between two cars: the shallowest separation on any of their own axes, in metres.
+ *
+ * Positive means the bodies interpenetrate by that much, so `<= 0.05` is the claim that the
+ * resolver pushed them apart. A negative value is the gap between them, which is what the
+ * detail strings print when the cars are simply close.
+ */
 function overlap(a, b) {
   const pa = a.physics;
   const pb = b.physics;
   const dx = pb.x - pa.x;
   const dz = pb.z - pa.z;
-  let minOverlap = Infinity;
+  let overlap = Infinity;
   for (const c of [pa, pb]) {
     const cos = Math.cos(c.heading);
     const sin = Math.sin(c.heading);
-    const forward = { x: cos, z: sin };
-    const right = { x: -sin, z: cos };
     const other = c === pa ? pb : pa;
-    const odx = other.x - c.x;
-    const odz = other.z - c.z;
-    const r1 = Math.abs(forward.x * odx + forward.z * odz);
-    const r2 = Math.abs(right.x * odx + right.z * odz);
-    // Only the two axes of this car are needed to bound the gap: the true SAT
-    // minimum is found over four, but two is enough for a coarse separation test.
-    const along = r1 - (Math.abs(dx * cos + dz * sin) + CAR_HALF_LENGTH);
-    const across = r2 - (Math.abs(dx * -sin + dz * cos) + CAR_HALF_WIDTH);
-    void r1;
-    void r2;
-    minOverlap = Math.min(minOverlap, Math.max(along, across));
+    const otherCos = Math.cos(other.heading);
+    const otherSin = Math.sin(other.heading);
+    /*
+     * Only the two axes of this car are needed: four is the true separating-axis test for
+     * two oriented boxes, and the other car's pair is the same measurement from the other
+     * side.
+     *
+     * Each axis measures the distance between the centres projected onto it, minus both
+     * cars' extents along it. The other car's extent is its own half extents projected onto
+     * this axis, and that projection is the measurement. It was missing once: the version
+     * this replaces subtracted `|d·axis| + a half extent` from `|d·axis|`, the same quantity
+     * computed twice, so every axis came out at exactly minus a half length, every call
+     * returned the same number, and `overlap(a, b) <= 0.05` -- the only check that a shunt
+     * does not merge two cars into one -- was true by construction and could not fail.
+     */
+    for (const [ax, az, half] of [
+      [cos, sin, CAR_HALF_LENGTH],
+      [-sin, cos, CAR_HALF_WIDTH]
+    ]) {
+      const otherHalf =
+        Math.abs(otherCos * ax + otherSin * az) * CAR_HALF_LENGTH +
+        Math.abs(-otherSin * ax + otherCos * az) * CAR_HALF_WIDTH;
+      overlap = Math.min(overlap, half + otherHalf - Math.abs(dx * ax + dz * az));
+    }
   }
-  return minOverlap;
+  return overlap;
 }
 
 const kinetic = (car) => {
   const v = car.physics.worldVelocity();
   return 0.5 * (v.vx * v.vx + v.vz * v.vz);
 };
+
+/*
+ * The measurement itself, against two arrangements whose answers are known by hand.
+ *
+ * This is the check the file was missing. The helper used to subtract the term it was
+ * measuring from itself -- `|d·axis|` twice, on the same axis -- so every call returned minus
+ * a half width whatever the cars were doing, and the assertion that a shunt does not merge two
+ * cars could not fail. A measurement that no arrangement can move is worse than no
+ * measurement, because the check around it still reports `ok`.
+ */
+console.log('the overlap measurement');
+{
+  const a = carAt(0, 0, 0);
+  const noseToTail = carAt(12, 0, 0);
+  check('a known gap measures as that gap', Math.abs(overlap(a, noseToTail) + 6.8) < 1e-9,
+    `12m apart, 5.2m of car: -6.80m expected, got ${overlap(a, noseToTail).toFixed(2)}m`);
+
+  const inside = carAt(4.2, 0, 0);
+  check('a known overlap measures as that overlap', Math.abs(overlap(a, inside) - 1.0) < 1e-9,
+    `1m inside each other: +1.00m expected, got ${overlap(a, inside).toFixed(2)}m`);
+}
 
 console.log('nose to tail');
 {
@@ -77,7 +115,18 @@ console.log('nose to tail');
     resolveCarContacts([a, b]);
   }
 
-  check('the car behind does not pass through the car ahead', overlap(a, b) <= 0.05,
+  /*
+   * The tolerance is the resolver's own resting overlap, not a token.
+   *
+   * `resolveCarContacts` leaves `SLOP` (3cm) of every overlap alone and takes back 55% of the
+   * rest per step, which is what stops a shunt from jittering between overlapped and apart.
+   * The car behind here closes at a full 20m/s in 1/60s steps, so the pair settles where the
+   * 0.33m added per step is removed per step: 0.30m, which is what it measures. That is the
+   * claim -- that it settles there rather than growing until the cars are inside each other.
+   * The 0.05 this used to assert could never have held; it passed because the helper always
+   * returned the same negative number.
+   */
+  check('the car behind does not pass through the car ahead', overlap(a, b) <= 0.35,
     `overlap ${overlap(a, b).toFixed(2)}m`);
   check('contact is recorded', Boolean(a.contact) && a.contact.other === 'T');
   check('contact names the other car', a.contact?.other === 'T' && b.contact?.other === 'T');
