@@ -4509,6 +4509,45 @@ test('points follow the championship system', () => {
   assert.equal(pointsForPosition(11), 0, 'outside the points there is nothing');
 });
 
+test('retiring is not a podium and not a win', () => {
+  /*
+   * A best finish was counted as `position <= 3`, and `position` is null for a car that was not
+   * classified -- `null <= 3` is true, so every retirement counted as a podium. The standings
+   * break a points tie on wins and then on podiums, so this handed the championship to whoever
+   * had failed to finish most often, and the season screen credited retirements as silverware.
+   */
+  const championship = createChampionship();
+  const [a, b] = championship.entries;
+  // Level on points, so the tiebreak is the only thing that separates them.
+  a.points = 20;
+  b.points = 20;
+  championship.history[0] = [
+    { short: a.short, position: null, retired: true, points: 0, fastestLap: false },
+    { short: b.short, position: 3, retired: false, points: 15, fastestLap: false }
+  ];
+  championship.history[1] = [
+    { short: a.short, position: null, retired: true, points: 0, fastestLap: false },
+    { short: b.short, position: 8, retired: false, points: 4, fastestLap: false }
+  ];
+  championship.history[2] = [
+    { short: a.short, position: null, retired: true, points: 0, fastestLap: false },
+    { short: b.short, position: 11, retired: false, points: 0, fastestLap: false }
+  ];
+
+  const table = standings(championship);
+  const rowA = table.find((row) => row.short === a.short);
+  const rowB = table.find((row) => row.short === b.short);
+  assert.equal(rowA.wins, 0, 'three retirements are not three wins');
+  assert.equal(rowA.podiums, 0, 'and they are not three podiums either');
+  assert.equal(rowB.podiums, 1, 'a third place is a podium');
+  assert.equal(rowA.races, 3, 'a retirement is still a race entered');
+  assert.equal(rowB.races, 3, 'and so is a finish');
+  assert.ok(
+    table.indexOf(rowB) < table.indexOf(rowA),
+    'level on points, the driver who finished on the podium is ahead of the one who never finished'
+  );
+});
+
 test('a season runs every round and awards points exactly once', () => {
   const store = {
     available: true,

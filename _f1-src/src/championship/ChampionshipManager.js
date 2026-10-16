@@ -157,13 +157,25 @@ export function currentRound(championship) {
 export function standings(championship) {
   return [...championship.entries]
     .map((entry) => {
-      // Matched on `short`. This used to match on `result.id`, but history rows are
-  // recorded with a `short` field and nothing writes `id`, so the filter never
-  // matched anything: every driver reported zero wins and zero podiums all season,
-  // and the standings fell back to sorting purely on points.
-  const results = championship.history.flat().filter((result) => result.short === entry.short);
-      const wins = results.filter((result) => result.position === 1).length;
-      const podiums = results.filter((result) => result.position <= 3).length;
+      /*
+       * Matched on `short`.
+       *
+       * This used to match on `result.id`, and history rows are recorded with a `short`, so the
+       * filter matched nothing: every driver reported zero wins and zero podiums all season and
+       * the standings fell back to sorting on points alone.
+       */
+      const results = championship.history.flat().filter((result) => result.short === entry.short);
+      /*
+       * A best finish has to be a finish.
+       *
+       * `position` is null for a car that was not classified, and `null <= 3` is true -- so every
+       * retirement counted as a podium. The standings break a points tie on wins and then on
+       * podiums, which handed the championship to whoever had failed to finish most often. The
+       * fastest-lap point is guarded the same way, for the same reason.
+       */
+      const classified = results.filter((result) => result.position !== null);
+      const wins = classified.filter((result) => result.position === 1).length;
+      const podiums = classified.filter((result) => result.position <= 3).length;
       return { ...entry, wins, podiums, races: results.length };
     })
     .sort((a, b) => b.points - a.points || b.wins - a.wins || b.podiums - a.podiums || a.short.localeCompare(b.short));
