@@ -187,10 +187,18 @@ setup.lapMetres = track.length;
       const timer = new LapTimer(track);
       timer.hintIndex = located.index;
       timer.progress = located.sample.s / track.length;
-      timer.lap = 0;
-      timer.lapStarted = true;
-      timer.visited.add(0);
-      timer.expected = 1;
+      /*
+       * The timer is *not* armed on the grid, and gate 0 is not pre-collected.
+       *
+       * A fresh `LapTimer` starts unarmed, and crossing the line arms it -- which is the
+       * entire reason the grid is behind the line. Pre-arming it (`lapStarted = true`, gate 0
+       * already in `visited`) put every car in the state of a machine halfway round a lap with
+       * one checkpoint taken, so the first crossing was read as the end of a lap that had
+       * missed twenty-three checkpoints: `invalid` was set for every car on the grid, and the
+       * HUD shouted INVALID LAP at all twenty of them from lights out until each one finished
+       * the lap -- a lap none of them had cut.
+       */
+
 
       const car = {
         entry,

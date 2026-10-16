@@ -4614,3 +4614,48 @@ test('the grid puts pole on the road, not in the run-off', () => {
   assert.ok(Number.isFinite(located.index));
   assert.ok(Math.abs(located.lateral) < 6, 'pole should be near the centreline');
 });
+
+test('the first lap of a race is a lap, not a deleted one', () => {
+  /*
+   * The grid sits behind the line and crossing that line arms the timer: that is the whole
+   * reason a grid is where it is. `RaceSession` armed every car's timer while it was still
+   * standing on the grid -- `lapStarted = true` with gate 0 already collected, which is the
+   * state of a machine halfway round a lap -- so the first crossing of the line was read as
+   * the end of a lap that had missed twenty-three checkpoints. `invalid` was set for every car
+   * on the grid, and the HUD reported INVALID LAP at all of them from lights out until each
+   * one had finished a full lap: a lap none of them had cut.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const entries = [
+    { ...DRIVERS[0], isPlayer: true, upgrades: {} },
+    { ...DRIVERS[1], isPlayer: false, upgrades: {} }
+  ];
+  const session = new RaceSession({
+    track,
+    entries,
+    type: SESSION_TYPE.race,
+    totalLaps: 3,
+    random: () => 0.5
+  });
+
+  for (const car of session.cars) {
+    // Unarmed, and with no checkpoints collected: the crossing is what starts the lap.
+    assert.equal(car.timer.lapStarted, false, `${car.entry.short} must not be timing from the grid`);
+    assert.equal(car.timer.visited.size, 0, 'a car on the grid has not collected a checkpoint');
+  }
+
+  // Off the grid and over the line: the player's car by hand, the AI's car by itself.
+  const straight = { throttle: 0.7, brake: 0, steer: 0, handbrake: false };
+  let crossed = 0;
+  for (let i = 0; i < 60 * 40 && crossed < session.cars.length; i += 1) {
+    session.update(DT, straight);
+    crossed = session.cars.filter((car) => car.timer.lapStarted).length;
+  }
+  assert.equal(crossed, session.cars.length, 'the field is over the line within forty seconds');
+
+  for (const car of session.cars) {
+    assert.equal(car.timer.invalid, false, `${car.entry.short}'s first lap was deleted on the line`);
+    assert.equal(car.timer.laps.length, 0, 'the crossing arms the timer rather than completing a lap');
+    assert.equal(car.timer.lap, 0, 'so no lap has been completed yet');
+  }
+});

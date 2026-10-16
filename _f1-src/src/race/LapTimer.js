@@ -160,6 +160,18 @@ export class LapTimer {
       this.visited.clear();
       this.visited.add(0);
       this.expected = 1;
+      /*
+       * The sector clock restarts with the attempt.
+       *
+       * Arming at the line is not the same as the clock having started there: for a car on
+       * the grid the sector clock has been running since it was placed, and the arm crossing
+       * is the boundary of whatever sector the grid is in. Without this, the first arm
+       * crossing records a couple of seconds of partial sector -- the run off the grid -- as
+       * a complete sector time, and being the shortest thing ever recorded there it becomes
+       * the reference the rest of the race is measured against.
+       */
+      this.sector = sample.sector;
+      this.sectorTime = 0;
     }
 
     // Sector boundaries come from the sample index, so they cannot be missed.
