@@ -2944,6 +2944,26 @@ test('reverse is a recovery aid, never a driving mode', () => {
   assert.ok(REVERSE_LIMIT <= 8, 'reverse must be strictly speed-limited');
 });
 
+test('yaw inertia is the tuned number, and the number is the tuned thing', () => {
+  /*
+   * The comment on this constant claimed it was "a fraction of mass * wheelbase^2". The code
+   * uses `mass * yawInertiaPerKg`. The two differ by 13x -- 350 kg m^2 against 4530 -- so the
+   * comment, the constant and the code disagreed about what a 795kg car with a 3.6m wheelbase
+   * does when you turn the wheel.
+   *
+   * The code is the calibrated side: the inertia is deliberately light (a knife-edge car, held
+   * stable by the yaw damping in `step`, with the AI's steering gains tuned against both), and
+   * "fixing" it to match the old comment would silently re-tune the entire game. So the
+   * arithmetic is pinned here, and the comment now says what the constant is.
+   */
+  const inertia = DEFAULT_GEOMETRY.mass * DEFAULT_GEOMETRY.yawInertiaPerKg;
+  assert.ok(Math.abs(inertia - 350) < 5, `yaw inertia is ${inertia.toFixed(0)} kg m^2`);
+  assert.ok(
+    inertia < DEFAULT_GEOMETRY.mass * DEFAULT_GEOMETRY.wheelBase ** 2 * 0.5,
+    'mass * wheelbase^2 is not the formula, and applying it re-tunes the car'
+  );
+});
+
 test('engine braking is a force at the wheels, not a torque', () => {
   /*
    * `ax` is assembled from forces, and every drivetrain term goes through `thrustFromTorque`,

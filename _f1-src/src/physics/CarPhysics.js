@@ -30,8 +30,20 @@ export const GRAVITY = 9.81;
  */
 export const DEFAULT_GEOMETRY = {
   mass: 795,
-  /** Yaw inertia as a fraction of mass * wheelbase^2. */
-  inertiaFactor: 0.44,
+  /**
+   * Yaw inertia *per kilogram*, in m^2 -- the radius of gyration squared, so that
+   * `I = mass * yawInertiaPerKg`.
+   *
+   * For this car that is 795 * 0.44 = 350 kg m^2, which is deliberately lighter than a real
+   * F1 car's (the uniform-rectangle estimate for a 3.6m car is over 2000, and a real car lands
+   * somewhere in between). It is calibrated together with the yaw damping in `step`, which is
+   * what actually keeps the car from oscillating, and with every steering and AI constant that
+   * has been tuned against it. The comment here used to claim `mass * wheelbase^2 *
+   * inertiaFactor` -- 13x more inertia than the code used, and a car that would drive nothing
+   * like this one. Correcting it the other way, by changing the code, is a re-tune of the whole
+   * game rather than a bug fix, so the constant says what it is instead.
+   */
+  yawInertiaPerKg: 0.44,
   wheelBase: 3.6,
   centreOfMassToFront: 1.85,
   centreOfMassHeight: 0.31,
@@ -451,7 +463,7 @@ export class CarPhysics {
     const a = spec.centreOfMassToFront;
     const b = spec.wheelBase - spec.centreOfMassToFront;
     const mass = spec.mass;
-    const inertia = mass * spec.inertiaFactor;
+    const inertia = mass * spec.yawInertiaPerKg;
     const speed = this.speed;
 
     this.downforce = this.computeDownforce(speed);
