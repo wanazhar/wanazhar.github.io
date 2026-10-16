@@ -1181,6 +1181,33 @@ test('a button pressed once is not still pressed a lap later', () => {
   );
 });
 
+test('losing focus releases everything that was being held', () => {
+  /*
+   * Neither the browser nor the operating system delivers a keyup for a key that was held when
+   * the window lost focus, and no pointerup arrives for a finger on a control -- the events
+   * simply stop. So everything held has to be released on blur, or a held throttle stays
+   * asserted for the rest of the session and the car drives off on its own while the player is
+   * looking at something else. On a phone, leaving the page is one of the ordinary ways to
+   * lose focus.
+   */
+  const input = new InputController(fakeWindow());
+  const pad = fakeButton();
+  input.bindButton(pad, ACTIONS.throttle, 'hold');
+
+  pad.emit('pointerdown');
+  assert.equal(input.read(1 / 60).throttle, 1, 'the on-screen pedal supplies throttle while held');
+
+  input.onBlur();
+  assert.equal(input.read(1 / 60).throttle, 0, 'and losing focus must release it');
+  assert.equal(pad.classList.contains('is-pressed'), false, 'the control must stop looking pressed');
+
+  // A key held at the same moment goes too: its `keyup` is never delivered either.
+  input.onKeyDown({ code: 'KeyW', repeat: false, preventDefault() {} });
+  assert.equal(input.read(1 / 60).throttle, 1, 'the key supplies throttle while held');
+  input.onBlur();
+  assert.equal(input.read(1 / 60).throttle, 0, 'and blur releases the keyboard as well');
+});
+
 test('qualifying is a knockout, not a time trial', () => {
   /*
    * Qualifying used to be a three-lap race with the lights off: every car on track at once,

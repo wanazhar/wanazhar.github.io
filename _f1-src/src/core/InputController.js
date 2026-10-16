@@ -105,12 +105,17 @@ export class InputController {
       if (!action) return;
       this.keys.delete(action);
     };
-    this.onBlur = () => {
-      this.keys.clear();
-      this.touch.throttle = 0;
-      this.touch.brake = 0;
-      this.touch.steer = 0;
-    };
+    /*
+     * Losing focus releases everything that was held.
+     *
+     * Neither the browser nor the operating system delivers a `keyup` for a key that was held
+     * when the window lost focus, and no `pointerup` arrives for a finger on a control -- the
+     * events simply stop coming. Releasing is the same job `clear()` does, so it is the same
+     * call: an on-screen throttle left asserted is a car that drives off by itself while the
+     * player is looking at something else, and on a phone leaving the page is one of the
+     * ordinary ways to lose focus.
+     */
+    this.onBlur = () => this.clear();
 
     target.addEventListener('keydown', this.onKeyDown, { passive: false });
     target.addEventListener('keyup', this.onKeyUp);
