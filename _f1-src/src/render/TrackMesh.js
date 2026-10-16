@@ -479,13 +479,23 @@ const roadMaterial = new THREE.MeshStandardMaterial({
   const apron = new THREE.Mesh(apronGeometry, runOffMaterial);
   group.add(apron);
 
+  /*
+   * The containment walls, 1.5m of concrete at the far edge of the run-off, one per side.
+   *
+   * `side` was computed here and then never used in the loop below: both walls were built at
+   * the *same* offset, so one side of every circuit had two coincident barriers z-fighting with
+   * each other and the other side had no barrier at all -- the one place a car can leave the
+   * track and keep going. The winding has to follow the side for the same reason: with one
+   * winding for both, the wall on the second side is lit from behind and culled, so it is not
+   * merely in the wrong place, it is invisible.
+   */
   for (const side of [1, -1]) {
     const wallPositions = [];
     const wallIndices = [];
     const wallUvs = [];
     for (let i = 0; i <= count; i += 1) {
       const s = samples[i % count];
-      const half = s.width * 0.5 + APRON + 1.5;
+      const half = (s.width * 0.5 + APRON + 1.5) * side;
       wallPositions.push(
         s.x + s.rightX * half, s.y, s.z + s.rightZ * half,
         s.x + s.rightX * half, s.y + 1.5, s.z + s.rightZ * half
@@ -496,7 +506,8 @@ const roadMaterial = new THREE.MeshStandardMaterial({
       wallUvs.push(u, 0, u, 1);
       if (i < count) {
         const a = i * 2;
-        wallIndices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+        if (side > 0) wallIndices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+        else wallIndices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
       }
     }
     const wallGeometry = new THREE.BufferGeometry();

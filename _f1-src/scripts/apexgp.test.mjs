@@ -3088,6 +3088,106 @@ test('a pit stop actually happens, and it actually costs time', () => {
   );
 });
 
+test('the barriers are on both sides of the circuit, facing it', () => {
+  /*
+   * `side` was computed in the barrier loop and then never used: both walls were built at the
+   * same offset. One side of every circuit had two coincident barriers z-fighting with each
+   * other, and the other side -- the one a car actually leaves the track on -- had no barrier at
+   * all. The winding did not follow the side either, so a wall placed on the far side is lit from
+   * behind and culled: not merely misplaced, invisible.
+   */
+  const circuit = getCircuit('monza');
+  const track = buildTrack(circuit);
+  const group = buildTrackMesh(track);
+  const meshes = [];
+  group.traverse((node) => {
+    if (node.isMesh) meshes.push(node);
+  });
+
+  // The containment walls: pairs of vertices 1.5m apart. The pit wall is 1.2m and the strips
+  // built from the road surface are flat.
+  const walls = meshes.filter((mesh) => {
+    if (mesh.isInstancedMesh || !mesh.geometry.getIndex()) return false;
+    const pos = mesh.geometry.getAttribute('position');
+    if (pos.count < 4 || pos.count % 2 !== 0) return false;
+    for (let i = 0; i < pos.count; i += 2) {
+      if (Math.abs(pos.getY(i + 1) - pos.getY(i) - 1.5) > 1e-3) return false;
+    }
+    return true;
+  });
+  assert.equal(walls.length, 2, 'one containment wall per side of the circuit');
+
+  const samples = track.samples;
+  const sides = walls.map((wall) => {
+    const pos = wall.geometry.getAttribute('position');
+    const located = locateOnTrack(track, pos.getX(0), pos.getZ(0), 0);
+    return Math.sign(located.lateral);
+  });
+  assert.equal(sides[0], -sides[1], `both barriers are on the same side (${sides.join(', ')})`);
+
+  for (const [index, wall] of walls.entries()) {
+    const pos = wall.geometry.getAttribute('position');
+    const pairs = pos.count / 2;
+    assert.equal(pairs, samples.length + 1, 'the barrier follows the whole lap');
+
+    // Its faces point back at the circuit. Vertex pairs are in sample order, so each triangle
+    // can be attributed to the sample it was built from rather than to whichever sample happens
+    // to be nearest -- which, on a hairpin tighter than the barrier's own offset, is a different
+    // part of the lap entirely.
+    const wallIndex = wall.geometry.getIndex();
+    let outward = 0;
+    let faces = 0;
+    for (let t = 0; t < wallIndex.count; t += 3) {
+      const v0 = wallIndex.getX(t);
+      const v1 = wallIndex.getX(t + 1);
+      const v2 = wallIndex.getX(t + 2);
+      const ax = pos.getX(v0);
+      const ay = pos.getY(v0);
+      const az = pos.getZ(v0);
+      const ux = pos.getX(v1) - ax;
+      const uy = pos.getY(v1) - ay;
+      const uz = pos.getZ(v1) - az;
+      const wx = pos.getX(v2) - ax;
+      const wy = pos.getY(v2) - ay;
+      const wz = pos.getZ(v2) - az;
+      const nx = uy * wz - uz * wy;
+      const nz = ux * wy - uy * wx;
+      const sample = samples[Math.floor(v0 / 2) % samples.length];
+      const towardX = sample.x - ax;
+      const towardZ = sample.z - az;
+      faces += 1;
+      if (nx * towardX + nz * towardZ <= 0) outward += 1;
+    }
+    /*
+     * A few per cent, not zero: where a corner is tighter than the wall's own offset (Monza's
+     * chicane), extruding a strip 34m wide round the inside of it genuinely folds the wall back
+     * on itself. The wall on the *wrong* side of the circuit fails this by a mile, since every
+     * face of it is lit from behind.
+     */
+    assert.ok(
+      outward * 50 < faces,
+      `${outward} of ${faces} barrier faces point away from the circuit`
+    );
+  }
+
+  /*
+   * One on each side, an apron apart.
+   *
+   * The two walls are built from the same sample, so their separation is the road's own width
+   * plus two run-offs plus the two walls -- 26m of run-off each side, which is TrackMesh's
+   * `APRON`. Coincident walls measure zero here.
+   */
+  const [near, far] = walls.map((wall) => wall.geometry.getAttribute('position'));
+  for (let i = 0; i < samples.length; i += 7) {
+    const gap = Math.hypot(near.getX(i * 2) - far.getX(i * 2), near.getZ(i * 2) - far.getZ(i * 2));
+    const expected = samples[i].width + 2 * 26 + 2 * 1.5;
+    assert.ok(
+      Math.abs(gap - expected) < 1,
+      `the barriers are ${gap.toFixed(1)}m apart at sample ${i}, expected ${expected.toFixed(1)}m`
+    );
+  }
+});
+
 test('the pit lane is one strip, where the lane rules say it is', () => {
   /*
    * The pit window wraps the start line, so the samples in it are two runs in storage order --
