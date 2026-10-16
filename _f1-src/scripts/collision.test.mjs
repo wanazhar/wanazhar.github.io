@@ -183,5 +183,29 @@ console.log('\nrepeated contact settles');
   check('contact expires once they are apart', a.contact === null);
 }
 
+console.log('\nthe contact lifetime is measured in the caller\'s seconds');
+{
+  /*
+   * The age was advanced by a hard-coded 1/60 while the session steps at 1/120, so a contact
+   * meant to stay visible for 0.6s stayed for 1.2s of race time -- and any other caller (a
+   * bench, a replay, a slower machine) stretched it by whatever the ratio happened to be.
+   * `resolveCarContacts` takes the step it is being run at now.
+   */
+  const STEP = 1 / 120;
+  const a = carAt(0, 0, 0, 35);
+  const b = carAt(4.2, 0, 0, 35);
+  resolveCarContacts([a, b], STEP);
+  check('a contact exists to age', a.contact !== null);
+
+  // Half a second of the caller's own seconds: still inside the effect's 0.6s life.
+  b.physics.x += 40;
+  for (let i = 0; i < 60; i += 1) resolveCarContacts([a, b], STEP);
+  check('contact survives half a second of race time', a.contact !== null,
+    `age ${a.contact ? a.contact.age.toFixed(3) : 'gone'}`);
+
+  for (let i = 0; i < 30; i += 1) resolveCarContacts([a, b], STEP);
+  check('and is gone once it is over', a.contact === null);
+}
+
 console.log(`\n${failures === 0 ? 'all contact assertions hold' : `${failures} assertion(s) failed`}`);
 process.exitCode = failures === 0 ? 0 : 1;

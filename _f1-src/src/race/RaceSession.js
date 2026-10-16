@@ -360,7 +360,7 @@ setup.lapMetres = track.length;
      * ends up on the inside of a shunt depends on its grid slot rather than on
      * where the cars actually met.
      */
-    if (this.contacts) resolveCarContacts(this.cars);
+    if (this.contacts) resolveCarContacts(this.cars, dt);
 
     /*
      * Damage.

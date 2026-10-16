@@ -111,6 +111,8 @@ const BROADPHASE_DISTANCE = CAR_HALF_LENGTH * 2 + 1;
 
 /** Seconds a contact effect stays visible after the collision frame. */
 const CONTACT_TTL = 0.6;
+/** Fallback step for direct callers (tests, tooling) that do not pass one. */
+const DEFAULT_STEP = 1 / 60;
 
 /**
  * Resolve every contact in the field.
@@ -121,14 +123,19 @@ const CONTACT_TTL = 0.6;
  * depends on grid order.
  *
  * @param {Array<{physics: object, retired?: boolean, finished?: boolean}>} cars
+ * @param {number} [dt] the substep the caller is running, seconds
  */
-export function resolveCarContacts(cars) {
+export function resolveCarContacts(cars, dt = DEFAULT_STEP) {
   // Fade the previous frame's effects. Cars are appended in grid order, so this has
   // to walk the live list, not a snapshot taken before it was built.
   for (const car of cars) {
     car.touching = false;
     if (car.contact && car.contact.age >= CONTACT_TTL) car.contact = null;
-    else if (car.contact) car.contact.age += 1 / 60;
+    // Aged in the caller's own seconds. This was a fixed 1/60 while the session steps at
+    // 1/120, so a contact's 0.6s of visible life was 1.2s on the timing screens, and any
+    // caller that steps differently (a bench, a replay, a slower machine) stretched it by
+    // whatever the ratio happened to be.
+    else if (car.contact) car.contact.age += dt;
   }
 
   for (let i = 0; i < cars.length; i += 1) {
