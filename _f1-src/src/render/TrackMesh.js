@@ -318,41 +318,79 @@ const roadMaterial = new THREE.MeshStandardMaterial({
   const pitWallIndices = [];
   const PIT_LANE_RENDER_WIDTH = PIT_LANE_WIDTH;
   const boxes = [];
-  let previousIndex = -1;
 
-  for (let i = 0; i <= count; i += 1) {
-    const s = samples[i % count];
+  /*
+   * The window wraps the start line, so it is walked as one contiguous run that *begins*
+   * where the gap before it ends.
+   *
+   * Walking from sample 0 instead produced the tail of the lap and the head of it as two
+   * separate runs, with a duplicate of sample 0 on the end, and the index builder below
+   * assumed the vertex buffer was one unbroken strip: it joined the two runs with a quad,
+   * bridged the opening at the box, and ran two vertices past the end of the buffer, which
+   * WebGL reads as the origin -- a triangle from the pit lane to the middle of the world.
+   */
+  const windowStart = Math.max(0, samples.findIndex((sample) => sample.s / track.length >= PIT_WINDOW_START));
+  let lanePrevious = -1;
+  let wallPrevious = -1;
+
+  for (let step = 0; step < count; step += 1) {
+    const s = samples[(windowStart + step) % count];
     const fraction = s.s / track.length;
-    // The window wraps the line, so walk it as a contiguous run from just before the line.
     const inWindow = fraction >= PIT_WINDOW_START || fraction <= PIT_WINDOW_END;
     if (!inWindow) {
-      if (previousIndex >= 0) previousIndex = -1;
+      lanePrevious = -1;
+      wallPrevious = -1;
       continue;
     }
 
     const edge = PIT_SIDE * (s.width * 0.5);
     const outer = edge + PIT_SIDE * PIT_LANE_RENDER_WIDTH;
 
-    // Lane surface.
+    // Lane surface. Two vertices per sample, joined to the previous sample of *this* run.
+    // The walk covers each sample exactly once (`step < count`), so the lane does not carry a
+    // second copy of the sample it started on -- which is what left a pair of vertices in the
+    // buffer connected to nothing.
+    const laneBase = pitStripPositions.length / 3;
     pitStripPositions.push(
       s.x + s.rightX * edge, s.y + 0.03, s.z + s.rightZ * edge,
       s.x + s.rightX * outer, s.y + 0.03, s.z + s.rightZ * outer
     );
-    const v = (i / count) * track.length * 0.1;
+    // Along the run rather than around the lap, so the texture stays continuous from one
+    // end of the lane to the other instead of restarting at the start line.
+    const v = (step / count) * track.length * 0.1;
     pitStripUvs.push(0, v, 1, v);
+    if (lanePrevious >= 0) {
+      pitStripIndices.push(
+        lanePrevious, lanePrevious + 1, laneBase,
+        lanePrevious + 1, laneBase + 1, laneBase
+      );
+    }
+    lanePrevious = laneBase;
 
-    // Pit wall, 1.2m high, with a gap at the box so cars can reach the far side.
+    // Pit wall, 1.2m high, with a gap at the box so cars can reach the far side. The gap has
+    // to break the run, not just skip a pair of vertices: skipping alone left the indices
+    // spanning it, so the wall was solid across the pit box with a hole in the vertex list.
     const atBox = Math.abs(laneProgress(fraction) - BOX_PROGRESS) < 0.06;
-    if (!atBox) {
+    if (atBox) {
+      wallPrevious = -1;
+    } else {
+      const wallBase = pitWallPositions.length / 3;
       pitWallPositions.push(
         s.x + s.rightX * edge, s.y, s.z + s.rightZ * edge,
         s.x + s.rightX * edge, s.y + 1.2, s.z + s.rightZ * edge
       );
+      if (wallPrevious >= 0) {
+        pitWallIndices.push(
+          wallPrevious, wallBase, wallPrevious + 1,
+          wallPrevious + 1, wallBase, wallBase + 1
+        );
+      }
+      wallPrevious = wallBase;
     }
 
     // Garages and boxes along the far side, instanced.
     // One garage per team frontage: real complexes have a building per entry, not a wall of them.
-    if (i % 10 === 0) {
+    if (step % 10 === 0) {
       boxes.push({
         x: s.x + s.rightX * (outer - PIT_SIDE * 3.5),
         y: s.y,
@@ -360,20 +398,7 @@ const roadMaterial = new THREE.MeshStandardMaterial({
         heading: s.heading
       });
     }
-
-    previousIndex = i;
   }
-
-  // Indices, now that the runs are known.
-  for (let base = 0; base * 2 < pitStripPositions.length / 3; base += 1) {
-    const a = base * 2;
-    pitStripIndices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
-  }
-  for (let base = 0; base * 2 < pitWallPositions.length / 3; base += 1) {
-    const a = base * 2;
-    pitWallIndices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
-  }
-  void previousIndex;
 
   if (pitStripIndices.length) {
     const laneGeometry = new THREE.BufferGeometry();
@@ -391,7 +416,17 @@ const roadMaterial = new THREE.MeshStandardMaterial({
     pitWallGeometry.setAttribute('position', new THREE.Float32BufferAttribute(pitWallPositions, 3));
     pitWallGeometry.setIndex(pitWallIndices);
     pitWallGeometry.computeVertexNormals();
-    group.add(new THREE.Mesh(pitWallGeometry, wallMaterial));
+    /*
+     * The one wall in the venue drawn from both sides.
+     *
+     * A barrier is only ever seen from the circuit, so one side is enough and half the
+     * triangles are culled. The pit wall has no thickness and is seen from both: from the
+     * circuit, where the camera spends the whole lap, and from the lane, where the car is
+     * when it actually matters.
+     */
+    const pitWallMaterial = wallMaterial.clone();
+    pitWallMaterial.side = THREE.DoubleSide;
+    group.add(new THREE.Mesh(pitWallGeometry, pitWallMaterial));
   }
 
   if (boxes.length) {

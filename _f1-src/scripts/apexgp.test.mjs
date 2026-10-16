@@ -23,7 +23,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { buildCarMesh, buildEnvironment, syncCarMesh } from '../src/render/TrackMesh.js';
+import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../src/render/TrackMesh.js';
 
 import { CIRCUITS, getCircuit } from '../src/track/circuits.js';
 import {
@@ -58,7 +58,7 @@ import {
 } from '../src/physics/CarPhysics.js';
 import { AIDriver } from '../src/ai/AIDriver.js';
 import { LapTimer } from '../src/race/LapTimer.js';
-import { inPitLane, PIT_LANE_WIDTH, shouldPit } from '../src/race/pit.js';
+import { BOX_PROGRESS, inPitLane, laneProgress, PIT_LANE_WIDTH, PIT_WINDOW_END, PIT_WINDOW_START, shouldPit } from '../src/race/pit.js';
 import { weatherAt, weatherPlan } from '../src/race/weather.js';
 import {
   applyImpact,
@@ -3085,6 +3085,175 @@ test('a pit stop actually happens, and it actually costs time', () => {
   assert.ok(
     worstFreshRubber < 0.2,
     `a stop must leave fresh rubber, worst sample ${(worstFreshRubber * 100).toFixed(0)}% wear`
+  );
+});
+
+test('the pit lane is one strip, where the lane rules say it is', () => {
+  /*
+   * The pit window wraps the start line, so the samples in it are two runs in storage order --
+   * the end of the lap and the beginning of it -- plus a repeat of the first sample at the end
+   * of an inclusive walk. The geometry was built as though they were one unbroken strip: the
+   * index loop joined the end of the lap to the start of it with a quad, and ran two vertices
+   * past the end of the buffer, which WebGL reads as index 0 -- a triangle from the pit lane to
+   * the middle of the world. The pit wall had the same treatment, which is why its opening at
+   * the box was a hole in the vertex list that the indices happily spanned.
+   */
+  const circuit = getCircuit('monza');
+  const track = buildTrack(circuit);
+  const group = buildTrackMesh(track);
+  const meshes = [];
+  group.traverse((node) => {
+    if (node.isMesh) meshes.push(node);
+  });
+  const positionOf = (mesh) => mesh.geometry.getAttribute('position');
+
+  // Every index is a real vertex of its own buffer.
+  for (const mesh of meshes) {
+    const index = mesh.geometry.getIndex();
+    if (!index) continue;
+    const vertices = positionOf(mesh).count;
+    for (let i = 0; i < index.count; i += 1) {
+      assert.ok(index.getX(i) < vertices, `index ${index.getX(i)} of ${vertices} vertices`);
+    }
+  }
+
+  /*
+   * No triangle in the circuit spans a gap.
+   *
+   * The widest legitimate triangle here is the run-off apron's: it links the road edge to the
+   * verge 26m out on the other side, so a quad is about 70m across on every circuit. Anything
+   * much wider is two pieces of geometry being joined that should not be: the quad that joined
+   * the two pit-lane runs crossed the main straight, and the triangle built on the out-of-range
+   * indices crossed the map from the pit lane to the origin.
+   */
+  for (const mesh of meshes) {
+    if (mesh.isInstancedMesh) continue;
+    const pos = positionOf(mesh);
+    const index = mesh.geometry.getIndex();
+    const total = index ? index.count : pos.count;
+    const at = (v) => [pos.getX(v), pos.getY(v), pos.getZ(v)];
+    const span = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+    for (let t = 0; t + 2 < total; t += 3) {
+      const corners = index
+        ? [index.getX(t), index.getX(t + 1), index.getX(t + 2)].map(at)
+        : [at(t), at(t + 1), at(t + 2)];
+      const longest = Math.max(
+        span(corners[0], corners[1]),
+        span(corners[1], corners[2]),
+        span(corners[2], corners[0])
+      );
+      assert.ok(longest < 90, `a ${longest.toFixed(0)}m edge in the ${mesh.geometry.type}`);
+    }
+  }
+
+  // The lane surface: the strip whose every vertex is inside the pit window, out past the road
+  // edge. Nothing else in the group is confined to the lane.
+  const lane = meshes.find((mesh) => {
+    if (mesh.isInstancedMesh || !mesh.geometry.getIndex()) return false;
+    const pos = positionOf(mesh);
+    for (let i = 0; i < pos.count; i += 1) {
+      const located = locateOnTrack(track, pos.getX(i), pos.getZ(i), null);
+      const fraction = located.sample.s / track.length;
+      const inWindow = fraction >= PIT_WINDOW_START || fraction <= PIT_WINDOW_END;
+      if (!inWindow) return false;
+      if (Math.abs(located.lateral) < located.sample.width * 0.5 - 0.5) return false;
+    }
+    return true;
+  });
+  assert.ok(lane, 'the pit lane must be drawn');
+
+  const samplesInWindow = track.samples.filter((sample) => {
+    const fraction = sample.s / track.length;
+    return fraction >= PIT_WINDOW_START || fraction <= PIT_WINDOW_END;
+  });
+  const pos = positionOf(lane);
+  assert.equal(
+    pos.count,
+    samplesInWindow.length * 2,
+    'one pair of vertices per sample of the window -- no missing run, no repeat of the first sample'
+  );
+
+  // And it is where `race/pit.js` says the lane is: the middle of each quad is in the lane by
+  // the same rule the race uses, and its two sides are the road edge and the far side of it.
+  for (let i = 0; i < pos.count; i += 2) {
+    const middle = locateOnTrack(track, (pos.getX(i) + pos.getX(i + 1)) / 2, (pos.getZ(i) + pos.getZ(i + 1)) / 2, null);
+    const half = middle.sample.width * 0.5;
+    assert.ok(
+      inPitLane(middle.sample.s / track.length, middle.lateral, half),
+      `the middle of the lane is not in the lane (lateral ${middle.lateral.toFixed(1)}m)`
+    );
+    const inner = locateOnTrack(track, pos.getX(i), pos.getZ(i), null);
+    const outer = locateOnTrack(track, pos.getX(i + 1), pos.getZ(i + 1), null);
+    assert.ok(Math.abs(Math.abs(inner.lateral) - half) < 0.2, 'the lane starts at the road edge');
+    assert.ok(
+      Math.abs(Math.abs(outer.lateral) - (half + PIT_LANE_WIDTH)) < 0.2,
+      `the lane ends at the lane width, not ${(Math.abs(outer.lateral) - half).toFixed(1)}m out`
+    );
+  }
+
+  // The wall: pairs of vertices 1.2m apart, which nothing else in the group is.
+  const wall = meshes.find((mesh) => {
+    if (mesh.isInstancedMesh || !mesh.geometry.getIndex()) return false;
+    const wallPos = positionOf(mesh);
+    if (wallPos.count < 4 || wallPos.count % 2 !== 0) return false;
+    for (let i = 0; i < wallPos.count; i += 2) {
+      // Tolerance is the float32 round-off in the attribute, not slack: the wall is the only
+      // pair-of-vertices-a-fixed-height-apart strip in the group.
+      if (Math.abs(wallPos.getY(i + 1) - wallPos.getY(i) - 1.2) > 1e-3) return false;
+    }
+    return true;
+  });
+  assert.ok(wall, 'the pit wall must be drawn');
+
+  // Connected pieces of the wall, and how far along the lane each one reaches.
+  const wallIndex = wall.geometry.getIndex();
+  const wallPos = positionOf(wall);
+  const neighbours = new Map();
+  const connect = (a, b) => {
+    if (!neighbours.has(a)) neighbours.set(a, new Set());
+    if (!neighbours.has(b)) neighbours.set(b, new Set());
+    neighbours.get(a).add(b);
+    neighbours.get(b).add(a);
+  };
+  for (let i = 0; i < wallIndex.count; i += 3) {
+    const tri = [wallIndex.getX(i), wallIndex.getX(i + 1), wallIndex.getX(i + 2)];
+    connect(tri[0], tri[1]);
+    connect(tri[1], tri[2]);
+    connect(tri[2], tri[0]);
+  }
+  const seen = new Set();
+  const pieces = [];
+  for (const start of neighbours.keys()) {
+    if (seen.has(start)) continue;
+    const queue = [start];
+    seen.add(start);
+    let low = Infinity;
+    let high = -Infinity;
+    while (queue.length) {
+      const vertex = queue.pop();
+      const located = locateOnTrack(track, wallPos.getX(vertex), wallPos.getZ(vertex), null);
+      const progress = laneProgress(located.sample.s / track.length);
+      low = Math.min(low, progress);
+      high = Math.max(high, progress);
+      for (const next of neighbours.get(vertex)) {
+        if (seen.has(next)) continue;
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+    pieces.push([low, high]);
+  }
+
+  assert.equal(pieces.length, 2, `the wall is two pieces with the box between them, not ${pieces.length}`);
+  for (const [low, high] of pieces) {
+    assert.ok(
+      low > BOX_PROGRESS || high < BOX_PROGRESS,
+      `a wall from ${low.toFixed(2)} to ${high.toFixed(2)} crosses the pit box, where cars have to`
+    );
+  }
+  assert.ok(
+    Math.min(...pieces.map(([low]) => low)) < 0.02 && Math.max(...pieces.map(([, high]) => high)) > 0.98,
+    'the wall runs the length of the lane, either side of the opening'
   );
 });
 
