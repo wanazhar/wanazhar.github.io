@@ -490,7 +490,11 @@ export class Game {
         if (array[i] < 0) array[i] += 45;
       }
       positions.needsUpdate = true;
-      this.rain.position.set(camera.x, 0, camera.z);
+      // Centred on the camera in all three axes. On x and z as before -- the drops are a
+      // column that travels with the view -- and on y because the column is 45m tall and
+      // was anchored at sea level, so at Mexico City the rain fell two kilometres below
+      // the car and a wet race was a dry one.
+      this.rain.position.set(camera.x, camera.y - 22, camera.z);
     }
 
     // DRS is only usable on the straights, and only when it is allowed.
@@ -650,11 +654,20 @@ export class Game {
     }
   }
 
-  /** Keep the shadow camera tight around the player for crisp shadows. */
+  /**
+   * Keep the shadow camera tight around the player, and keep it in the player's sky.
+   *
+   * The offset is what sets the direction of the light, so it is deliberately the same
+   * (180, 320, 120) everywhere -- but it has to be measured from the car, not from sea
+   * level. The shadow camera is 40m to 900m deep, and a car at 2235m (Mexico City) with
+   * its light at 320m is nearly two kilometres outside that range: the shadows quietly
+   * stopped existing on every elevated circuit, and the only circuits where this was
+   * right were the two at zero metres.
+   */
   #updateSunFollow(physics) {
     if (!this.sun) return;
-    this.sun.position.set(physics.x + 180, 320, physics.z + 120);
-    this.sun.target.position.set(physics.x, 0, physics.z);
+    this.sun.position.set(physics.x + 180, physics.y + 320, physics.z + 120);
+    this.sun.target.position.set(physics.x, physics.y, physics.z);
     this.sun.target.updateMatrixWorld();
     if (!this.sun.target.parent) this.scene.add(this.sun.target);
   }

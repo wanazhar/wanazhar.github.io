@@ -597,7 +597,16 @@ export function buildEnvironment(track, theme) {
   const pylonMaterial = new THREE.MeshStandardMaterial({ color: 0x9ca3af, roughness: 0.7, metalness: 0.3 });
   const bulbMaterial = new THREE.MeshBasicMaterial({ color: 0xfff6d0 });
 
-  // Grandstands every so often around the lap, tilted towards the track.
+  /*
+   * Every placement here is against the circuit's own height, never against y = 0.
+   *
+   * `sample.y` is metres above sea level, and the circuits are spread across 2.2km of it --
+   * Mexico City sits at 2235m, Spielberg at 685, Baku at -21. Anchoring scenery to zero put
+   * the grandstands two kilometres under the road at Mexico: no stands, no pylons, no start
+   * gantry, and a ground plane far below, so the circuit appeared to float in the sky. It
+   * looked correct only on Silverstone (0m) and Las Vegas (0m), which is presumably how it
+   * survived.
+   */
   const standStride = Math.max(1, Math.floor(count / 18));
   const standPlacements = [];
   for (let i = 0; i < count; i += standStride) {
@@ -606,7 +615,7 @@ export function buildEnvironment(track, theme) {
     for (const side of [1, -1]) {
       const matrix = new THREE.Matrix4();
       matrix.compose(
-        new THREE.Vector3(s.x + s.rightX * half * side, 0, s.z + s.rightZ * half * side),
+        new THREE.Vector3(s.x + s.rightX * half * side, s.y, s.z + s.rightZ * half * side),
         new THREE.Quaternion().setFromAxisAngle(
           new THREE.Vector3(0, 1, 0),
           -s.heading + (side > 0 ? Math.PI / 2 : -Math.PI / 2)
@@ -642,7 +651,7 @@ export function buildEnvironment(track, theme) {
     const s = samples[i];
     const half = s.width * 0.5 + 40;
     for (const side of [1, -1]) {
-      const position = new THREE.Vector3(s.x + s.rightX * half * side, 0, s.z + s.rightZ * half * side);
+      const position = new THREE.Vector3(s.x + s.rightX * half * side, s.y, s.z + s.rightZ * half * side);
       const quaternion = new THREE.Quaternion();
       // Face the rig back at the track: the same effect as the previous
       // lookAt-then-nudge, but written without allocating a throwaway Object3D.
@@ -688,7 +697,7 @@ export function buildEnvironment(track, theme) {
   banner.position.y = 12.2;
   gantry.add(banner);
   const startSample = samples[0];
-  gantry.position.set(startSample.x, 0, startSample.z);
+  gantry.position.set(startSample.x, startSample.y, startSample.z);
   // Same 90-degree offset as `syncCarMesh`, and for the same reason: the track's
   // heading describes travel as `(cos h, sin h)` in world (x, z), while the beam
   // is modelled across local +X. With `-heading` the gantry was rotated to stand
@@ -726,9 +735,19 @@ export function buildEnvironment(track, theme) {
     })
   );
   ground.rotation.x = -Math.PI / 2;
-  // Just below the road surface, so the tarmac always sits on top of it and there is
-  // never a z-fighting seam at the edge of the run-off.
-  ground.position.y = -0.08;
+  /*
+   * Just below the road surface, so the tarmac always sits on top of it and there is
+   * never a z-fighting seam at the edge of the run-off.
+   *
+   * "Just below" has to mean below the *lowest* point of the lap, not below sea level. A
+   * circuit with 70m of elevation (Spa, Imola) would otherwise be cut through by its own
+   * ground plane wherever it dips under average height, and a circuit with 2200m (Mexico)
+   * would have no ground at all -- the plane sat on the far side of the world, below the
+   * horizon, so the track hung in the sky.
+   */
+  let groundLevel = Infinity;
+  for (const sample of samples) groundLevel = Math.min(groundLevel, sample.y);
+  ground.position.y = groundLevel - 0.08;
   group.add(ground);
 
   return group;

@@ -131,6 +131,7 @@ const physicsSource = readFileSync(new URL('../src/physics/CarPhysics.js', impor
 const geometrySource = readFileSync(new URL('../src/track/trackGeometry.js', import.meta.url), 'utf8');
 const uiSource = readFileSync(new URL('../src/ui/UIManager.js', import.meta.url), 'utf8');
 const renderSource = readFileSync(new URL('../src/render/TrackMesh.js', import.meta.url), 'utf8');
+const gameSource = readFileSync(new URL('../src/core/Game.js', import.meta.url), 'utf8');
 const mainSource = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 
 const DT = FIXED_TIMESTEP;
@@ -3671,6 +3672,75 @@ test('the AI never commands throttle and brake together', () => {
     );
     car.step(DT, controls, { grip: 1 });
   }
+});
+
+test('the world is built at the circuit, not at sea level', () => {
+  /*
+   * `sample.y` is metres above sea level and the calendar spans 2.2km of it: Mexico City at
+   * 2235m, Spielberg at 685, Baku at -21, Silverstone and Las Vegas at exactly 0. Every piece
+   * of venue scenery -- grandstands, floodlight pylons, the start gantry, the ground plane --
+   * was placed at a hardcoded y = 0, and the sun's shadow camera was anchored the same way.
+   *
+   * At Mexico that put the entire venue two kilometres below the road: no stands, no rigs, no
+   * gantry, no ground, a circuit hanging in the sky. At Baku it hung a storey above it. The
+   * only two circuits it looked right on were the two that happen to be at zero metres, which
+   * is how a hardcoded height survives a decade of playtesting.
+   */
+  for (const id of ['mexico', 'spielberg', 'baku', 'monza', 'silverstone']) {
+    const circuit = getCircuit(id);
+    const track = buildTrack(circuit);
+    const heights = track.samples.map((sample) => sample.y);
+    const low = Math.min(...heights);
+    const high = Math.max(...heights);
+
+    const environment = buildEnvironment(track, circuit.theme);
+    // One forced update of the whole tree: measuring a child's world box before its parents
+    // have been updated reports the child's *local* box, which is how the start gantry read as
+    // sitting at 8m on a circuit 2.2km up.
+    environment.updateMatrixWorld(true);
+    const meshes = [];
+    environment.traverse((node) => {
+      if (node.isMesh) meshes.push(node);
+    });
+    assert.ok(meshes.length > 0, `${id}: no venue scenery at all`);
+
+    for (const mesh of meshes) {
+      const box = new THREE.Box3().setFromObject(mesh);
+      // The ground plane is deliberately just under the *lowest* point of the lap; everything
+      // else stands on the ground the circuit is actually built on.
+      assert.ok(
+        box.min.y > low - 40,
+        `${id}: scenery at ${box.min.y.toFixed(1)}m is below a circuit at ${low.toFixed(1)}m`
+      );
+      assert.ok(
+        box.max.y < high + 60,
+        `${id}: scenery at ${box.max.y.toFixed(1)}m towers over a circuit at ${high.toFixed(1)}m`
+      );
+    }
+
+    // And specifically the ground: under the road everywhere, over the horizon nowhere.
+    const ground = meshes.find((mesh) => mesh.geometry.type === 'PlaneGeometry');
+    assert.ok(ground, `${id}: the world outside the barriers needs a ground plane`);
+    assert.ok(ground.position.y < low, `${id}: the ground plane cuts through the circuit`);
+    assert.ok(ground.position.y > low - 20, `${id}: the ground plane is ${(low - ground.position.y).toFixed(1)}m below the road`);
+  }
+
+  // Two more anchors of the same kind, in the game loop rather than in the venue. The sun's
+  // shadow camera is 40m to 900m deep over a car that can be 2.2km above sea level, and the
+  // rain column is 45m tall around a camera that is up there with it. Source-level, because
+  // both need a live renderer to exercise.
+  assert.ok(
+    /this\.sun\.position\.set\(\s*physics\.x \+ 180,\s*physics\.y \+ 320,\s*physics\.z \+ 120\s*\)/.test(gameSource),
+    'the shadow camera must be anchored to the car it is shadowing, not to sea level'
+  );
+  assert.ok(
+    /this\.sun\.target\.position\.set\(physics\.x, physics\.y, physics\.z\)/.test(gameSource),
+    'the light must point at the car, not at the origin'
+  );
+  assert.ok(
+    /this\.rain\.position\.set\(camera\.x, camera\.y - 22, camera\.z\)/.test(gameSource),
+    'the rain column must be centred on the camera in all three axes'
+  );
 });
 
 test('the floodlights are on the pylons, and on every pylon', () => {
