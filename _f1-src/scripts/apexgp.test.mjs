@@ -123,6 +123,7 @@ import {
   buyUpgrade,
   createChampionship,
   currentRound,
+  loadChampionship,
   pointsForPosition,
   setupForEntry,
   standings
@@ -4546,6 +4547,77 @@ test('retiring is not a podium and not a win', () => {
     table.indexOf(rowB) < table.indexOf(rowA),
     'level on points, the driver who finished on the podium is ahead of the one who never finished'
   );
+});
+
+test('an unusable save leaves the season where it was', () => {
+  /*
+   * `loadChampionship` returns null when the save cannot be applied, but it wrote each entry as
+   * it checked it -- points, upgrades and development points, one entry at a time. A save that
+   * failed on its last entry, which is what a save from a different roster looks like, therefore
+   * left the championship half-loaded: some of a stranger's progress, this season's for the
+   * rest. The caller ignores the null, because a null save means "start fresh" and there is
+   * nothing else for it to do, so it started the season from that chimaera.
+   */
+  const store = {
+    available: true,
+    data: null,
+    load() {
+      return this.data;
+    },
+    save(state) {
+      this.data = state;
+      return true;
+    },
+    clear() {
+      this.data = null;
+    }
+  };
+  const championship = createChampionship(store);
+  const before = championship.entries.map((entry) => ({
+    short: entry.short,
+    points: entry.points,
+    upgrades: { ...entry.upgrades }
+  }));
+
+  // Every entry named but the last: usable right up to the point where it is not.
+  store.data = {
+    version: 1,
+    round: 5,
+    finished: false,
+    history: [],
+    entries: championship.entries.slice(0, -1).map((entry, index) => ({
+      short: entry.short,
+      points: 40 + index,
+      upgrades: { ...entry.upgrades, power: 3 },
+      developmentPoints: 7
+    }))
+  };
+  assert.equal(loadChampionship(championship), null, 'a save missing an entry is unusable');
+  assert.equal(championship.round, 0, 'so the season must not be moved on');
+  for (const entry of championship.entries) {
+    const original = before.find((row) => row.short === entry.short);
+    assert.equal(entry.points, original.points, `${entry.short} must keep this season's points`);
+    assert.deepEqual(entry.upgrades, original.upgrades, "and this season's upgrades");
+    assert.notEqual(entry.points, 40, 'and none of the unusable save must be in there');
+  }
+
+  // A save that names every entry still loads, which is the whole point of the function.
+  store.data = {
+    version: 1,
+    round: 4,
+    finished: false,
+    history: [],
+    entries: championship.entries.map((entry, index) => ({
+      short: entry.short,
+      points: 10 + index,
+      upgrades: { ...entry.upgrades },
+      developmentPoints: 3
+    }))
+  };
+  assert.ok(loadChampionship(championship), 'a complete save must still load');
+  assert.equal(championship.round, 4, 'with its round, its history and its points');
+  assert.equal(championship.entries[0].points, 10, 'the first entry takes the saved points');
+  assert.equal(championship.entries.at(-1).points, 10 + championship.entries.length - 1);
 });
 
 test('a season runs every round and awards points exactly once', () => {

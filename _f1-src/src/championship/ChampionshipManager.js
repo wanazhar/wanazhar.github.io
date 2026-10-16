@@ -272,12 +272,31 @@ export function loadChampionship(championship) {
   const saved = championship.store.load();
   if (!saved || saved.version !== 1 || !Array.isArray(saved.entries)) return null;
   const byName = new Map(saved.entries.map((entry) => [entry.short, entry]));
+  /*
+   * Check the whole save before applying any of it.
+   *
+   * Entries used to be written as they were checked, so a save that turned out to be unusable
+   * half way through -- one entry missing, which is what a save from a different roster looks
+   * like -- left the championship holding that save's points and upgrades for the entries it had
+   * reached and this season's for the rest. The caller ignores the returned null, because a
+   * null save means "start fresh" and there is nothing else for it to do, so it started from
+   * that chimaera and the season had someone else's progress in it.
+   */
+  const restored = [];
   for (const entry of championship.entries) {
     const found = byName.get(entry.short);
     if (!found) return null;
-    entry.points = found.points ?? 0;
-    entry.upgrades = { ...stockUpgrades(), ...found.upgrades };
-    if (entry.isPlayer) entry.developmentPoints = found.developmentPoints ?? 0;
+    restored.push({
+      entry,
+      points: found.points ?? 0,
+      upgrades: { ...stockUpgrades(), ...found.upgrades },
+      developmentPoints: found.developmentPoints ?? 0
+    });
+  }
+  for (const { entry, points, upgrades, developmentPoints } of restored) {
+    entry.points = points;
+    entry.upgrades = upgrades;
+    if (entry.isPlayer) entry.developmentPoints = developmentPoints;
   }
   championship.round = saved.round ?? 0;
   championship.finished = Boolean(saved.finished);
