@@ -1,8 +1,9 @@
 # Apex GP — Formula 1 Championship
 
 An arcade Formula 1 championship for `wanazhar.github.io/f1`, built with vanilla
-Three.js and no external assets. Six circuits, qualifying and race sessions, ten
-drivers on the grid, championship points, and development upgrades between rounds.
+Three.js and no external assets. Twenty-four real circuits, qualifying and race
+sessions, a 23-car field, championship points, pit stops, weather, and development
+upgrades between rounds.
 
 ## Running it
 
@@ -22,8 +23,10 @@ npm run build    # -> ../f1
 | Vite `base` | `/f1/` |
 | Deployed by | `.github/workflows/pages.yml` |
 
-Built output is committed, matching the other games here. The deploy workflow
-builds this project and uploads the repository root as the Pages artifact.
+Built output is *not* committed, unlike the other games here. The deploy workflow
+installs, tests and builds this project and uploads the repository root as the
+Pages artifact, so `f1/` exists in a working tree and in the artifact and nowhere
+else.
 
 ## Controls
 
@@ -53,13 +56,17 @@ src/
     Game.js                   renderer, scene, fixed-timestep loop
     CameraRig.js              chase / cockpit / trackside cameras
     InputController.js        keyboard, touch and gamepad
+    MotionControl.js          gyroscope steering
   track/
-    circuitShapes.js          radial layout generator
-    circuits.js               the 23 real circuits: names, venues, grip, metadata
+    circuitShapes.js          radial layout generator (synthetic tracks and tests)
+    circuits.js               the 24 real circuits: names, venues, grip, metadata
     circuitData.js            GENERATED real centrelines (fetch-circuits.mjs)
+    elevationData.js          GENERATED lap elevation profiles (fetch-elevation.mjs)
+    environments.js           per-circuit identity: ground, light, run-off, weather
     trackGeometry.js          centreline, racing line, speed profile, checkpoints
   physics/
     CarPhysics.js             the car: tyres, drivetrain, load transfer, thermal model
+    compounds.js              tyre compounds and weather presets
     drivers.js                11 real 2026 teams, 22 real drivers, skill presets
     upgrades.js               development tree
   ai/
@@ -67,13 +74,24 @@ src/
   race/
     LapTimer.js               lap validation, sectors, live timing order
     RaceSession.js            the grid, the step loop, barriers, classification
+    collision.js              car-to-car contact resolution
+    damage.js                 damage accumulation and mechanical failure
+    pit.js                    the pit lane, the box and the decision to stop
+    qualifying.js             Q1, Q2, Q3 and the eliminations
+    startSequence.js          the start lights, and holding the field until they go out
+    weather.js                a forecast that arrives during the race
     quickRace.js              Quick Race: circuit + team picker, field builder
   championship/
     ChampionshipManager.js    calendar, points, standings, saves
   render/
     TrackMesh.js              procedural track, kerbs, walls, grandstands, car mesh
+    Cockpit.js                the interior, built only for the cockpit camera
+    Surrounds.js              everything outside the barriers
+    textures.js               procedural canvas textures
   ui/
     UIManager.js              HUD and panels
+    trackMap.js               the minimap and selection-screen outline
+    avatars.js                procedural helmets and team badges
   util/
     math.js                   shared maths and formatting
     storage.js                localStorage persistence
@@ -86,15 +104,21 @@ temperatures, championship totals — rather than on screenshots.
 
 ## The decisions that matter
 
-### Circuits are radial, not straights-and-corners
+### Circuits are closed by construction, not straights-and-corners
 
 The obvious way to author a circuit is a list of straights and corners. That
 cannot work: a closed loop's arc chords miss the start line by hundreds of metres,
 and solving for scale factors to close it is so badly conditioned that the layouts
-fold through themselves. Circuits here are instead a **radial profile** — a base
-radius plus a handful of `{ at, radius, spread }` pins — which is closed and
-non-self-intersecting by construction. Every angle maps to exactly one point, so a
-circuit can never cross itself, and the shape stays tunable by moving one pin.
+fold through themselves.
+
+The shipped circuits do not solve that problem so much as avoid needing to: every lap
+is a real published centreline (see **Real data** below), which is closed because the
+real circuit is. The **radial profile** — a base radius plus a handful of
+`{ at, radius, spread }` pins, in `circuitShapes.js` — is what closes by
+construction, and it is what the game uses for tracks with no real data behind them:
+synthetic circuits, the benches, and the tests. Every angle maps to exactly one
+point, so such a loop can never cross itself, and the shape stays tunable by moving
+one pin.
 
 ### The racing line minimises length, not curvature
 
@@ -165,8 +189,11 @@ Each of these shipped once and looked plausible. The test suite guards all of th
   manual `R` instead.
 - **Tyre thermal model is a heuristic**, tuned so a normal lap sits in the working
   window and abuse cooks them. Not derived from a first-principles heat model.
-- **No pit stops.** Tyres degrade over a stint and development points are spent
-  between rounds, but a race does not stop.
+- **Pit stops are a decision, not a garage.** The lane, the box, the 80 km/h limit and
+  the tyre change are simulated, and a stop is priced honestly -- about 40s of lap time,
+  of which 2.4 is stationary -- which is what makes the strategy real. What is not
+  there: fuel, damage repair, a crew, and any control of the stop itself once the car
+  is in the box: `PIT_STOP_SECONDS` runs, and the car rejoins.
 
 ### Two modes
 
@@ -176,7 +203,7 @@ accumulate, and upgrades cost development points earned from the previous round.
 Being unable to jump to Silverstone in round one is correct behaviour for that
 mode, not an oversight.
 
-**Quick Race** — any of the 23 circuits, any of the 10 teams, racing immediately.
+**Quick Race** — any of the 24 circuits, any of the 11 teams, racing immediately.
 No qualifying, no points, no development, no save. `src/race/quickRace.js` builds
 the field and the screen flow; `main.js` threads a `quickRace` selection through
 the same `startSession` so the build, loading progress and error handling are
@@ -185,7 +212,7 @@ written once. `finishSession` guards `applyRaceResult` behind
 standings, and `quit` / `next-round` return to the Quick Race picker rather than to
 a calendar round the player never entered.
 
-The player takes a seat *in addition to* the full 20-car grid rather than
+The player takes a seat *in addition to* the full 22-driver field rather than
 replacing a named driver. Removing a real driver to make room would misrepresent
 the field, and would break saved championships keyed by driver code.
 
