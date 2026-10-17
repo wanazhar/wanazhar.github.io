@@ -1336,7 +1336,8 @@ img {
 .rank-2 .rank-num { background: linear-gradient(180deg, #e8e8e8, #9a9a9a); color: #222; }
 .rank-3 .rank-num { background: linear-gradient(180deg, #e2a06b, #a3612f); }
 .rank-4 .rank-num,
-.rank-5 .rank-num { background: #7f7a6d; }
+.rank-5 .rank-num,
+.rank-6 .rank-num { background: #7f7a6d; }
 
 .ranking-note {
   margin: 0;
