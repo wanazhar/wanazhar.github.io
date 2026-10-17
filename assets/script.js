@@ -34,7 +34,7 @@ const STRINGS = {
       'いらっしゃいませ〜♪ 今日も全品0円だよ！',
       'おみくじ引いてみて？ 今日の運勢が出るよ〜',
       'カートに入れてもお会計は0円！ ふしぎ！',
-      'クアラルンプール、1000万ブロックあるんだよ……',
+      'クアラルンプール、29万ブロックあるんだよ……',
       '23:59までタイムセール中！ 急いで〜！',
       'ミミは0円で働いてるよ。えらい？'
     ]
@@ -71,7 +71,7 @@ const STRINGS = {
       'Welcome~♪ Everything is ¥0 again today!',
       'Try the omikuji? It tells your fortune~',
       'Add it to your cart — the total stays ¥0! Amazing!',
-      'Kuala Lumpur has 10 million blocks, you know...',
+      'Kuala Lumpur has 290,000 blocks, you know...',
       'Time sale until 23:59! Hurry~!',
       'Mimi works for ¥0. Impressive, right?'
     ]
