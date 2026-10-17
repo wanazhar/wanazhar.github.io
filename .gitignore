@@ -5,3 +5,13 @@ node_modules/
 .env.local
 .vite/
 dist/
+
+# Built by .github/workflows/pages.yml and published via the artifact:
+# f1/ is not tracked (unlike the older published game directories), and
+# _site/ is the staging directory the workflow uploads.
+f1/
+_site/
+
+# Local tooling scratch.
+g.yml
+.commandcode/
