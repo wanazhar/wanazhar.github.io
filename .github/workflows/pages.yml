@@ -32,17 +32,33 @@ jobs:
           npm ci
           npm run build
 
+      - name: Test Emir's Car World
+        working-directory: _emir-src
+        run: npm test
+
       - name: Build Endless Runner
         working-directory: _endlessrunner-src
         run: |
           npm ci
           npm run build
 
+      - name: Test Endless Runner
+        working-directory: _endlessrunner-src
+        run: |
+          npm test
+          npm run lint:imports
+
       - name: Build Kuala Lumpur
         working-directory: _kualalumpur-src
         run: |
           npm ci
           npm run build
+
+      - name: Test Kuala Lumpur
+        working-directory: _kualalumpur-src
+        run: |
+          npm test
+          npm run lint:syntax
 
       - name: Build Apex GP
         working-directory: _f1-src
