@@ -1,8 +1,11 @@
 name: Deploy monorepo to GitHub Pages
 
+# Pull requests run every build and gate; only pushes to main (and manual runs)
+# reach the deploy job.
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -10,8 +13,10 @@ permissions:
   pages: write
   id-token: write
 
+# One run per branch/PR, so a PR queued behind a deploy cannot starve it and
+# two main pushes still serialise.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -145,14 +150,17 @@ jobs:
           cp -R f1 emir endlessrunner kualalumpur spacebunnyalpha doom _site/
 
       - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
