@@ -1,4 +1,5 @@
 import { hasSupabaseConfig, supabase } from './supabaseClient.js';
+import { nextHighScore } from './highScore.js';
 
 const STORAGE_KEY = 'emir-car-world:garage-state:v1';
 const DEFAULT_STATE = {
@@ -54,7 +55,15 @@ export class GarageStore {
   }
 
   async save(partial = {}) {
-    this.updateLocalState(partial);
+    const { score, ...rest } = partial;
+    // `score` is the current run, reported by the Save button; the persisted
+    // field is the best run seen. Before this, `score` was merged into local
+    // state (where nothing reads it) while `high_score` was sent to Supabase
+    // from a value nothing ever set, so the column stayed 0 forever.
+    if (typeof score === 'number' && Number.isFinite(score)) {
+      rest.high_score = nextHighScore(this.state.high_score, score);
+    }
+    this.updateLocalState(rest);
     if (!hasSupabaseConfig) return { mode: 'localStorage' };
     await this.refreshUser();
     if (!this.user) return { mode: 'localStorage', reason: 'not-authenticated' };
