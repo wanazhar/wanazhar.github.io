@@ -441,14 +441,26 @@
     elements.saveButton.addEventListener("click", async () => {
       if (commandInterface) {
         if (typeof commandInterface.persist === "function") {
-          const { data } = await commandInterface.persist();
+          // persist() resolves to the bundle bytes themselves (the runtime's
+          // own download button does `const data = await ci.persist(false)`),
+          // or to null when there is nothing to persist. Destructuring a
+          // `{ data }` shape out of that handed `undefined` to Blob, which is
+          // a 4-byte text file, not a save.
+          const data = await commandInterface.persist();
+          if (!data) {
+            setStatus("error", "Save failed: nothing to persist (｡•́︿•̀｡)");
+            return;
+          }
           const blob = new Blob([data], { type: "application/octet-stream" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
           a.download = "doom-save.jsdos";
           a.click();
-          URL.revokeObjectURL(url);
+          // Revoking in the same task can cancel the download in some
+          // browsers; the blob URL has to outlive the click.
+          window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+          setStatus("ready", "Save downloaded ♡");
         } else if (typeof commandInterface.save === "function") {
           await commandInterface.save();
           setStatus("ready", "Saved locally ♡");
