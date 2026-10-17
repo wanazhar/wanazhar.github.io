@@ -233,7 +233,11 @@
   }
 
   function startDoom(bundleUrl = DEFAULT_BUNDLE_URL) {
-    if (bundleUrl === DEFAULT_BUNDLE_URL && (safeModeRequested || isAppleTouchDevice())) {
+    // If the js-dos CDN script never arrived, the vendored legacy engine is
+    // the difference between playing and staring at "Failed to load js-dos
+    // v8". Only the default bundle exists in a form it can run.
+    const canUseV8 = typeof window.Dos === "function";
+    if (bundleUrl === DEFAULT_BUNDLE_URL && (safeModeRequested || isAppleTouchDevice() || !canUseV8)) {
       return startDoomLegacy();
     }
     return startDoomV8(bundleUrl);
