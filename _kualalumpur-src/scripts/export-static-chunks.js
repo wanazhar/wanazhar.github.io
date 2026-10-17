@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as THREE from 'three';
 import { createKualaLumpurWorld } from '../src/world/createKualaLumpurWorld.js';
@@ -10,6 +10,10 @@ const world = createKualaLumpurWorld(scene);
 world.chunkManager.update(world.startPosition);
 
 const outputDir = path.resolve('public/chunks');
+// This export owns the directory: clear it first so summaries from an older
+// chunk grid cannot keep shipping next to the current ones (48 of the 64
+// committed summary files were leftovers from a previous export).
+await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });
 
 const chunkStats = world.chunkManager.getStats();
@@ -29,8 +33,8 @@ await Promise.all(chunks.map((chunk) => writeFile(
 const manifest = {
   formatVersion: CHUNK_FORMAT_VERSION,
   generatedAt: new Date().toISOString(),
-  mode: 'phase4-10m-generated-detail',
-  note: '10M authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.',
+  mode: 'static-chunk-export',
+  note: 'Authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.',
   totalInstances: world.voxelStats.total,
   generatedDetailInstances: generatedDetail.totalAuthored,
   totalAuthoredWithGeneratedDetail: world.voxelStats.total + generatedDetail.totalAuthored,

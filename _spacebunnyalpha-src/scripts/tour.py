@@ -109,7 +109,13 @@ async def run(url, outdir, analyze=False):
 
 
 def main():
-    url = sys.argv[1] if len(sys.argv) > 1 else "http://100.98.115.95:4174/"
+    # Localhost by default, like the other browser scripts (AGENTS.md §3): a
+    # hardcoded remote address fails on every machine that is not the dev box.
+    url = (
+        sys.argv[1]
+        if len(sys.argv) > 1
+        else os.environ.get("SBA_URL", "http://127.0.0.1:4174/")
+    )
     outdir = sys.argv[2] if len(sys.argv) > 2 else "/tmp/sba-tour"
     asyncio.run(run(url, outdir, "--analyze" in sys.argv))
 

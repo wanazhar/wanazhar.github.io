@@ -6,13 +6,13 @@ Open-world toy car simulator for `wanazhar.github.io/emir`, built with Vanilla T
 
 - Vanilla Vite + Three.js renderer.
 - Rapier custom raycast vehicle controller with five swappable profiles: Sedan, Hatchback, 4WD Off-roader, Heavy Truck, Excavator.
-- Optional build-time map-data fetcher for the bundled city sample.
+- Deterministic procedural city layout (`src/world/cityLayout.js`) — no map data files, no fetches.
 - Blocky city rendered through `THREE.InstancedMesh` chunks.
 - Spatial hash + runtime collider streaming so Rapier only simulates nearby voxel colliders.
-- Decoupled GLB vehicle chassis/wheel loading with procedural fallback.
+- Vehicles assembled from code (`src/physics/VehicleModels.js`) — no GLB assets.
 - Minimalist high-contrast garage UI.
 - Browser-only Supabase client. No Prisma. No server code.
-- GitHub Pages Actions workflow using official Pages actions.
+- Published by the monorepo workflow (repository-root `.github/workflows/pages.yml`), which builds this app into `../emir`.
 
 ## Quick start
 
@@ -21,19 +21,12 @@ npm install
 npm run dev
 ```
 
-## Generate City Sample Data
+## The city
 
-The repo already includes a small generated sample at `public/data/city-blocks.json` so the game loads immediately.
-
-```bash
-npm run generate:city
-```
-
-Tune it:
-
-```bash
-CITY_RADIUS_METERS=950 CITY_CELL_SIZE=4 CITY_MAX_BLOCKS=45000 npm run generate:city
-```
+The city is procedural. `src/world/cityLayout.js` generates the street grid,
+block plots and landmark sites deterministically — same seed, same city — and
+`src/world/VoxelCity.js` renders it as chunked instanced cubes. There is no
+city data file and no generator script; the only build step is `npm run build`.
 
 ## Supabase setup
 
@@ -46,9 +39,9 @@ The app uses Supabase Auth magic links and RLS policies. If env vars are missing
 
 ## GitHub Pages deployment
 
-The repo name should be `emir`. `vite.config.js` already contains `base: '/emir/'`.
-
-Push to `main`; `.github/workflows/deploy.yml` builds the app and deploys `dist` to GitHub Pages. In GitHub repo settings, set **Pages → Build and deployment → Source → GitHub Actions**.
+`vite.config.js` builds with `base: '/emir/'` into `../emir`, the directory the
+monorepo publishes. There is no workflow inside this project; the repository-root
+`.github/workflows/pages.yml` installs, tests and builds it on every push to `main`.
 
 ## Controls
 
@@ -64,6 +57,9 @@ Push to `main`; `.github/workflows/deploy.yml` builds the app and deploys `dist`
 
 Touch controls are included as an accessible bottom-right overlay.
 
-## Asset naming convention
+## Adding a vehicle
 
-Each GLB vehicle should expose separate nodes named `chassis`, `wheel_fl`, `wheel_fr`, `wheel_rl`, `wheel_rr`. The included placeholder `.glb` files already follow this convention.
+Add a profile to `src/physics/VehicleProfiles.js` and a builder to
+`src/physics/VehicleModels.js`. The garage swaps vehicles through
+`game.setVehicle(id)`, which disposes the current model and rebuilds it from
+the profile. There are no vehicle asset files.

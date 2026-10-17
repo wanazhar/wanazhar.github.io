@@ -62,6 +62,8 @@ Two things about the test command:
 - **`npm test` runs `scripts/run-tests.js`, not a glob.** It discovers
   `*.test.js` under both `scripts/` and `test/` and prints the file list.
   Keep suites in one of those two directories, or they silently never run.
+  `npm run lint` syntax-checks both directories as well, so a suite that runs is
+  also a suite that gets parsed.
 - **`NODE_ENV` may already be `production` in this environment**, which makes
   `npm ci` skip devDependencies and leave `jsdom`, `acorn` and `acorn-walk`
   uninstalled. Use `npm ci --include=dev` in CI.
@@ -86,7 +88,7 @@ Do not bump it without checking CI's Node version first.
 Browser tooling:
 
 ```bash
-npm run smoke:browser -- http://100.98.115.95:4174/
+npm run smoke:browser                      # the game boots in real Chrome
 python3 scripts/controls-check.py          # joystick direction, real Chrome
 python3 scripts/serve.py --bind 127.0.0.1 --port 4174 --dir ../spacebunnyalpha &
 python3 scripts/serve-check.py             # asserts the server gotchas below
@@ -97,9 +99,10 @@ tree. The bundle only exists in the sibling output directory, so anything that
 needs a running game must pass `--dir ../spacebunnyalpha`. Getting this wrong
 fails as "the game never became ready", not as an obvious path error.
 
-`controls-check.py` defaults to `http://127.0.0.1:4174/`, overridable with
-`SBA_URL`. Keep it that way — a hardcoded remote address makes the script fail
-on every machine that is not the dev box, including CI.
+`controls-check.py`, `tour.py`, `screenshot.py` and `browser-smoke.py` all
+default to `http://127.0.0.1:4174/`, overridable with `SBA_URL`. Keep it that
+way — a hardcoded remote address makes the script fail on every machine that is
+not the dev box, including CI.
 
 For visual work, drive a dedicated Chrome over CDP. Do **not** reuse a shared
 browser; a long-running one accumulates tabs and drops its socket mid-run:
@@ -108,7 +111,7 @@ browser; a long-running one accumulates tabs and drops its socket mid-run:
 chromium-browser --headless=new --remote-debugging-port=9333 \
   --user-data-dir=/tmp/sba-chrome about:blank &
 SBA_CDP=9333 npm run build
-SBA_CDP=9333 python3 scripts/tour.py http://100.98.115.95:4174/ /tmp/shots
+SBA_CDP=9333 python3 scripts/tour.py http://127.0.0.1:4174/ /tmp/shots
 ```
 
 `window.__sba` is the inspection handle: `state`, `teleport`, `view`,
@@ -256,28 +259,22 @@ So:
 
 ## 8. Known issues
 
-**Oversized `concrete` slabs in the suburbs.** Roughly 29 boxes near the konbini
-are 8 × 0.12 × 6 — thin in Y but 8 × 6 in plan — and render as wide grey plates
-that dominate the view. Hiding the house material group confirms `concrete` and
-`stone` are the culprit, but the emitting call site has not been identified;
-`SuburbRegion.js` lines 105, 133, 155, 163, 219, 229, 264 and 304 are all
-candidates. The intent was presumably a thin floor or footing slab.
+**Nothing known open.** The oversized `concrete` slabs in the suburbs were
+floating house floor slabs. `buildHouse()` planted everything — the slab, the
+wall shell, the garden path, the hedge, the garage — on `heightAt(lot centre)`,
+one sample, so wherever the lot ran a block lower than its middle the house hung
+over the drop: 9 of the 35 houses floated a full block at their low corner and 5
+paths floated a block, and the 8 × 0.12 × 6 slab and the 1.4 × 4 `stone` path
+read as wide grey plates. The house is planted on the lowest ground under the
+lot now, and the path on the ground under its own length, since it runs past the
+lot line where the lot's base says nothing. `groundIsFlat()` checks the whole
+lot rather than two corners, so the one lot with a two-block diagonal is not
+built on. `regions.test.js` asserts every footing and every path reaches its
+ground.
 
-To find it:
-
-```bash
-node --input-type=module -e "
-import { WorldPlan } from './src/world/World.js';
-const b = new WorldPlan().buildAllStatics();
-const hits = b.get('concrete').filter(o =>
-  Math.abs(o.x - 113.5) < 1 && Math.abs(o.z - 167.5) < 1);
-console.log(hits.length, hits.slice(0, 4));
-"
-```
-
-**Nothing else is known-broken.** Treat that as a claim to be tested, not
-trusted — the bug rate in this project has been consistently "looks fine in the
-data, visibly broken on screen".
+Treat "nothing else is known-broken" as a claim to be tested, not trusted — the
+bug rate in this project has been consistently "looks fine in the data, visibly
+broken on screen".
 
 ## 9. CI
 

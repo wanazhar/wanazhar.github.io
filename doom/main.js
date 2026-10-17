@@ -1,8 +1,11 @@
 (() => {
   const DEFAULT_BUNDLE_URL = "./assets/doom.jsdos";
   const ALT_BUNDLE_URL = "./assets/doom_old.jsdos";
-  const LEGACY_BUNDLE_URL = "https://thedoggybrad.github.io/doom_on_js-dos/DOOM-@evilution.zip";
+  const LEGACY_BUNDLE_URL = "./assets/doom-legacy.zip";
   const LEGACY_API_URL = "./vendor/js-dos-api.js";
+  // ?safe=1 forces the iPad-safe legacy engine on any device, as documented
+  // in instruction.md. Apple touch devices pick the same engine on their own.
+  const safeModeRequested = new URLSearchParams(window.location.search).get("safe") === "1";
 
   const elements = {
     dos: document.querySelector("#dos"),
@@ -67,9 +70,32 @@
     return new Promise((resolve, reject) => {
       const existing = document.querySelector(`script[src="${src}"]`);
       if (existing) {
-        existing.addEventListener("load", resolve, { once: true });
-        existing.addEventListener("error", reject, { once: true });
-        if (existing.dataset.loaded === "true") resolve();
+        if (existing.dataset.loaded === "true") {
+          resolve();
+          return;
+        }
+        if (existing.dataset.failed === "true") {
+          reject(new Error(`Failed to load ${src}`));
+          return;
+        }
+        // This element was injected elsewhere (index.html's CDN-failure
+        // handler) and may already have settled. A settled script never fires
+        // load/error again, so the deadline is what keeps that case from
+        // hanging the caller forever; the handlers cover the in-flight case,
+        // and index.html marks the element's outcome when it settles.
+        const timer = window.setTimeout(() => {
+          reject(new Error(`Timed out waiting for ${src}`));
+        }, 10000);
+        existing.addEventListener("load", () => {
+          window.clearTimeout(timer);
+          existing.dataset.loaded = "true";
+          resolve();
+        }, { once: true });
+        existing.addEventListener("error", () => {
+          window.clearTimeout(timer);
+          existing.dataset.failed = "true";
+          reject(new Error(`Failed to load ${src}`));
+        }, { once: true });
         return;
       }
 
@@ -80,7 +106,10 @@
         script.dataset.loaded = "true";
         resolve();
       };
-      script.onerror = () => reject(new Error(`Failed to load ${src}`));
+      script.onerror = () => {
+        script.dataset.failed = "true";
+        reject(new Error(`Failed to load ${src}`));
+      };
       document.head.appendChild(script);
     });
   }
@@ -117,7 +146,7 @@
       backendLocked: true,
       noCloud: true,
       noNetworking: true,
-      pathPrefix: "https://v8.js-dos.com/latest/emulators/",
+      pathPrefix: "https://cdn.jsdelivr.net/npm/js-dos@8.5.3/dist/emulators/",
       onEvent: (event, arg) => {
         if (event === "emu-error" || event === "ci-err" || event === "bnd-error") {
           console.error("js-dos event", event, arg);
@@ -157,6 +186,18 @@
     }
   }
 
+  function retryWithV8() {
+    // The legacy engine exists for devices where js-dos v8 crashes, so when it
+    // cannot start, v8 is still worth one more attempt; without it there is
+    // nothing left to try.
+    if (typeof window.Dos === "function") {
+      startDoomV8(DEFAULT_BUNDLE_URL, "Retrying with the js-dos bundle...");
+      return;
+    }
+    setStatus("error", "Boot failed (´•̥ ᵔ •̥`)");
+    showEmptyState(true);
+  }
+
   async function startDoomLegacy() {
     const runId = activeRunId + 1;
     activeRunId = runId;
@@ -173,12 +214,15 @@
       legacyDosbox = new window.Dosbox({
         id: "dos",
         onload: (dosbox) => {
-          setStatus("running", "Loading external reference DOOM zip...");
+          setStatus("running", "Loading local shareware bundle...");
           try {
             dosbox.run(LEGACY_BUNDLE_URL, "./DOOM/DOOM.EXE");
           } catch (err) {
-            console.warn('Legacy external bundle failed, falling back to local', err);
-            dosbox.run(DEFAULT_BUNDLE_URL, "./DOOM.EXE");
+            // The v3 loader reports a failed download only through
+            // console.error (Dosbox.Xhr has no error callback), so the
+            // fallback can cover a synchronous throw and nothing else.
+            console.warn("Legacy engine refused the local bundle", err);
+            retryWithV8();
           }
           window.setTimeout(() => {
             if (runId === activeRunId) {
@@ -194,8 +238,8 @@
           }
         },
         onerror: (err) => {
-          console.warn('Legacy Dosbox error, trying local bundle', err);
-          if (runId === activeRunId) startDoomV8(DEFAULT_BUNDLE_URL, "Retrying with local bundle...");
+          console.warn("Legacy Dosbox error", err);
+          if (runId === activeRunId) retryWithV8();
         },
       });
 
@@ -215,7 +259,11 @@
   }
 
   function startDoom(bundleUrl = DEFAULT_BUNDLE_URL) {
-    if (isAppleTouchDevice() && bundleUrl === DEFAULT_BUNDLE_URL) {
+    // If the js-dos CDN script never arrived, the vendored legacy engine is
+    // the difference between playing and staring at "Failed to load js-dos
+    // v8". Only the default bundle exists in a form it can run.
+    const canUseV8 = typeof window.Dos === "function";
+    if (bundleUrl === DEFAULT_BUNDLE_URL && (safeModeRequested || isAppleTouchDevice() || !canUseV8)) {
       return startDoomLegacy();
     }
     return startDoomV8(bundleUrl);
@@ -426,14 +474,26 @@
     elements.saveButton.addEventListener("click", async () => {
       if (commandInterface) {
         if (typeof commandInterface.persist === "function") {
-          const { data } = await commandInterface.persist();
+          // persist() resolves to the bundle bytes themselves (the runtime's
+          // own download button does `const data = await ci.persist(false)`),
+          // or to null when there is nothing to persist. Destructuring a
+          // `{ data }` shape out of that handed `undefined` to Blob, which is
+          // a 4-byte text file, not a save.
+          const data = await commandInterface.persist();
+          if (!data) {
+            setStatus("error", "Save failed: nothing to persist (｡•́︿•̀｡)");
+            return;
+          }
           const blob = new Blob([data], { type: "application/octet-stream" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
           a.download = "doom-save.jsdos";
           a.click();
-          URL.revokeObjectURL(url);
+          // Revoking in the same task can cancel the download in some
+          // browsers; the blob URL has to outlive the click.
+          window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+          setStatus("ready", "Save downloaded ♡");
         } else if (typeof commandInterface.save === "function") {
           await commandInterface.save();
           setStatus("ready", "Saved locally ♡");
@@ -444,20 +504,10 @@
     });
 
     elements.loadButton.addEventListener("click", () => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".jsdos";
-      input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          if (commandInterface) {
-            alert("To load a save, please use the 'Load .jsdos' button below with your save file!");
-          } else {
-            alert("Save loading is only available in the js-dos v8 mode. Use Alt Version first, then load.");
-          }
-        }
-      };
-      input.click();
+      // One load path: the hidden bundle picker boots a .jsdos file (a save or
+      // a full bundle) through the same code that loads the game. The old
+      // handler opened its own file dialog and then only alerted at the user.
+      elements.bundlePicker.click();
     });
 
     elements.bundlePicker.addEventListener("change", (event) => {

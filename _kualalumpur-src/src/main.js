@@ -18,7 +18,6 @@ import { quests, achievements } from './data/quests.js';
 import { postcardTemplates } from './data/postcards.js';
 import { SaveSystem } from './game/SaveSystem.js';
 import { QuestSystem } from './game/QuestSystem.js';
-import { loadStaticChunkManifest } from './world/chunks/ChunkLoader.js';
 import { DETAIL_BUDGETS, getDetailTier } from './world/chunks/chunkVisibility.js';
 import { GeneratedDetailLayer } from './world/detail/GeneratedDetailLayer.js';
 import { GENERATED_DETAIL_VISIBLE_BUDGET } from './world/detail/generatedDetailConfig.js';
@@ -345,17 +344,6 @@ updateTourHud();
 hud.setTimeMode(timeModes[timeModeIndex]);
 applyTimeMode(timeModes[timeModeIndex]);
 hud.showToast('Explore Kuala Lumpur: WASD to move, touch joystick on mobile, routes and guidebook in panels.');
-
-loadStaticChunkManifest()
-  .then((manifest) => {
-    if (!manifest) return;
-    world.staticChunkManifest = manifest;
-    const total = manifest.totalAuthoredWithGeneratedDetail ?? manifest.totalInstances;
-    console.info(`Static chunk manifest ready: ${manifest.chunks.length} base chunks + ${manifest.generatedDetailChunks?.length ?? 0} generated detail chunks / ${total.toLocaleString()} authored instances`);
-  })
-  .catch((error) => {
-    console.info('Static chunk manifest not available yet; using bundled world.', error.message);
-  });
 
 const miniMap = setupMiniMap({
   canvas: document.getElementById('mini-map'),

@@ -8,6 +8,6 @@ The v8 bundles use an iPad/Safari-safe DOSBox config: conservative video mode, n
 
 See `SOURCE.txt` for the exact source URL and checksum.
 
-## External reference mode
+## Legacy path
 
-The live iPad/Safari legacy path currently loads thedoggybrad's external `DOOM-@evilution.zip` URL directly instead of copying that archive into this repository. The local `doom-legacy.zip` remains the shareware fallback/test bundle.
+The iPad/Safari legacy path boots the older js-dos v3/asm.js engine with a plain zip instead of a `.jsdos` bundle, because that engine avoids the js-dos v8 WebAssembly backend crash seen on real iPad Safari. It loads `doom-legacy.zip` from this directory — the same public shareware v1.9 game data as the v8 bundles — so the page never downloads the game from a third-party site.

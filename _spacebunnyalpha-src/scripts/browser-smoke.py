@@ -16,7 +16,9 @@ import time
 import urllib.request
 
 DEBUG = "http://127.0.0.1:9222"
-URL = sys.argv[1] if len(sys.argv) > 1 else "http://100.98.115.95:4174/"
+# Localhost by default, like the other browser scripts (AGENTS.md §3): a
+# hardcoded remote address fails on every machine that is not the dev box.
+URL = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("SBA_URL", "http://127.0.0.1:4174/")
 
 
 def open_tab(url):

@@ -435,6 +435,18 @@ img {
   background: repeating-linear-gradient(90deg, #fffbe0 0 18px, #fff6c0 18px 36px);
 }
 
+/* Replacement for the <marquee> under prefers-reduced-motion (assets/script.js):
+   same look, but the text wraps and holds still. */
+.news-ticker-still {
+  flex: 1 1 auto;
+  margin: 0;
+  padding: 4px 10px;
+  color: var(--shop-dark-red);
+  font-weight: bold;
+  font-size: 12px;
+  background: repeating-linear-gradient(90deg, #fffbe0 0 18px, #fff6c0 18px 36px);
+}
+
 /* ---------- layout ---------- */
 
 .container {
@@ -1336,7 +1348,8 @@ img {
 .rank-2 .rank-num { background: linear-gradient(180deg, #e8e8e8, #9a9a9a); color: #222; }
 .rank-3 .rank-num { background: linear-gradient(180deg, #e2a06b, #a3612f); }
 .rank-4 .rank-num,
-.rank-5 .rank-num { background: #7f7a6d; }
+.rank-5 .rank-num,
+.rank-6 .rank-num { background: #7f7a6d; }
 
 .ranking-note {
   margin: 0;
@@ -2104,5 +2117,21 @@ html {
 
   .petal {
     opacity: 0.35;
+  }
+}
+
+/* Honor the OS level "reduce motion" setting; endlessrunner ships the same
+   block. The petals are decoration, so they go entirely rather than instantly
+   snapping to their end state, and the mascot stops bobbing. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .petals-layer {
+    display: none;
   }
 }

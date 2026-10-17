@@ -34,7 +34,7 @@ const STRINGS = {
       'いらっしゃいませ〜♪ 今日も全品0円だよ！',
       'おみくじ引いてみて？ 今日の運勢が出るよ〜',
       'カートに入れてもお会計は0円！ ふしぎ！',
-      'クアラルンプール、1000万ブロックあるんだよ……',
+      'クアラルンプール、29万ブロックあるんだよ……',
       '23:59までタイムセール中！ 急いで〜！',
       'ミミは0円で働いてるよ。えらい？'
     ]
@@ -71,7 +71,7 @@ const STRINGS = {
       'Welcome~♪ Everything is ¥0 again today!',
       'Try the omikuji? It tells your fortune~',
       'Add it to your cart — the total stays ¥0! Amazing!',
-      'Kuala Lumpur has 10 million blocks, you know...',
+      'Kuala Lumpur has 290,000 blocks, you know...',
       'Time sale until 23:59! Hurry~!',
       'Mimi works for ¥0. Impressive, right?'
     ]
@@ -510,6 +510,23 @@ const urlLang = new URLSearchParams(window.location.search).get('lang');
 let storedLang = null;
 try { storedLang = localStorage.getItem(LANG_KEY); } catch {}
 setLanguage(urlLang || storedLang || 'ja', { persist: Boolean(urlLang) });
+
+// A <marquee> scrolls forever and CSS cannot stop it. Under the OS
+// "reduce motion" setting, swap it for the same text held still; the
+// replacement keeps the data-ja/data-en attributes so the language buttons
+// keep swapping it like the original.
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const ticker = document.querySelector('marquee.news-ticker');
+  if (ticker) {
+    const still = document.createElement('p');
+    still.className = 'news-ticker-still';
+    for (const attribute of ['data-ja', 'data-en']) {
+      if (ticker.hasAttribute(attribute)) still.setAttribute(attribute, ticker.getAttribute(attribute));
+    }
+    still.textContent = ticker.textContent;
+    ticker.replaceWith(still);
+  }
+}
 
 bindCart();
 startVisitorCounter();

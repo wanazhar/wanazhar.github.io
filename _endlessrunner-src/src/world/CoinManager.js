@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { LANES, RECYCLE_Z, PowerUpType } from '../core/Constants.js';
 import { applyCurvedWorldMaterial } from '../graphics/ShaderUtils.js';
 import { getTheme } from '../core/ThemePresets.js';
+import { sweptWindowHit } from '../collision/sweep.js';
 
 const dummy = new THREE.Object3D();
 const playerPosition = new THREE.Vector3();
@@ -80,6 +81,7 @@ export class CoinManager {
     let deepestZ = this.getDeepestZ();
 
     for (const coin of this.coins) {
+      const previousZ = coin.z;
       coin.z += speed * deltaSeconds;
       coin.angle += deltaSeconds * 6.5;
 
@@ -109,7 +111,10 @@ export class CoinManager {
         }
 
         const laneAligned = Math.abs(playerPosition.x - coinPosition.x) < (magnetActive ? 0.92 : 0.68);
-        const zAligned = Math.abs(playerPosition.z - coinPosition.z) < (magnetActive ? 0.85 : 0.62);
+        // Sweep the z window: at full speed the world moves ~1.89 units in a
+        // capped frame, more than the ~1.2-unit window, so a point test drops
+        // coins that crossed between frames (see collision/sweep.js).
+        const zAligned = sweptWindowHit(previousZ, coinPosition.z, playerPosition.z, magnetActive ? 0.85 : 0.62);
         const yAligned = Math.abs((playerPosition.y + 1.1) - coinPosition.y) < (jetpackActive || magnetActive ? 1.95 : 1.65);
         if (laneAligned && zAligned && yAligned) {
           coin.active = false;

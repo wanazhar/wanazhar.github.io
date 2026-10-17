@@ -51,6 +51,59 @@ test('every suburban house rests on dry, level ground', () => {
   }
 });
 
+test('every suburban house piece reaches the ground under it', () => {
+  // The bug this guards: buildHouse() planted the slab, the wall shell, the path
+  // and the hedge on heightAt(lot centre) — one sample. Wherever the lot ran a
+  // block lower than that sample, they hung in the air, and the 8 x 6 slab and
+  // the stone path read as wide grey plates (AGENTS.md §8).
+  const batch = new VoxelBatch();
+  const lots = planSuburbLots();
+  for (const lot of lots) buildHouse(batch, lot);
+
+  const lowestGround = (x0, z0, x1, z1) => {
+    let low = Infinity;
+    for (let x = x0; x <= x1 + 1e-6; x += 0.25) {
+      for (let z = z0; z <= z1 + 1e-6; z += 0.25) low = Math.min(low, heightAt(x, z));
+    }
+    return low;
+  };
+
+  // Each house builds a floor slab and a ceiling slab: 8 x 0.12 x 6 across the
+  // wall ring (lots are 11 x 9, walls 8 x 6). The lower of a house's two slabs
+  // is the one that meets the ground.
+  const slabs = batch.get('concrete').filter((o) => o.sx === 8 && o.sy === 0.12 && o.sz === 6);
+  assert.strictEqual(slabs.length, lots.length * 2, 'expected a floor and a ceiling slab per house');
+
+  const footing = new Map();
+  for (const slab of slabs) {
+    const key = `${slab.x},${slab.z}`;
+    const seen = footing.get(key);
+    if (!seen || slab.y < seen.y) footing.set(key, slab);
+  }
+  assert.strictEqual(footing.size, lots.length, 'every house should have a footing');
+
+  for (const slab of footing.values()) {
+    const bottom = slab.y - slab.sy / 2;
+    const low = lowestGround(slab.x - 4, slab.z - 3, slab.x + 4, slab.z + 3);
+    assert.ok(
+      bottom <= low + 0.05,
+      `floor slab at ${slab.x},${slab.z} floats ${(bottom - low).toFixed(2)}m above the ground`
+    );
+  }
+
+  // The path runs out past the lot line, so it is measured against its own span.
+  const paths = batch.get('stone').filter((o) => o.sx === 1.4 && o.sy === 0.12 && o.sz === 4);
+  assert.strictEqual(paths.length, lots.length, 'expected a garden path per house');
+  for (const path of paths) {
+    const bottom = path.y - path.sy / 2;
+    const low = lowestGround(path.x - 0.7, path.z - 2, path.x + 0.7, path.z + 2);
+    assert.ok(
+      bottom <= low + 0.05,
+      `garden path at ${path.x},${path.z} floats ${(bottom - low).toFixed(2)}m above the ground`
+    );
+  }
+});
+
 test('the konbini and the school sit on solid land', () => {
   for (const [name, spot] of Object.entries(SUBURB_FURNITURE)) {
     const h = heightAt(spot.x, spot.z);

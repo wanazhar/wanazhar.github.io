@@ -1,8 +1,11 @@
 name: Deploy monorepo to GitHub Pages
 
+# Pull requests run every build and gate; only pushes to main (and manual runs)
+# reach the deploy job.
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -10,8 +13,10 @@ permissions:
   pages: write
   id-token: write
 
+# One run per branch/PR, so a PR queued behind a deploy cannot starve it and
+# two main pushes still serialise.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -25,6 +30,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            _emir-src/package-lock.json
+            _endlessrunner-src/package-lock.json
+            _kualalumpur-src/package-lock.json
+            _f1-src/package-lock.json
+            _spacebunnyalpha-src/package-lock.json
 
       - name: Build Emir's Car World
         working-directory: _emir-src
@@ -32,17 +44,33 @@ jobs:
           npm ci
           npm run build
 
+      - name: Test Emir's Car World
+        working-directory: _emir-src
+        run: npm test
+
       - name: Build Endless Runner
         working-directory: _endlessrunner-src
         run: |
           npm ci
           npm run build
 
+      - name: Test Endless Runner
+        working-directory: _endlessrunner-src
+        run: |
+          npm test
+          npm run lint:imports
+
       - name: Build Kuala Lumpur
         working-directory: _kualalumpur-src
         run: |
           npm ci
           npm run build
+
+      - name: Test Kuala Lumpur
+        working-directory: _kualalumpur-src
+        run: |
+          npm test
+          npm run lint:syntax
 
       - name: Build Apex GP
         working-directory: _f1-src
@@ -107,16 +135,33 @@ jobs:
         working-directory: _kualalumpur-src
         run: |
           npm run validate:budget
+          npm run check:chunks
+
+      # The upload used to be the repository root, which meant everything the
+      # checkout left behind was published: five `npm ci` runs leave ~458 MB of
+      # node_modules plus every `_*-src` source tree in the workspace, and
+      # upload-pages-artifact copied all of it (the live site really served
+      # /_emir-src/node_modules/three/package.json). Stage the site content
+      # explicitly instead — the store front plus the six published games.
+      - name: Stage site
+        run: |
+          rm -rf _site
+          mkdir _site
+          cp -R index.html assets images docs CNAME .nojekyll _site/
+          cp -R f1 emir endlessrunner kualalumpur spacebunnyalpha doom _site/
 
       - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -74,11 +74,7 @@ http://localhost:5173
 npm run build
 ```
 
-The built static site will be created in:
-
-```text
-dist/
-```
+Vite writes the production build straight into `../kualalumpur/` (`base: './'` and `outDir: '../kualalumpur'` in `vite.config.js`) — the directory this repository commits and GitHub Pages serves — so there is no `dist/` to copy anywhere.
 
 ## City layout: street grid, blocks, and props
 
@@ -104,48 +100,33 @@ npm run validate:budget
 
 `measure:world` builds the scene in Node and reports authored instance totals, material counts, section counts, chunk count, prop totals, and instanced mesh count. `validate:budget` enforces the authored/mesh/chunk/visible ceilings before export.
 
-Current numbers: ~284k authored base instances (mostly terrain), ~4.2k authored street props, ~460 instanced meshes, 16 base chunks at 128 units, and a 350k visible-instance cap per device tier.
+Current numbers: ~290k authored base instances (mostly terrain), ~4.2k authored street props, ~484 instanced meshes, 16 base chunks at 128 units, and a 350k visible-instance cap per device tier.
+
+## Static chunk export
+
+```bash
+npm run export:chunks   # regenerate public/chunks/
+npm run check:chunks    # fail if the committed export is out of date
+```
+
+The world also commits a static chunk export under `public/chunks/` — a manifest plus one summary per base chunk — written by `scripts/export-static-chunks.js` and shipped with the site as data for future static map streaming. The runtime does not read it: the game renders the in-memory chunk groups that `createKualaLumpurWorld()` builds at startup, and the export is committed for the future streaming work. No build step regenerates it, so CI runs `check:chunks`, which re-runs the generator into a temp folder and compares every file (`generatedAt` excluded): a world change cannot silently leave the committed export describing an older city. The generator clears its output directory first, so summaries from a previous chunk grid cannot keep shipping next to the current ones.
 
 ## Deploy to `wanazhar.github.io/kualalumpur`
 
-This project uses `base: './'` in `vite.config.js`, so the built files can be copied into a subfolder like `/kualalumpur` without changing asset paths.
+`vite.config.js` keeps `base: './'` so the build works from a `/kualalumpur/` subfolder, and `outDir: '../kualalumpur'` writes it straight into this website repository's published directory. Deployment is the repository-root workflow (`.github/workflows/pages.yml`): it installs, builds and tests every project, stages the site and publishes it to GitHub Pages. There is no per-project deploy script to run by hand.
 
-From this project folder:
+For a local build of the published output:
 
 ```bash
-npm install
+npm ci
 npm run build
+npm run preview   # serves ../kualalumpur
 ```
 
-Then copy the **contents** of `dist/` into the `kualalumpur` folder of your `wanazhar.github.io` repository:
-
-```bash
-# example folder layout:
-# ~/projects/voxel-kuala-lumpur
-# ~/projects/wanazhar.github.io
-
-mkdir -p ~/projects/wanazhar.github.io/kualalumpur
-rm -rf ~/projects/wanazhar.github.io/kualalumpur/*
-cp -R dist/* ~/projects/wanazhar.github.io/kualalumpur/
-
-cd ~/projects/wanazhar.github.io
-git add kualalumpur
-git commit -m "Add Kuala Lumpur prototype"
-git push
-```
-
-After GitHub Pages updates, open:
+Commit the rebuilt `kualalumpur/` directory together with the source change; the workflow rebuilds it the same way on every deploy. The published page lives at:
 
 ```text
 https://wanazhar.github.io/kualalumpur/
-```
-
-## Optional: one-command deploy helper
-
-Edit `scripts/deploy-to-wanazhar-pages.sh` if your local `wanazhar.github.io` repo is somewhere else, then run:
-
-```bash
-bash scripts/deploy-to-wanazhar-pages.sh
 ```
 
 ## Project structure
@@ -156,7 +137,10 @@ voxel-kuala-lumpur/
 ├─ package.json
 ├─ vite.config.js
 ├─ scripts/
-│  └─ deploy-to-wanazhar-pages.sh
+│  ├─ check-chunk-freshness.js
+│  ├─ export-static-chunks.js
+│  ├─ measure-world.js
+│  └─ validate-budget.js
 └─ src/
    ├─ main.js
    ├─ style.css

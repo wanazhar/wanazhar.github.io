@@ -192,7 +192,7 @@ port; the tooling drives it over CDP.
 chromium-browser --headless=new --remote-debugging-port=9333 \
   --user-data-dir=/tmp/sba-chrome about:blank &
 SBA_CDP=9333 npm run build
-SBA_CDP=9333 python3 scripts/tour.py http://100.98.115.95:4174/ /tmp/shots
+SBA_CDP=9333 python3 scripts/tour.py http://127.0.0.1:4174/ /tmp/shots
 python3 scripts/analyze.py /tmp/shots/00-machiya-street.png   # colour stats
 node scripts/find-vantage-points.js                           # camera positions
 ```
@@ -259,9 +259,12 @@ real renderer gets a playable scene. For that, drive a real Chrome over CDP:
 
 ```bash
 npm run build
-python3 scripts/serve.py --bind 100.98.115.95 --port 4174 &
-npm run smoke:browser -- http://100.98.115.95:4174/
+python3 scripts/serve.py --bind 127.0.0.1 --port 4174 &
+npm run smoke:browser                      # defaults to http://127.0.0.1:4174/
 ```
+
+All four browser scripts default to `http://127.0.0.1:4174/`; on a remote box
+bind `serve.py` to that box's address and pass the URL (or set `SBA_URL`).
 
 It clicks the start button, counts `requestAnimationFrame` callbacks to prove the
 loop is live, and fails on any console error. Note that headless Chrome throttles

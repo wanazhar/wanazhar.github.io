@@ -3,6 +3,7 @@ import { LANES, RECYCLE_Z, PowerUpType, POWER_UP_DURATIONS } from '../core/Const
 import { applyCurvedWorldToObject } from '../graphics/ShaderUtils.js';
 import { getTheme } from '../core/ThemePresets.js';
 import { makeDecalPlane, textureBank } from '../assets/AssetRegistry.js';
+import { sweptWindowHit } from '../collision/sweep.js';
 
 const playerPosition = new THREE.Vector3();
 
@@ -83,6 +84,7 @@ export class PowerUpManager {
     let deepestZ = this.getDeepestZ();
 
     for (const item of this.items) {
+      const previousZ = item.z;
       item.z += speed * deltaSeconds;
       item.phase += deltaSeconds * 3.1;
       item.group.position.z = item.z;
@@ -91,9 +93,12 @@ export class PowerUpManager {
 
       if (item.active) {
         const dx = Math.abs(playerPosition.x - item.group.position.x);
-        const dz = Math.abs(playerPosition.z - item.group.position.z);
+        // Sweep the z window instead of sampling the landing point: a capped
+        // frame moves the world further than the ~1.8-unit window, so a
+        // power-up can cross the runner between two frames (collision/sweep.js).
+        const zAligned = sweptWindowHit(previousZ, item.group.position.z, playerPosition.z, 0.92);
         const dy = Math.abs((playerPosition.y + 1.1) - item.group.position.y);
-        if (dx < 0.95 && dz < 0.92 && dy < 2.2) {
+        if (dx < 0.95 && zAligned && dy < 2.2) {
           item.active = false;
           item.group.visible = false;
           if (this.onCollect) this.onCollect(item.type, POWER_UP_DURATIONS[item.type]);

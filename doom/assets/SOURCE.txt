@@ -27,5 +27,5 @@ v8 DOSBox config:
 Legacy engine note:
   The reference implementation at https://github.com/thedoggybrad/doom_on_js-dos works by using the older js-dos v3 asm.js loader with a normal zip archive instead of js-dos v8 WebAssembly/.jsdos. The deployed iPad path follows that engine pattern but uses public shareware game data only.
 
-Current external legacy mode:
-  The iPad/Safari legacy startup can load the external URL https://thedoggybrad.github.io/doom_on_js-dos/DOOM-@evilution.zip directly from that site. That archive is not copied into this repository.
+Local legacy bundle:
+  The iPad/Safari legacy startup loads ./assets/doom-legacy.zip from this repository (shareware v1.9 data, same archive source as the v8 bundles). It does not fetch game data from any third-party site.
