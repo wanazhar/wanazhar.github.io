@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { buildTrack } from '../track/trackGeometry.js';
 import { centrelineFor } from '../track/circuitData.js';
 import { getCircuit } from '../track/circuits.js';
+import { buildCockpit, steerCockpit } from '../render/Cockpit.js';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../render/TrackMesh.js';
 import { buildSurrounds } from '../render/Surrounds.js';
 import { damageFraction } from '../race/damage.js';
