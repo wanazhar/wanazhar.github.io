@@ -62,6 +62,8 @@ Two things about the test command:
 - **`npm test` runs `scripts/run-tests.js`, not a glob.** It discovers
   `*.test.js` under both `scripts/` and `test/` and prints the file list.
   Keep suites in one of those two directories, or they silently never run.
+  `npm run lint` syntax-checks both directories as well, so a suite that runs is
+  also a suite that gets parsed.
 - **`NODE_ENV` may already be `production` in this environment**, which makes
   `npm ci` skip devDependencies and leave `jsdom`, `acorn` and `acorn-walk`
   uninstalled. Use `npm ci --include=dev` in CI.
