@@ -471,20 +471,10 @@
     });
 
     elements.loadButton.addEventListener("click", () => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".jsdos";
-      input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          if (commandInterface) {
-            alert("To load a save, please use the 'Load .jsdos' button below with your save file!");
-          } else {
-            alert("Save loading is only available in the js-dos v8 mode. Use Alt Version first, then load.");
-          }
-        }
-      };
-      input.click();
+      // One load path: the hidden bundle picker boots a .jsdos file (a save or
+      // a full bundle) through the same code that loads the game. The old
+      // handler opened its own file dialog and then only alerted at the user.
+      elements.bundlePicker.click();
     });
 
     elements.bundlePicker.addEventListener("change", (event) => {
