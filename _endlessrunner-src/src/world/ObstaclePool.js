@@ -76,7 +76,8 @@ export class ObstaclePool {
       type: null,
       localOBB: null,
       worldOBB: new OBB(),
-      laneIndex: 1
+      laneIndex: 1,
+      sweepZ: 0
     };
   }
 
@@ -96,6 +97,7 @@ export class ObstaclePool {
     obstacle.group.scale.setScalar(this.randomRange(0.94, 1.08));
     obstacle.group.visible = true;
     obstacle.group.updateMatrixWorld(true);
+    obstacle.sweepZ = 0;
   }
 
   buildObstacle(type) {
@@ -106,11 +108,14 @@ export class ObstaclePool {
 
   update(deltaSeconds, speed) {
     let deepestZ = this.getDeepestZ();
+    const step = speed * deltaSeconds;
     for (const obstacle of this.obstacles) {
-      obstacle.group.position.z += speed * deltaSeconds;
+      obstacle.sweepZ = step;
+      obstacle.group.position.z += step;
       if (obstacle.group.position.z > RECYCLE_Z) {
         deepestZ -= this.randomRange(24, 48);
         this.resetObstacle(obstacle, deepestZ);
+        obstacle.sweepZ = 0;
       }
       obstacle.group.updateMatrixWorld(true);
     }
@@ -119,7 +124,18 @@ export class ObstaclePool {
   getCollisionOBBs() {
     return this.obstacles
       .filter((obstacle) => obstacle.group.visible && obstacle.group.position.z > -8 && obstacle.group.position.z < 4)
-      .map((obstacle) => updateWorldOBB(obstacle.localOBB, obstacle.group, obstacle.worldOBB));
+      .map((obstacle) => {
+        const worldOBB = updateWorldOBB(obstacle.localOBB, obstacle.group, obstacle.worldOBB);
+        // Collide against the volume the obstacle crossed this frame, not just
+        // where it landed: a capped frame moves ~1.9 units, wider than a
+        // gate's ~1.7-unit contact window, so a point-in-time box can be
+        // tunnelled through (see collision/sweep.js). Motion is +z, so the
+        // world box is extended backwards by the step.
+        const sweep = obstacle.sweepZ ?? 0;
+        worldOBB.center.z -= sweep / 2;
+        worldOBB.halfSize.z += sweep / 2;
+        return worldOBB;
+      });
   }
 
   getDeepestZ() {
