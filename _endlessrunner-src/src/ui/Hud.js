@@ -24,6 +24,9 @@ export class Hud {
     this.overlayBody = document.querySelector('[data-overlay-body]');
     this.overlayMeta = document.querySelector('[data-overlay-meta]');
     this.powerUps = document.querySelector('[data-powerups]');
+    this.powerUpPills = new Map();
+    this.powerUpEmpty = null;
+    this.powerUpSignature = null;
     this.swipeSlider = document.querySelector('[data-swipe-threshold]');
     this.swipeValue = document.querySelector('[data-swipe-threshold-value]');
     this.themeButtons = Array.from(document.querySelectorAll('[data-theme-button]'));
@@ -97,21 +100,58 @@ export class Hud {
 
   renderPowerUps(activePowerUps = {}) {
     if (!this.powerUps) return;
-    this.powerUps.innerHTML = '';
-    const entries = Object.entries(activePowerUps).filter(([, remaining]) => remaining > 0);
+    const entries = Object.entries(activePowerUps)
+      .filter(([, remaining]) => remaining > 0)
+      .sort((a, b) => b[1] - a[1]);
+
+    // render() runs on every animation frame — advanceRun() emits state 60
+    // times a second — and this strip is an aria-live region. It used to be
+    // emptied and rebuilt on each of those frames, so screen readers were
+    // handed a live region that never settled and the DOM was torn down 60
+    // times a second for nothing. Timers are displayed to one decimal, so
+    // skip entirely unless that text would change, then update in place.
+    const signature = entries.map(([type, remaining]) => `${type}:${remaining.toFixed(1)}`).join('|');
+    if (signature === this.powerUpSignature) return;
+    this.powerUpSignature = signature;
+
+    const activeTypes = new Set(entries.map(([type]) => type));
+    for (const [type, pill] of this.powerUpPills) {
+      if (!activeTypes.has(type)) {
+        pill.remove();
+        this.powerUpPills.delete(type);
+      }
+    }
 
     if (!entries.length) {
-      this.powerUps.innerHTML = '<span class="pill pill-muted">No active power-ups</span>';
+      if (!this.powerUpEmpty) {
+        this.powerUpEmpty = document.createElement('span');
+        this.powerUpEmpty.className = 'pill pill-muted';
+        this.powerUpEmpty.textContent = 'No active power-ups';
+        this.powerUps.appendChild(this.powerUpEmpty);
+      }
       return;
     }
 
-    entries
-      .sort((a, b) => b[1] - a[1])
-      .forEach(([type, remaining]) => {
-        const pill = document.createElement('span');
+    if (this.powerUpEmpty) {
+      this.powerUpEmpty.remove();
+      this.powerUpEmpty = null;
+    }
+
+    entries.forEach(([type, remaining], index) => {
+      let pill = this.powerUpPills.get(type);
+      if (!pill) {
+        pill = document.createElement('span');
         pill.className = 'pill';
-        pill.textContent = `${powerUpLabels[type] ?? type} ${remaining.toFixed(1)}s`;
-        this.powerUps.appendChild(pill);
-      });
+        pill.dataset.powerUp = type;
+        this.powerUpPills.set(type, pill);
+      }
+      pill.textContent = `${powerUpLabels[type] ?? type} ${remaining.toFixed(1)}s`;
+      // Every timer ticks at the same rate, so the sorted order is stable for
+      // the life of a set; this only moves a pill when the order really
+      // changed (a new power-up with a longer duration).
+      if (this.powerUps.children[index] !== pill) {
+        this.powerUps.insertBefore(pill, this.powerUps.children[index] ?? null);
+      }
+    });
   }
 }
