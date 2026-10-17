@@ -113,7 +113,7 @@ npm run export:chunks   # regenerate public/chunks/
 npm run check:chunks    # fail if the committed export is out of date
 ```
 
-The world also commits a static chunk export under `public/chunks/` — a manifest plus one summary per base chunk — written by `scripts/export-static-chunks.js` and shipped with the site as data for future static map streaming. No build step regenerates it, so CI runs `check:chunks`, which re-runs the generator into a temp folder and compares every file (`generatedAt` excluded): a world change cannot silently leave the committed export describing an older city. The generator clears its output directory first, so summaries from a previous chunk grid cannot keep shipping next to the current ones.
+The world also commits a static chunk export under `public/chunks/` — a manifest plus one summary per base chunk — written by `scripts/export-static-chunks.js` and shipped with the site as data for future static map streaming. The runtime does not read it: the game renders the in-memory chunk groups that `createKualaLumpurWorld()` builds at startup, and the export is committed for the future streaming work. No build step regenerates it, so CI runs `check:chunks`, which re-runs the generator into a temp folder and compares every file (`generatedAt` excluded): a world change cannot silently leave the committed export describing an older city. The generator clears its output directory first, so summaries from a previous chunk grid cannot keep shipping next to the current ones.
 
 ## Deploy to `wanazhar.github.io/kualalumpur`
 
