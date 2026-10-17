@@ -74,11 +74,7 @@ http://localhost:5173
 npm run build
 ```
 
-The built static site will be created in:
-
-```text
-dist/
-```
+Vite writes the production build straight into `../kualalumpur/` (`base: './'` and `outDir: '../kualalumpur'` in `vite.config.js`) — the directory this repository commits and GitHub Pages serves — so there is no `dist/` to copy anywhere.
 
 ## City layout: street grid, blocks, and props
 
@@ -117,44 +113,20 @@ The world also commits a static chunk export under `public/chunks/` — a manife
 
 ## Deploy to `wanazhar.github.io/kualalumpur`
 
-This project uses `base: './'` in `vite.config.js`, so the built files can be copied into a subfolder like `/kualalumpur` without changing asset paths.
+`vite.config.js` keeps `base: './'` so the build works from a `/kualalumpur/` subfolder, and `outDir: '../kualalumpur'` writes it straight into this website repository's published directory. Deployment is the repository-root workflow (`.github/workflows/pages.yml`): it installs, builds and tests every project, stages the site and publishes it to GitHub Pages. There is no per-project deploy script to run by hand.
 
-From this project folder:
+For a local build of the published output:
 
 ```bash
-npm install
+npm ci
 npm run build
+npm run preview   # serves ../kualalumpur
 ```
 
-Then copy the **contents** of `dist/` into the `kualalumpur` folder of your `wanazhar.github.io` repository:
-
-```bash
-# example folder layout:
-# ~/projects/voxel-kuala-lumpur
-# ~/projects/wanazhar.github.io
-
-mkdir -p ~/projects/wanazhar.github.io/kualalumpur
-rm -rf ~/projects/wanazhar.github.io/kualalumpur/*
-cp -R dist/* ~/projects/wanazhar.github.io/kualalumpur/
-
-cd ~/projects/wanazhar.github.io
-git add kualalumpur
-git commit -m "Add Kuala Lumpur prototype"
-git push
-```
-
-After GitHub Pages updates, open:
+Commit the rebuilt `kualalumpur/` directory together with the source change; the workflow rebuilds it the same way on every deploy. The published page lives at:
 
 ```text
 https://wanazhar.github.io/kualalumpur/
-```
-
-## Optional: one-command deploy helper
-
-Edit `scripts/deploy-to-wanazhar-pages.sh` if your local `wanazhar.github.io` repo is somewhere else, then run:
-
-```bash
-bash scripts/deploy-to-wanazhar-pages.sh
 ```
 
 ## Project structure
@@ -165,7 +137,10 @@ voxel-kuala-lumpur/
 ├─ package.json
 ├─ vite.config.js
 ├─ scripts/
-│  └─ deploy-to-wanazhar-pages.sh
+│  ├─ check-chunk-freshness.js
+│  ├─ export-static-chunks.js
+│  ├─ measure-world.js
+│  └─ validate-budget.js
 └─ src/
    ├─ main.js
    ├─ style.css
