@@ -1,7 +1,7 @@
 (() => {
   const DEFAULT_BUNDLE_URL = "./assets/doom.jsdos";
   const ALT_BUNDLE_URL = "./assets/doom_old.jsdos";
-  const LEGACY_BUNDLE_URL = "https://thedoggybrad.github.io/doom_on_js-dos/DOOM-@evilution.zip";
+  const LEGACY_BUNDLE_URL = "./assets/doom-legacy.zip";
   const LEGACY_API_URL = "./vendor/js-dos-api.js";
 
   const elements = {
@@ -157,6 +157,18 @@
     }
   }
 
+  function retryWithV8() {
+    // The legacy engine exists for devices where js-dos v8 crashes, so when it
+    // cannot start, v8 is still worth one more attempt; without it there is
+    // nothing left to try.
+    if (typeof window.Dos === "function") {
+      startDoomV8(DEFAULT_BUNDLE_URL, "Retrying with the js-dos bundle...");
+      return;
+    }
+    setStatus("error", "Boot failed (´•̥ ᵔ •̥`)");
+    showEmptyState(true);
+  }
+
   async function startDoomLegacy() {
     const runId = activeRunId + 1;
     activeRunId = runId;
@@ -173,12 +185,15 @@
       legacyDosbox = new window.Dosbox({
         id: "dos",
         onload: (dosbox) => {
-          setStatus("running", "Loading external reference DOOM zip...");
+          setStatus("running", "Loading local shareware bundle...");
           try {
             dosbox.run(LEGACY_BUNDLE_URL, "./DOOM/DOOM.EXE");
           } catch (err) {
-            console.warn('Legacy external bundle failed, falling back to local', err);
-            dosbox.run(DEFAULT_BUNDLE_URL, "./DOOM.EXE");
+            // The v3 loader reports a failed download only through
+            // console.error (Dosbox.Xhr has no error callback), so the
+            // fallback can cover a synchronous throw and nothing else.
+            console.warn("Legacy engine refused the local bundle", err);
+            retryWithV8();
           }
           window.setTimeout(() => {
             if (runId === activeRunId) {
@@ -194,8 +209,8 @@
           }
         },
         onerror: (err) => {
-          console.warn('Legacy Dosbox error, trying local bundle', err);
-          if (runId === activeRunId) startDoomV8(DEFAULT_BUNDLE_URL, "Retrying with local bundle...");
+          console.warn("Legacy Dosbox error", err);
+          if (runId === activeRunId) retryWithV8();
         },
       });
 
