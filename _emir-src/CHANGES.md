@@ -7,12 +7,10 @@ Initial autonomous scaffold for **Emir’s Car World**.
 - Vanilla Vite + Three.js app shell.
 - Rapier physics world with fixed timestep.
 - Custom raycast vehicle controller.
-- Runtime vehicle swapping through `VehicleManager`.
+- Runtime vehicle swapping through `Game#setVehicle`.
 - Five vehicle profiles: Sedan, Hatchback, 4WD Off-roader, Truck, Excavator.
-- GLB asset loader with decoupled chassis/wheel node support.
-- Real placeholder `.glb` assets for all five vehicles.
-- map-data build-time script for city sample generation.
-- Bundled playable blocky city sample dataset.
+- Vehicles assembled from code in `src/physics/VehicleModels.js` (no GLB assets).
+- Deterministic procedural city layout (`src/world/cityLayout.js`).
 - Chunked `THREE.InstancedMesh` city renderer with custom frustum culling.
 - Spatial hash and runtime Rapier collider streaming around active vehicle.
 - High-contrast editorial minimalist UI with Garage, Vehicle Select, Map and touch controls.
