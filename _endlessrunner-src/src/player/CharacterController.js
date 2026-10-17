@@ -494,6 +494,10 @@ export class CharacterController {
     gsap.killTweensOf(this.root.position);
 
     gsap.to(this.root.position, {
+      // `killTweensOf` above also aborts an in-flight lane change, so the x
+      // target has to travel with this tween: without it the runner keeps the
+      // half-way x — visually and in the collision OBB — until the next swipe.
+      x: LANES[this.laneIndex],
       y: shouldFly ? this.flyY : this.groundY,
       duration: shouldFly ? 0.42 : 0.34,
       ease: shouldFly ? 'power3.out' : 'power2.inOut',
