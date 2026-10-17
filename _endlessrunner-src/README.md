@@ -23,7 +23,7 @@ npm run dev
 npm run build
 ```
 
-Deploy the contents of `dist/` to your GitHub Pages `/endlessrunner/` folder. `vite.config.js` still uses `base: './'`.
+Vite writes the production build straight into `../endlessrunner/` — `vite.config.js` sets `base: '/endlessrunner/'` and `outDir: '../endlessrunner'` — which is the directory this repository commits and serves from GitHub Pages. There is no `dist/` to copy by hand; the repository-root Pages workflow rebuilds this project on every deploy and publishes the committed output with the rest of the site.
 
 ## Controls
 
