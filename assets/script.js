@@ -511,6 +511,23 @@ let storedLang = null;
 try { storedLang = localStorage.getItem(LANG_KEY); } catch {}
 setLanguage(urlLang || storedLang || 'ja', { persist: Boolean(urlLang) });
 
+// A <marquee> scrolls forever and CSS cannot stop it. Under the OS
+// "reduce motion" setting, swap it for the same text held still; the
+// replacement keeps the data-ja/data-en attributes so the language buttons
+// keep swapping it like the original.
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const ticker = document.querySelector('marquee.news-ticker');
+  if (ticker) {
+    const still = document.createElement('p');
+    still.className = 'news-ticker-still';
+    for (const attribute of ['data-ja', 'data-en']) {
+      if (ticker.hasAttribute(attribute)) still.setAttribute(attribute, ticker.getAttribute(attribute));
+    }
+    still.textContent = ticker.textContent;
+    ticker.replaceWith(still);
+  }
+}
+
 bindCart();
 startVisitorCounter();
 startCountdown();
