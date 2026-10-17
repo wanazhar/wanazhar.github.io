@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "generatedAt": "2026-09-30T20:20:23.195Z",
-  "mode": "phase4-10m-generated-detail",
-  "note": "10M authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.",
+  "mode": "static-chunk-export",
+  "note": "Authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.",
   "totalInstances": 284350,
   "generatedDetailInstances": 4200,
   "totalAuthoredWithGeneratedDetail": 288550,

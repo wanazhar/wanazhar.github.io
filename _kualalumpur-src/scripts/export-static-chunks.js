@@ -29,8 +29,8 @@ await Promise.all(chunks.map((chunk) => writeFile(
 const manifest = {
   formatVersion: CHUNK_FORMAT_VERSION,
   generatedAt: new Date().toISOString(),
-  mode: 'phase4-10m-generated-detail',
-  note: '10M authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.',
+  mode: 'static-chunk-export',
+  note: 'Authored deterministic KL/Klang Valley detail layer. Runtime rendering uses an adaptive visible cap up to 350k base-world + detail instances to target smoother old-device performance.',
   totalInstances: world.voxelStats.total,
   generatedDetailInstances: generatedDetail.totalAuthored,
   totalAuthoredWithGeneratedDetail: world.voxelStats.total + generatedDetail.totalAuthored,
