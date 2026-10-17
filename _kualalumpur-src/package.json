@@ -12,7 +12,8 @@
     "measure:world": "node scripts/measure-world.js",
     "validate:budget": "node scripts/validate-budget.js",
     "test": "node --test scripts/*.test.js",
-    "export:chunks": "node scripts/export-static-chunks.js"
+    "export:chunks": "node scripts/export-static-chunks.js",
+    "check:chunks": "node scripts/check-chunk-freshness.js"
   },
   "dependencies": {
     "three": "^0.184.0"

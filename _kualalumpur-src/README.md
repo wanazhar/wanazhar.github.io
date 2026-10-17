@@ -104,7 +104,16 @@ npm run validate:budget
 
 `measure:world` builds the scene in Node and reports authored instance totals, material counts, section counts, chunk count, prop totals, and instanced mesh count. `validate:budget` enforces the authored/mesh/chunk/visible ceilings before export.
 
-Current numbers: ~284k authored base instances (mostly terrain), ~4.2k authored street props, ~460 instanced meshes, 16 base chunks at 128 units, and a 350k visible-instance cap per device tier.
+Current numbers: ~290k authored base instances (mostly terrain), ~4.2k authored street props, ~484 instanced meshes, 16 base chunks at 128 units, and a 350k visible-instance cap per device tier.
+
+## Static chunk export
+
+```bash
+npm run export:chunks   # regenerate public/chunks/
+npm run check:chunks    # fail if the committed export is out of date
+```
+
+The world also commits a static chunk export under `public/chunks/` — a manifest plus one summary per base chunk — written by `scripts/export-static-chunks.js` and shipped with the site as data for future static map streaming. No build step regenerates it, so CI runs `check:chunks`, which re-runs the generator into a temp folder and compares every file (`generatedAt` excluded): a world change cannot silently leave the committed export describing an older city. The generator clears its output directory first, so summaries from a previous chunk grid cannot keep shipping next to the current ones.
 
 ## Deploy to `wanazhar.github.io/kualalumpur`
 

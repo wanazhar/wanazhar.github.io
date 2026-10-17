@@ -135,6 +135,7 @@ jobs:
         working-directory: _kualalumpur-src
         run: |
           npm run validate:budget
+          npm run check:chunks
 
       # The upload used to be the repository root, which meant everything the
       # checkout left behind was published: five `npm ci` runs leave ~458 MB of

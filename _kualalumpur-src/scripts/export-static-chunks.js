@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import * as THREE from 'three';
 import { createKualaLumpurWorld } from '../src/world/createKualaLumpurWorld.js';
@@ -10,6 +10,10 @@ const world = createKualaLumpurWorld(scene);
 world.chunkManager.update(world.startPosition);
 
 const outputDir = path.resolve('public/chunks');
+// This export owns the directory: clear it first so summaries from an older
+// chunk grid cannot keep shipping next to the current ones (48 of the 64
+// committed summary files were leftovers from a previous export).
+await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });
 
 const chunkStats = world.chunkManager.getStats();
