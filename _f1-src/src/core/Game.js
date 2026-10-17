@@ -13,6 +13,7 @@ import { centrelineFor } from '../track/circuitData.js';
 import { getCircuit } from '../track/circuits.js';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../render/TrackMesh.js';
 import { buildSurrounds } from '../render/Surrounds.js';
+import { damageFraction } from '../race/damage.js';
 import { RaceSession, SESSION_TYPE, FIXED_TIMESTEP } from '../race/RaceSession.js';
 import { CameraRig } from './CameraRig.js';
 import { InputController, ACTIONS } from './InputController.js';
