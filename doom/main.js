@@ -120,7 +120,7 @@
       backendLocked: true,
       noCloud: true,
       noNetworking: true,
-      pathPrefix: "https://v8.js-dos.com/latest/emulators/",
+      pathPrefix: "https://cdn.jsdelivr.net/npm/js-dos@8.5.3/dist/emulators/",
       onEvent: (event, arg) => {
         if (event === "emu-error" || event === "ci-err" || event === "bnd-error") {
           console.error("js-dos event", event, arg);

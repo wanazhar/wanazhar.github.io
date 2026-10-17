@@ -6,17 +6,23 @@
     <meta name="theme-color" content="#ffcce0" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>DOOM Kawaii ♡</title>
-    <link rel="preconnect" href="https://v8.js-dos.com" crossorigin />
-    <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css" crossorigin="anonymous" />
+    <!-- Pinned instead of the vendor's /latest: v8.js-dos.com has no versioned
+         paths (17.0.2-style URLs 404), and js-dos@8.5.3 on jsDelivr is
+         byte-identical to what /latest served on 2026-10-17 (sha256 checked).
+         main.js's pathPrefix points at the matching emulator set. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/js-dos@8.5.3/dist/js-dos.css" crossorigin="anonymous" />
     <link rel="stylesheet" href="./styles.css" />
-    <script src="https://v8.js-dos.com/latest/js-dos.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-dos@8.5.3/dist/js-dos.js" crossorigin="anonymous"></script>
     <script>
       // Fallback to legacy vendor if CDN v8 fails (offline / CORS). Legacy engine is iPad-safe.
       window.addEventListener('error', function (e) {
-        if (e.target && e.target.src && e.target.src.includes('v8.js-dos.com/latest/js-dos.js')) {
-          console.warn('v8 js-dos CDN failed, falling back to local vendor');
+        if (e.target && e.target.src && e.target.src.includes('cdn.jsdelivr.net/npm/js-dos@8.5.3/dist/js-dos.js')) {
+          console.warn('js-dos CDN failed, falling back to local vendor');
           var s = document.createElement('script');
           s.src = './vendor/js-dos-api.js';
+          s.onload = function () { s.dataset.loaded = 'true'; };
+          s.onerror = function () { s.dataset.failed = 'true'; };
           document.head.appendChild(s);
         }
       }, true);

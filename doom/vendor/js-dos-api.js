@@ -1,3 +1,11 @@
+/*
+ * Vendored js-dos v3 API wrapper (jQLite plus the Dosbox bindings) from the
+ * js-dos project — https://js-dos.com · https://github.com/caiiiycuk/js-dos
+ * (3.xx branch). The MIT header below is jQLite's, not the wrapper's; the
+ * DOSBox engine it loads lives in doom/vendor/js-dos-v3.js, whose header
+ * records the licence. Only loaded when main.js falls back to the local
+ * legacy engine.
+ */
 /*!
  * jQLite JavaScript Library v1.1.1 (http://code.google.com/p/jqlite/)
  * Copyright (c) 2010 Brett Fattori (bfattori@gmail.com)
