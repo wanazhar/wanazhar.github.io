@@ -108,13 +108,26 @@ jobs:
         run: |
           npm run validate:budget
 
+      # The upload used to be the repository root, which meant everything the
+      # checkout left behind was published: five `npm ci` runs leave ~458 MB of
+      # node_modules plus every `_*-src` source tree in the workspace, and
+      # upload-pages-artifact copied all of it (the live site really served
+      # /_emir-src/node_modules/three/package.json). Stage the site content
+      # explicitly instead — the store front plus the six published games.
+      - name: Stage site
+        run: |
+          rm -rf _site
+          mkdir _site
+          cp -R index.html assets images docs CNAME .nojekyll _site/
+          cp -R f1 emir endlessrunner kualalumpur spacebunnyalpha doom _site/
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
   deploy:
     environment:
