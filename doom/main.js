@@ -3,6 +3,9 @@
   const ALT_BUNDLE_URL = "./assets/doom_old.jsdos";
   const LEGACY_BUNDLE_URL = "./assets/doom-legacy.zip";
   const LEGACY_API_URL = "./vendor/js-dos-api.js";
+  // ?safe=1 forces the iPad-safe legacy engine on any device, as documented
+  // in instruction.md. Apple touch devices pick the same engine on their own.
+  const safeModeRequested = new URLSearchParams(window.location.search).get("safe") === "1";
 
   const elements = {
     dos: document.querySelector("#dos"),
@@ -230,7 +233,7 @@
   }
 
   function startDoom(bundleUrl = DEFAULT_BUNDLE_URL) {
-    if (isAppleTouchDevice() && bundleUrl === DEFAULT_BUNDLE_URL) {
+    if (bundleUrl === DEFAULT_BUNDLE_URL && (safeModeRequested || isAppleTouchDevice())) {
       return startDoomLegacy();
     }
     return startDoomV8(bundleUrl);
