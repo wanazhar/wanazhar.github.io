@@ -70,9 +70,32 @@
     return new Promise((resolve, reject) => {
       const existing = document.querySelector(`script[src="${src}"]`);
       if (existing) {
-        existing.addEventListener("load", resolve, { once: true });
-        existing.addEventListener("error", reject, { once: true });
-        if (existing.dataset.loaded === "true") resolve();
+        if (existing.dataset.loaded === "true") {
+          resolve();
+          return;
+        }
+        if (existing.dataset.failed === "true") {
+          reject(new Error(`Failed to load ${src}`));
+          return;
+        }
+        // This element was injected elsewhere (index.html's CDN-failure
+        // handler) and may already have settled. A settled script never fires
+        // load/error again, so the deadline is what keeps that case from
+        // hanging the caller forever; the handlers cover the in-flight case,
+        // and index.html marks the element's outcome when it settles.
+        const timer = window.setTimeout(() => {
+          reject(new Error(`Timed out waiting for ${src}`));
+        }, 10000);
+        existing.addEventListener("load", () => {
+          window.clearTimeout(timer);
+          existing.dataset.loaded = "true";
+          resolve();
+        }, { once: true });
+        existing.addEventListener("error", () => {
+          window.clearTimeout(timer);
+          existing.dataset.failed = "true";
+          reject(new Error(`Failed to load ${src}`));
+        }, { once: true });
         return;
       }
 
@@ -83,7 +106,10 @@
         script.dataset.loaded = "true";
         resolve();
       };
-      script.onerror = () => reject(new Error(`Failed to load ${src}`));
+      script.onerror = () => {
+        script.dataset.failed = "true";
+        reject(new Error(`Failed to load ${src}`));
+      };
       document.head.appendChild(script);
     });
   }
