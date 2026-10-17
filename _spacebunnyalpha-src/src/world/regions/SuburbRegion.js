@@ -48,10 +48,39 @@ export function planSuburbLots() {
   return lots.filter((lot) => groundIsFlat(lot));
 }
 
+// Ground under a rectangle, sampled every half block. heightAt() is a whole-block
+// lattice, so half-block spacing touches every block the rectangle covers, and
+// the loop walks the rectangle's own edges — which matters when a terrace step
+// runs along a lot line.
+function groundRange(x0, z0, x1, z1, step = 0.5) {
+  let low = Infinity;
+  let high = -Infinity;
+  const nx = Math.max(1, Math.ceil((x1 - x0) / step));
+  const nz = Math.max(1, Math.ceil((z1 - z0) / step));
+  for (let i = 0; i <= nx; i += 1) {
+    const x = x0 + ((x1 - x0) * i) / nx;
+    for (let j = 0; j <= nz; j += 1) {
+      const z = z0 + ((z1 - z0) * j) / nz;
+      const h = heightAt(x, z);
+      if (h < low) low = h;
+      if (h > high) high = h;
+    }
+  }
+  return { low, high };
+}
+
+// The lot plus the half metre of verge its hedge and garage can overhang.
+function lotRange(lot) {
+  return groundRange(lot.x - 0.5, lot.z - 0.5, lot.x + lot.w + 0.5, lot.z + lot.d + 0.5);
+}
+
+// A lot is only built on where all of it is level to within a block. Comparing
+// two corners let lots through whose other diagonal fell two blocks, and a house
+// on a lot like that has to hang in the air on one side or bury itself on the
+// other.
 function groundIsFlat(lot) {
-  const min = heightAt(lot.x + 2, lot.z + 2);
-  const max = heightAt(lot.x + lot.w - 2, lot.z + lot.d - 2);
-  return max - min <= 1;
+  const { low, high } = lotRange(lot);
+  return high - low <= 1;
 }
 
 const HOUSE_WALLS = ['houseWall', 'houseWallWood', 'houseWallBlue', 'houseWall'];
@@ -83,7 +112,13 @@ export function describeHouse(lot) {
 // Builds one suburban house plus its garden furniture.
 export function buildHouse(batch, lot) {
   const spec = describeHouse(lot);
-  const base = heightAt(lot.x + Math.floor(lot.w / 2), lot.z + Math.floor(lot.d / 2));
+  // Lowest ground under the whole lot, not one sample of its middle. The terrain
+  // steps a block at a time, so a house planted on its centre sample hung in the
+  // air wherever the lot ran lower — the "wide grey plates" of AGENTS.md §8: the
+  // 8x6 floor slab and the 1.4x4 stone path, with daylight under the bottom wall
+  // course. Planting on the low point buries the bottom course by at most the
+  // block `groundIsFlat` allows, which reads as a house set into the hillside.
+  const base = lotRange(lot).low;
   const rng = mulberry32(lot.seed + 13);
 
   const wallW = lot.w - 3;
@@ -144,7 +179,11 @@ export function buildHouse(batch, lot) {
   batch.add('woodPost', cx, base + 1, frontZ + facing * 0.05, 1.1, 2, 0.2);
 
   // Garden: a path from the door to the street, a hedge, and a tree.
-  batch.add('stone', cx, base + 0.06, frontZ + facing * 2.2, 1.4, 0.12, 4);
+  // The path runs out past the lot line, where `base` says nothing about the
+  // ground, so it is planted on the lowest ground under its own length.
+  const pathZ = frontZ + facing * 2.2;
+  const pathBase = groundRange(cx - 0.7, pathZ - 2, cx + 0.7, pathZ + 2).low;
+  batch.add('stone', cx, pathBase + 0.06, pathZ, 1.4, 0.12, 4);
   const hedgeZ = lot.side < 0 ? lot.z : lot.z + lot.d - 1;
   batch.add('leafGreen', cx, base + 0.5, hedgeZ, lot.w - 2, 1, 0.6);
 
