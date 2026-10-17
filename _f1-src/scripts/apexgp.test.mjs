@@ -27,6 +27,7 @@ import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../
 import { buildCockpit, steerCockpit } from '../src/render/Cockpit.js';
 import { buildSurrounds } from '../src/render/Surrounds.js';
 import { disposeTree } from '../src/core/Game.js';
+import { CameraRig } from '../src/core/CameraRig.js';
 
 import { CIRCUITS, getCircuit } from '../src/track/circuits.js';
 import {
@@ -3329,6 +3330,56 @@ test('the cockpit view has a cockpit in it', () => {
     'something has to actually build it'
   );
   assert.ok(/steerCockpit\(this\.cockpit, controls\.steer\)/.test(gameSource), 'the wheel follows the input');
+});
+
+test('the trackside camera stands on the circuit and watches a car', () => {
+  /*
+   * Two anchors of sea level in one camera, and the mode showed neither a circuit nor a car.
+   *
+   * The anchor was `7 + Math.random() * 5` metres flat, and sixteen of the twenty-four circuits
+   * sit entirely above that band: Mexico's circuit is two kilometres up, so its trackside cameras
+   * stood two kilometres underground, and Spa's stood 400 metres under the grass. The camera then
+   * aimed at `(anchor.x, 0.7, anchor.z)` -- and `#nearestCarTo` returned `this.focus ?? the anchor
+   * point` with `setFocus` called from nowhere, so it aimed at the point directly under itself,
+   * straight down, at every anchor on every circuit.
+   *
+   * The circuit here is Mexico's height, so an absolute altitude fails on the first frame.
+   */
+  const samples = [];
+  for (let i = 0; i < 60; i += 1) {
+    samples.push({ index: i, x: i * 10, z: 0, y: 2235, width: 12, rightX: 0, rightZ: 1 });
+  }
+  const rig = new CameraRig(new THREE.PerspectiveCamera(), { samples });
+  rig.setMode('tv');
+
+  const car = { x: 120, y: 2235, z: 0, heading: 0 };
+  const leader = { x: 380, y: 2235, z: 6, heading: 0 };
+  const forward = new THREE.Vector3();
+
+  for (let frame = 0; frame < 60; frame += 1) {
+    rig.update(car, 0.5, leader);
+    const at = rig.camera.position;
+
+    assert.ok(
+      at.y > 2235,
+      `frame ${frame}: the trackside camera is at ${at.y.toFixed(1)}m, under ground that is 2235m up`
+    );
+
+    // The nearest of the two cars the rig is handed: the one a director would cut to.
+    const nearest = [car, leader].sort(
+      (a, b) => Math.hypot(a.x - at.x, a.z - at.z) - Math.hypot(b.x - at.x, b.z - at.z)
+    )[0];
+    rig.camera.getWorldDirection(forward);
+    const toCar = new THREE.Vector3(
+      nearest.x - at.x,
+      nearest.y + 0.7 - at.y,
+      nearest.z - at.z
+    ).normalize();
+    assert.ok(
+      forward.dot(toCar) > 0.999,
+      `frame ${frame}: the camera looks at a car, not ${forward.toArray().map((v) => v.toFixed(2)).join(', ')}`
+    );
+  }
 });
 
 test('a circuit that is replaced is released, textures and all', () => {

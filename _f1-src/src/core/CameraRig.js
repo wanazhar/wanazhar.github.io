@@ -153,7 +153,7 @@ export class CameraRig {
     this.camera.rotation.z += -car.yawRate * 0.08;
   }
 
-  /** Trackside cameras that pan to follow whoever is nearest to them. */
+  /** Trackside cameras that pan to follow whichever car is nearest to them. */
   #updateTv(car, leader, dt) {
     this.tvTimer -= dt;
     if (!this.tvAnchor || this.tvTimer <= 0) {
@@ -162,13 +162,18 @@ export class CameraRig {
     }
 
     const anchor = this.tvAnchor;
-    const target = this.#nearestCarTo(anchor);
+    const target = this.#nearestCarTo(anchor, car, leader);
     this.camera.position.set(anchor.x, anchor.y, anchor.z);
-    this.lookAt.set(target.x, 0.7, target.z);
-    this.camera.lookAt(this.lookAt);
+    /*
+     * Aim at the car, at the car's own height -- and if there is no car to aim at, keep
+     * looking where we were looking rather than swinging down at the grass underfoot.
+     */
+    if (target !== anchor) {
+      this.lookAt.set(target.x, (target.y ?? anchor.groundY) + 0.7, target.z);
+      this.camera.lookAt(this.lookAt);
+    }
     this.camera.position.x = damp(this.camera.position.x, anchor.x, 8, dt);
     this.camera.position.z = damp(this.camera.position.z, anchor.z, 8, dt);
-    void leader;
   }
 
   #pickTvAnchor() {
@@ -177,17 +182,47 @@ export class CameraRig {
     const sample = samples[index];
     const side = Math.random() > 0.5 ? 1 : -1;
     const offset = sample.width * 0.5 + 22;
+    const groundY = sample.y ?? 0;
     return {
       x: sample.x + sample.rightX * offset * side,
-      y: 7 + Math.random() * 5,
-      z: sample.z + sample.rightZ * offset * side
+      /*
+       * Above the circuit's own ground, not above sea level.
+       *
+       * This was `7 + Math.random() * 5` flat, and sixteen of the twenty-four circuits sit
+       * entirely above that band: Mexico's circuit is two kilometres up, so its trackside
+       * cameras stood two kilometres underground, and Spa's stood 400 metres under. The
+       * chase camera already rides the car's own height for the same reason.
+       */
+      y: groundY + 7 + Math.random() * 5,
+      z: sample.z + sample.rightZ * offset * side,
+      groundY
     };
   }
 
-  #nearestCarTo(anchor) {
-    // Without a reference to the field this simply looks at the anchor point;
-    // the game loop calls `setFocus` with the car being watched.
-    return this.focus ?? { x: anchor.x, z: anchor.z };
+  /**
+   * The car a trackside camera watches.
+   *
+   * A trackside camera cannot know what a broadcast director would cut to, so it takes the
+   * car it can see: the nearest of the two the rig is handed, or the explicitly focused one.
+   *
+   * It used to return `this.focus ?? the anchor point`, and nothing anywhere called
+   * `setFocus` -- so the "target" in TV mode was the point directly below the camera, and
+   * every trackside camera in the game filmed the ground beside the track, from on top of
+   * it.
+   */
+  #nearestCarTo(anchor, car, leader) {
+    if (this.focus) return this.focus;
+    let nearest = null;
+    let nearestDistance = Infinity;
+    for (const candidate of [car, leader]) {
+      if (!candidate) continue;
+      const distance = (candidate.x - anchor.x) ** 2 + (candidate.z - anchor.z) ** 2;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = candidate;
+      }
+    }
+    return nearest ?? anchor;
   }
 
   /** Tell the TV camera which car to watch. */
