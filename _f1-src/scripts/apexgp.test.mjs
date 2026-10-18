@@ -24,6 +24,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../src/render/TrackMesh.js';
+import {
+  Effects,
+  MARK_CAPACITY,
+  MARK_LIFE,
+  SOFT_CAPACITY,
+  SPARK_CAPACITY,
+  tyreSignals
+} from '../src/render/Effects.js';
 import { buildCockpit, steerCockpit } from '../src/render/Cockpit.js';
 import { buildSurrounds } from '../src/render/Surrounds.js';
 import { disposeTree } from '../src/core/Game.js';
@@ -5225,3 +5233,226 @@ test('the controls screen offers the same steering names the input layer accepts
   assert.match(source, /saveSteering\(/, 'the choice is remembered between sessions');
   assert.match(source, /game\.input\.setSensitivity\(loadSteering\(\)\)/, 'and applied on boot');
 });
+
+/* ---------------------------------------------------------------------------
+ * Tyre effects: smoke, dust, sparks and the rubber on the road
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Deterministic stand-ins for `Math.random` in the effect tests.
+ *
+ * Emission is a probability per frame, so a test that wanted a particle would be flaky on
+ * `Math.random`, and a test that wanted *no* particle would pass for the wrong reason.
+ * `fires` is below every probability the module produces and `coin` sits inside the range,
+ * so each assertion is about the threshold in the code rather than about luck.
+ */
+const fires = () => 0;
+const coin = () => 0.5;
+
+const rounded = (value) => Math.round(value * 100) / 100;
+
+test('the tyre effects fire on the physics signals rather than on guesses', () => {
+  /*
+   * The whole value of a smoke effect is that it means something: that the rear tyres are
+   * past the peak of the friction curve and the car is about to be a handful. A car at the
+   * limit of grip must therefore show nothing, which is why the thresholds are read from
+   * the physics rather than chosen for how the effect looks.
+   */
+  const car = new CarPhysics();
+  car.vLong = 50; // ~180 km/h
+  car.vLat = 0;
+  const surface = { halfWidth: 7, lateral: 0 };
+
+  // Gripping: the tyres are working hard and nothing should be coming off them.
+  car.rearSlipAngle = 0.08;
+  car.wheelSlip = 0;
+  car.brakeLock = 0;
+  let signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, false, 'a car at the peak of the friction curve must not smoke');
+  assert.equal(signals.laying, false, 'and must not be leaving rubber either');
+
+  // Sliding: past the peak, which is where the smoke belongs.
+  car.rearSlipAngle = 0.2;
+  signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, true, 'a sliding tyre smokes');
+  assert.equal(signals.laying, true, 'and leaves rubber');
+
+  /*
+   * Wheelspin, which has to clear a much higher bar than the slip angle does.
+   *
+   * `wheelSlip` is non-zero whenever the engine asks for more than the rear tyres can put
+   * down, and in these cars that is most of a lap. An earlier version fired on any of it,
+   * and the first run in the browser had all twenty-two cars smoking and laying rubber
+   * through a green-flag lap -- a cue that is always on is not a cue.
+   */
+  car.rearSlipAngle = 0.02;
+  car.wheelSlip = 0.3;
+  signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, false, 'a car merely on the power out of a corner is not smoking');
+  assert.equal(signals.laying, false, 'and is not leaving rubber either');
+
+  car.wheelSlip = 0.7; // half the drive force again on top of what the tyres can take
+  signals = tyreSignals(car, surface);
+  assert.ok(signals.sliding > 0.5, 'but a wheel properly spinning up is a sliding tyre');
+  assert.equal(signals.smoky, true);
+  assert.equal(signals.laying, true);
+
+  // Locked up under braking, which the physics flags for the front axle.
+  car.wheelSlip = 0;
+  car.brakeLock = 1;
+  signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, true, 'a locked wheel smokes');
+
+  /*
+   * Where the car is on the road, which decides dust and whether there is anything to mark.
+   * The kerb is 1.4m of run-off either side, so 8m off centre on a 14m road is still kerb
+   * and 9m is not -- and off the road there is no asphalt for the rubber to be laid on.
+   */
+  car.rearSlipAngle = 0.3;
+  car.brakeLock = 0;
+  assert.equal(
+    tyreSignals(car, { halfWidth: 7, lateral: 8 }).offTrack,
+    false,
+    'the kerb is still the track: the car is on the paint, not the grass'
+  );
+  const off = tyreSignals(car, { halfWidth: 7, lateral: 9 });
+  assert.equal(off.offTrack, true, 'past the kerb the wheels are on the run-off');
+  assert.equal(off.laying, false, 'and there is nothing to lay rubber on out there');
+  assert.equal(off.smoky, true, 'though the tyres are as gone as they were on the road');
+  assert.equal(
+    tyreSignals(car).offTrack,
+    false,
+    'a car the session has not placed yet is on the road, not off it'
+  );
+});
+
+test('the effect pools are bounded, and every particle ends', () => {
+  /*
+   * The pools are the reason this is affordable on a phone at all, so the two things worth
+   * asserting are that they cannot grow and that nothing in them is immortal. An effect
+   * that leaks a particle per frame is invisible until the frame rate falls off a cliff
+   * twenty minutes into a race.
+   */
+  const effects = new Effects(new THREE.Scene(), { random: fires });
+  for (let i = 0; i < 4000; i += 1) {
+    effects.smoke(0, 0, 0, 1, 0, 0, 1 / 60);
+    effects.dust(0, 0, 0, 1, 0, 0, 1 / 60);
+    effects.sparks(0, 0, 0, 20);
+  }
+  assert.ok(effects.particleCount > 0, 'the emitters must have produced something to test');
+  assert.ok(
+    effects.particleCount <= SOFT_CAPACITY + SPARK_CAPACITY,
+    `the pools cannot grow past their capacity, got ${effects.particleCount}`
+  );
+  effects.update(1 / 60);
+  assert.equal(
+    effects.soft.geometry.drawRange.count,
+    effects.soft.live,
+    'the draw range follows the live particles, so a dead one is not still drawn'
+  );
+
+  effects.update(3);
+  assert.equal(effects.particleCount, 0, 'every particle must expire');
+  assert.equal(effects.soft.geometry.drawRange.count, 0, 'and stop being drawn');
+  assert.equal(effects.soft.live, 0, 'with nothing left in the pool');
+});
+
+test('emission is a rate per second rather than a particle per frame', () => {
+  /*
+   * The frame rate is not a game variable: a phone at 30fps and a desktop at 144 are the
+   * same race, and smoke emitted per frame would be five times as dense on the desktop. A
+   * probability scaled by `dt` is what makes them agree.
+   */
+  const effects = new Effects(new THREE.Scene(), { random: coin });
+  effects.smoke(0, 0, 0, 1, 0, 0, 1 / 30);
+  assert.equal(effects.particleCount, 1, 'a thirtieth of a second of a fully sliding tyre emits');
+
+  effects.reset();
+  effects.smoke(0, 0, 0, 1, 0, 0, 1 / 600);
+  assert.equal(effects.particleCount, 0, 'a tenth of that time emits nothing');
+
+  // A tyre that is not past the limit emits nothing whatever the frame length is.
+  effects.reset();
+  effects.smoke(0, 0, 0, 0, 0, 0, 1);
+  assert.equal(effects.particleCount, 0, 'a tyre that is not sliding must not smoke');
+});
+
+test('smoke is left behind by the car that made it', () => {
+  const effects = new Effects(new THREE.Scene(), { random: fires });
+  effects.smoke(0, 0, 0, 1, 40, 0, 1 / 60);
+  assert.equal(effects.particleCount, 1);
+
+  const vx = effects.soft.velocity[0];
+  assert.ok(vx > 0 && vx < 40, `smoke drifts along with the car, it does not travel at its speed: ${vx}`);
+  effects.update(0.05);
+  assert.ok(effects.soft.position[1] > 0, 'and rises, because it is lighter than the air it is in');
+  assert.ok(effects.soft.alpha[0] > 0, 'fading in rather than appearing at full opacity');
+  assert.ok(effects.soft.size[0] > 0.5, 'and growing as it goes');
+});
+
+test('skid marks are laid one segment at a time, and wear off', () => {
+  const effects = new Effects(new THREE.Scene(), { random: fires });
+
+  assert.equal(effects.skid('car', 0, 0, 0, 1), false, 'the first call records where the strip starts');
+  assert.equal(effects.skid('car', 1, 0, 0, 1), false, 'a metre is less than a segment');
+  assert.equal(effects.skid('car', 3, 0, 0, 1), true, 'three metres is a segment');
+  assert.equal(effects.markCount, 1, 'and leaves exactly one mark');
+
+  // Geometry: the mark runs from the last point to this one, 0.34m wide, at road height.
+  // The segment travelled was 3m along x, so the width is taken across z.
+  const xs = [];
+  const zs = [];
+  for (let corner = 0; corner < 4; corner += 1) {
+    xs.push(rounded(effects.marks.position[corner * 3]));
+    zs.push(rounded(effects.marks.position[corner * 3 + 2]));
+  }
+  assert.deepEqual(xs, [0, 0, 3, 3], 'the strip spans the segment that was travelled');
+  assert.deepEqual(zs, [0.17, -0.17, 0.17, -0.17], 'and is 0.34m wide, centred on the path');
+
+  /*
+   * A strip that ends, ends where it ended.
+   *
+   * Without that, the next time the car slides the first mark would be one quad from the
+   * last slide to this one -- a single black streak across half the circuit, drawn the first
+   * time a car spins and comes back.
+   */
+  effects.clearStrip('car');
+  assert.equal(effects.skid('car', 400, 0, 0, 1), false, 'a new strip starts where the car is now');
+  assert.equal(effects.markCount, 1, 'and does not draw anything to get there');
+
+  for (let i = 0; i < 5000; i += 1) effects.skid('ring', i * 3, 0, 0, 1);
+  assert.equal(effects.markCount, MARK_CAPACITY, 'the ring is the cap, however long the slide');
+
+  effects.update(MARK_LIFE + 1);
+  assert.equal(effects.markCount, 0, 'and the rubber wears off in the end');
+});
+
+test('a barrier strike throws a burst of sparks, sized by the hit', () => {
+  const scene = new THREE.Scene();
+  const light = new Effects(scene, { random: fires });
+  const heavy = new Effects(new THREE.Scene(), { random: fires });
+  light.sparks(0, 0, 0, 2);
+  heavy.sparks(0, 0, 0, 30);
+  assert.ok(light.particleCount >= 3, 'even a graze throws something');
+  assert.ok(
+    heavy.particleCount > light.particleCount * 2,
+    `a big hit has to read as a big hit: ${heavy.particleCount} against ${light.particleCount}`
+  );
+  assert.ok(heavy.particleCount <= SPARK_CAPACITY, 'and the burst is capped');
+
+  /*
+   * Sparks are thrown along the wall's normal rather than in a sphere: the car is scraping
+   * one side, and sparks that fly through the barrier read as confetti.
+   */
+  const effect = new Effects(scene, { random: fires });
+  effect.sparks(0, 1, 0, 20, 1, 0);
+  const along = [];
+  for (let i = 0; i < effect.glow.live; i += 1) along.push(effect.glow.velocity[i * 3]);
+  assert.ok(along.length > 0, 'the burst must have produced sparks');
+  assert.ok(along.every((vx) => vx > 0), 'and every one of them starts moving away from the wall');
+
+  // Nothing, once they have fallen out of the air.
+  effect.update(2);
+  assert.equal(effect.particleCount, 0, 'sparks are gone within a second or so');
+});
+

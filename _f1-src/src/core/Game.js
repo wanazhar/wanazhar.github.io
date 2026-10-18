@@ -12,18 +12,28 @@ import { buildTrack } from '../track/trackGeometry.js';
 import { centrelineFor } from '../track/circuitData.js';
 import { getCircuit } from '../track/circuits.js';
 import { buildCockpit, steerCockpit } from '../render/Cockpit.js';
+import { Effects, tyreSignals } from '../render/Effects.js';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../render/TrackMesh.js';
 import { buildSurrounds } from '../render/Surrounds.js';
 import { damageFraction } from '../race/damage.js';
 import { RaceSession, SESSION_TYPE, FIXED_TIMESTEP } from '../race/RaceSession.js';
 import { CameraRig } from './CameraRig.js';
 import { InputController, ACTIONS } from './InputController.js';
-import { createRandom } from '../util/math.js';
+import { clamp, createRandom } from '../util/math.js';
 import { POWERTRAIN } from '../physics/CarPhysics.js';
 import { TrackProjection, cachedTrackMapPath, startLinePoint } from '../ui/trackMap.js';
 
 /** Geometry built from primitives does not need high precision. */
 const DEFAULT_FOV = 62;
+
+/**
+ * Tyre-effect geometry. The thresholds that decide *whether* to emit live with the module
+ * that draws the result, in `tyreSignals`.
+ */
+const REAR_AXLE = 1.5;
+const REAR_TRACK = 0.82;
+/** Metres. Tyre effects are only emitted for cars this close to the one being watched. */
+const EFFECT_RANGE = 150;
 
 export class Game {
   constructor(container, options = {}) {
@@ -41,6 +51,15 @@ export class Game {
     this.random = createRandom(this.seed);
 
     this.scene = new THREE.Scene();
+
+    /*
+     * Tyre effects belong to the scene rather than to a session.
+     *
+     * The pools are the same size whatever the circuit, so rebuilding them between sessions
+     * would be a hitch at the exact moment a race starts -- and the smoked rubber from
+     * practice is part of what the track looks like by the time the race begins.
+     */
+    this.effects = new Effects(this.scene);
     this.camera = new THREE.PerspectiveCamera(
       DEFAULT_FOV,
       container.clientWidth / Math.max(container.clientHeight, 1),
@@ -106,6 +125,8 @@ export class Game {
     this.camera.aspect = width / Math.max(height, 1);
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+    // Device pixels rather than CSS pixels: the particle sizes are in metres. See `Effects`.
+    this.effects.setViewport(this.renderer.domElement.height);
   }
 
   /**
@@ -393,6 +414,8 @@ export class Game {
     this.session.onImpact = this.onImpact;
     this.session.onRetire = this.onRetire;
 
+    // A new session starts with clean air and clean asphalt.
+    this.effects.reset();
     this.#buildCarMeshes();
     this.rig.setMode(this.rig.mode);
     this.#syncCockpit();
@@ -536,6 +559,7 @@ export class Game {
     }
 
     this.#syncMeshes();
+    this.#syncEffects(dt);
     this.#updateSunFollow(player.physics);
 
     // Lap-time events for the HUD.
@@ -575,6 +599,87 @@ export class Game {
     if (this.cockpit?.visible) steerCockpit(this.cockpit, controls.steer);
     this.onMinimapFrame?.(dt, (x, z) => this.minimapProjection.project(x, z), this.session.cars);
     this.onUpdate(this.#telemetry());
+  }
+
+  /**
+   * A frame of tyre effects for the whole field.
+   *
+   * The player's car is emitted first and everyone else is distance-culled, because the
+   * particle pools are shared: a backmarker three corners away must not spend the particles
+   * that the car on screen needs in order to look like it is sliding.
+   */
+  #syncEffects(dt) {
+    const player = this.session.player;
+    this.#emitTyreEffects(player, dt, true);
+    for (const car of this.session.cars) {
+      if (car !== player) this.#emitTyreEffects(car, dt, false);
+    }
+    this.effects.update(dt);
+  }
+
+  /**
+   * What one car's tyres are doing, as particles.
+   *
+   * @param {object} car session car entry
+   * @param {number} dt
+   * @param {boolean} isPlayer the watched car, which is never culled
+   */
+  #emitTyreEffects(car, dt, isPlayer) {
+    const physics = car.physics;
+    const player = this.session.player;
+    const offsetX = physics.x - player.physics.x;
+    const offsetZ = physics.z - player.physics.z;
+    const near = isPlayer || offsetX * offsetX + offsetZ * offsetZ < EFFECT_RANGE * EFFECT_RANGE;
+
+    /*
+     * A stable key per car and wheel, for the skid strips.
+     *
+     * Stamped once rather than looked up every frame, and taken from the field order so that
+     * two drivers who share a three-letter code cannot end up drawing one mark between two
+     * different cars.
+     */
+    if (car.effectId === undefined) car.effectId = this.session.cars.indexOf(car);
+
+    const signals = tyreSignals(physics, { halfWidth: car.trackHalfWidth, lateral: car.lateral });
+
+    const heading = physics.heading;
+    const cos = Math.cos(heading);
+    const sin = Math.sin(heading);
+    // The rear axle, from the car mesh: the rear wheels sit 1.5m behind the centre and
+    // 0.82m either side of it, and local +Z is the direction of travel.
+    const rearX = physics.x - cos * REAR_AXLE;
+    const rearZ = physics.z - sin * REAR_AXLE;
+    // World velocity, so the smoke is left behind rather than travelling with the car.
+    const worldVx = physics.vLong * cos - physics.vLat * sin;
+    const worldVz = physics.vLong * sin + physics.vLat * cos;
+
+    for (const side of [-1, 1]) {
+      const wheelX = rearX + sin * REAR_TRACK * side;
+      const wheelZ = rearZ - cos * REAR_TRACK * side;
+      const strip = `${car.effectId}:${side}`;
+
+      if (!near) {
+        this.effects.clearStrip(strip);
+        continue;
+      }
+
+      if (signals.smoky) {
+        this.effects.smoke(wheelX, physics.y, wheelZ, signals.sliding, worldVx, worldVz, dt);
+      }
+
+      if (signals.laying) {
+        this.effects.skid(strip, wheelX, physics.y, wheelZ, signals.sliding);
+      } else {
+        // Where the strip ends. Without this the next slide would draw a single quad from
+        // here to wherever the car happens to let go again, straight across the circuit.
+        this.effects.clearStrip(strip);
+      }
+
+      if (signals.offTrack) {
+        const dust = clamp(signals.speed / 25, 0.35, 1);
+        this.effects.dust(wheelX, physics.y, wheelZ, dust, worldVx, worldVz, dt);
+      }
+    }
   }
 
   /**
@@ -777,6 +882,7 @@ export class Game {
     }
     this.envMap?.dispose();
     this.pmrem?.dispose();
+    this.effects.dispose();
     if (this.rain) {
       this.scene.remove(this.rain);
       disposeTree(this.rain);
