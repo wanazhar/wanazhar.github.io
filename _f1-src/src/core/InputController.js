@@ -62,6 +62,50 @@ const STEER_SLEW_FAST = 1.5;
 /** Speed in m/s at which the slew limit has fully tightened. */
 const STEER_SLEW_REF_SPEED = 70;
 
+/*
+ * Thumbstick travel for full lock, as a fraction of the ring's rendered width.
+ *
+ * This was 0.32, which on a 132px ring means 42px from where the thumb landed -- about a
+ * centimetre. A phone player cannot hold a centimetre, so the smallest movement the thumb
+ * can express already asked for most of the steering the car had, and on the circuits the
+ * car then left the road. 0.41 puts full lock 54px out and makes the middle of the travel
+ * worth using rather than something to be avoided.
+ */
+const STICK_TRAVEL = 0.41;
+
+/** Dead zone, as a fraction of travel: a resting thumb must not steer. */
+const STICK_DEADZONE = 0.06;
+
+/**
+ * Sensitivity choices, as the exponent of the analogue response curve.
+ *
+ * The gyroscope has had a curve since it was written (`MotionControl.#axis`, exponent
+ * 1.6, and the comment there explains why squaring was too much); the stick was dead
+ * linear, so the first fifth of its travel did a fifth of the steering. On a touchscreen
+ * that is the wrong end of the range to make sensitive: the middle of the travel is where
+ * a corner is driven, and the edge is only ever reached on purpose.
+ *
+ * The endpoints are untouched by the exponent, so every setting still reaches full lock
+ * at the edge of the travel. A calm setting is not a car that cannot be turned.
+ */
+export const STEER_CURVES = { calm: 2.1, normal: 1.6, sharp: 1.15 };
+export const DEFAULT_STEER_SENSITIVITY = 'normal';
+
+/**
+ * Map a stick offset, in pixels, onto -1..1.
+ *
+ * @param {number} offset pixels from where the thumb landed
+ * @param {number} reach pixels that mean full lock
+ * @param {number} [curve] response exponent; 1 is linear
+ */
+export function stickAxis(offset, reach, curve = STEER_CURVES[DEFAULT_STEER_SENSITIVITY]) {
+  if (!(reach > 0)) return 0;
+  const magnitude = Math.abs(offset) / reach;
+  if (magnitude <= STICK_DEADZONE) return 0;
+  const scaled = Math.min((magnitude - STICK_DEADZONE) / (1 - STICK_DEADZONE), 1);
+  return Math.sign(offset) * scaled ** curve;
+}
+
 export class InputController {
   constructor(target = window) {
     this.keys = new Set();
@@ -86,6 +130,10 @@ export class InputController {
      * larger, which is not a control scheme, it is a coin toss.
      */
     this.controlScheme = 'touch';
+
+    /** Steering response, as chosen on the controls screen. */
+    this.sensitivity = DEFAULT_STEER_SENSITIVITY;
+    this.curve = STEER_CURVES[DEFAULT_STEER_SENSITIVITY];
 
     /** Gyroscope controls, or null until the player opts in and permission is granted. */
     this.motion = null;
@@ -227,7 +275,7 @@ export class InputController {
 
     /** Travel available in each axis, from the ring's rendered size. */
     const size = () => element.getBoundingClientRect().width || 132;
-    const travel = () => size() * 0.32;
+    const travel = () => size() * STICK_TRAVEL;
 
     const paint = (dx, dy) => {
       // Clamped to the same radius the input uses, so the knob stays inside the
@@ -267,7 +315,12 @@ export class InputController {
 
       // Steer from horizontal travel, throttle/brake from vertical. Throttle and
       // brake are mutually exclusive by construction: the sign of dy decides.
-      this.touch.steer = clamp(dx / reach, -1, 1);
+      //
+      // Steering goes through the response curve; the pedals stay linear. A pedal is
+      // pressed on purpose and wants to answer immediately, while steering is held
+      // somewhere in the middle of its range for the length of a corner -- which is
+      // exactly where a linear stick is too sharp and a curve is worth having.
+      this.touch.steer = stickAxis(dx, reach, this.curve);
       this.touch.throttle = clamp(-dy / reach, 0, 1);
       this.touch.brake = clamp(dy / reach, 0, 1);
       this.touch.active = true;
@@ -294,9 +347,33 @@ export class InputController {
     area.addEventListener('pointercancel', (event) => {
       if (event.pointerId === pointerId) release();
     });
-    // A finger that leaves the window never fires pointerup on the element.
-    window.addEventListener('pointerup', release);
-    window.addEventListener('blur', release);
+    // A finger that leaves the window never fires pointerup on the element. The
+    // listeners go on the controller's own target rather than the global `window`, for
+    // the same reason the keyboard ones do -- and so that a test can hand in a stand-in.
+    this.target.addEventListener('pointerup', release);
+    this.target.addEventListener('blur', release);
+  }
+
+  /**
+   * Choose how sharply the analogue steering answers.
+   *
+   * One setting covers both analogue schemes: a player who found the stick too sharp and
+   * switched to motion expecting that to be gentler should not have to go looking for a
+   * second control. The keyboard is deliberately not affected -- it is already
+   * rate-limited into a steering wheel, and slowing that down is a different complaint.
+   *
+   * An unknown name is ignored rather than thrown, because this is fed straight from a
+   * saved value that an older or newer version may have written.
+   *
+   * @param {'calm' | 'normal' | 'sharp'} name
+   */
+  setSensitivity(name) {
+    const curve = STEER_CURVES[name];
+    if (!curve) return false;
+    this.sensitivity = name;
+    this.curve = curve;
+    this.motion?.setCurve(curve);
+    return true;
   }
 
   /**

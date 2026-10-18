@@ -43,6 +43,7 @@ import { buildTrack } from './track/trackGeometry.js';
 import { driverAvatar, teamBadge } from './ui/avatars.js';
 import { cachedTrackMapPath, startLinePoint } from './ui/trackMap.js';
 import { MotionControl } from './core/MotionControl.js';
+import { DEFAULT_STEER_SENSITIVITY, STEER_CURVES } from './core/InputController.js';
 import {
   SESSION,
   applyRaceResult,
@@ -212,6 +213,9 @@ function showControls() {
   const supported = MotionControl.isSupported(window);
   const needsPermission = MotionControl.needsPermission(window);
   const current = game.input.controlScheme;
+  // Read back off the input rather than from storage: the input is what actually applies
+  // the choice, so the screen can never show a sensitivity the car is not using.
+  const steering = game.input.sensitivity;
   const motion = game.input.motion;
 
   /*
@@ -268,6 +272,18 @@ function showControls() {
           </div>
         </section>
 
+        <section class="setup-block">
+          <h2 class="setup-label">Steering</h2>
+          <div class="chips">
+            ${STEERING_CHOICES.map(
+              (choice) => `
+              <button type="button" class="chip${steering === choice.id ? ' is-selected' : ''}" data-steer="${choice.id}">
+                <span><strong>${choice.label}</strong><em>${choice.note}</em></span>
+              </button>`
+            ).join('')}
+          </div>
+        </section>
+
         ${
           current === 'motion'
             ? `<section class="setup-block">
@@ -297,6 +313,15 @@ function showControls() {
   panel.querySelectorAll('[data-scheme]').forEach((button) => {
     button.addEventListener('click', async () => {
       await setControlScheme(button.dataset.scheme);
+      showControls();
+    });
+  });
+
+  panel.querySelectorAll('[data-steer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      // Applied before the re-render, which reads the choice back off the input.
+      game.input.setSensitivity(button.dataset.steer);
+      saveSteering(button.dataset.steer);
       showControls();
     });
   });
@@ -401,6 +426,51 @@ function loadControlScheme() {
     return window.localStorage?.getItem('apexgp.controls') === 'motion' ? 'motion' : 'touch';
   } catch {
     return 'touch';
+  }
+}
+
+/**
+ * Copy for the steering choices, keyed by the names the input layer accepts.
+ *
+ * The exponents live in `STEER_CURVES` in `InputController`, and the chips are built from
+ * that object's own keys, so a choice cannot exist in the screen and not in the input
+ * layer. The copy describes what changes rather than naming the curve, because
+ * "sensitivity" on its own does not tell anyone which way to move it.
+ */
+const STEERING_COPY = {
+  calm: { label: 'Calm', note: 'Gentler through the middle' },
+  normal: { label: 'Normal', note: 'The tuned default' },
+  sharp: { label: 'Sharp', note: 'Answers sooner' }
+};
+
+const STEERING_CHOICES = Object.keys(STEER_CURVES).map((id) => ({
+  id,
+  label: STEERING_COPY[id]?.label ?? id,
+  note: STEERING_COPY[id]?.note ?? ''
+}));
+
+/** Remember the steering choice; a blocked store is not worth reporting. */
+function saveSteering(name) {
+  try {
+    window.localStorage?.setItem('apexgp.steering', name);
+  } catch {
+    // Private browsing, or storage disabled. The choice still applies this session.
+  }
+}
+
+/**
+ * The saved steering choice, or the tuned default.
+ *
+ * A name that is not one of the current choices -- written by a version that offered a
+ * different set -- is discarded rather than trusted, which is why this checks the value
+ * against `STEER_CURVES` instead of returning whatever is in storage.
+ */
+function loadSteering() {
+  try {
+    const saved = window.localStorage?.getItem('apexgp.steering');
+    return STEER_CURVES[saved] ? saved : DEFAULT_STEER_SENSITIVITY;
+  } catch {
+    return DEFAULT_STEER_SENSITIVITY;
   }
 }
 
@@ -1120,6 +1190,9 @@ game.start();
 if (loadControlScheme() === 'motion') {
   setControlScheme('motion');
 }
+
+// Applied whatever the scheme: one setting covers the stick and the gyroscope both.
+game.input.setSensitivity(loadSteering());
 
 if (ui.helpSeen) {
   showTitle();

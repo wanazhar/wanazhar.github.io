@@ -98,7 +98,13 @@ import { UIManager } from '../src/ui/UIManager.js';
 import { StartSequence } from '../src/race/startSequence.js';
 import { SETTING, environmentFor, isStreet } from '../src/track/environments.js';
 import { ELEVATION, PROFILE_POINTS, elevationAt } from '../src/track/elevationData.js';
-import { ACTIONS, InputController } from '../src/core/InputController.js';
+import {
+  ACTIONS,
+  DEFAULT_STEER_SENSITIVITY,
+  InputController,
+  STEER_CURVES,
+  stickAxis
+} from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
 
 import { createRandom } from '../src/util/math.js';
@@ -2423,7 +2429,11 @@ test('the on-screen controls are actually wired to the input controller', () => 
   const inputSource = readFileSync(new URL('../src/core/InputController.js', import.meta.url), 'utf8');
   assert.match(inputSource, /this\.touch\.throttle = clamp\(-dy \/ reach, 0, 1\)/, 'stick up = throttle');
   assert.match(inputSource, /this\.touch\.brake = clamp\(dy \/ reach, 0, 1\)/, 'stick down = brake');
-  assert.match(inputSource, /this\.touch\.steer = clamp\(dx \/ reach, -1, 1\)/, 'stick across = steer');
+  assert.match(
+    inputSource,
+    /this\.touch\.steer = stickAxis\(dx, reach, this\.curve\)/,
+    'stick across = steer, through the response curve'
+  );
 
   // `read()` must consider both on-screen sources, or a control wired to
   // whichever one it picked can silently go dead again.
@@ -5021,4 +5031,197 @@ test('the first lap of a race is a lap, not a deleted one', () => {
     assert.equal(car.timer.laps.length, 0, 'the crossing arms the timer rather than completing a lap');
     assert.equal(car.timer.lap, 0, 'so no lap has been completed yet');
   }
+});
+
+/* ---------------------------------------------------------------------------
+ * The touch stick: travel, response curve and the steering setting
+ * ------------------------------------------------------------------------ */
+
+/**
+ * A stand-in for the floating thumbstick.
+ *
+ * `bindStick` measures the ring it is handed and listens on the zone, so both are faked
+ * with the same listener map. Pointer capture is a silent no-op rather than absent: the
+ * binding treats it as optional, and a phone that refuses it must still steer.
+ */
+function fakeStick(width = 132) {
+  const make = () => {
+    const listeners = new Map();
+    return {
+      style: {},
+      contains: () => true,
+      classList: { add() {}, remove() {}, toggle() {} },
+      setPointerCapture() {},
+      getBoundingClientRect: () => ({ width, left: 0, top: 0 }),
+      addEventListener(type, handler) {
+        listeners.set(type, handler);
+      },
+      emit(type, fields = {}) {
+        listeners.get(type)?.({ preventDefault() {}, pointerId: 1, ...fields });
+      }
+    };
+  };
+  return { ring: make(), zone: make() };
+}
+
+/** A controller with the stand-in stick bound, the way `main.js` binds the real one. */
+function stickController(stick = fakeStick(132)) {
+  const input = new InputController(fakeWindow());
+  input.bindStick(stick.ring, null, stick.zone);
+  return { input, stick };
+}
+
+/**
+ * Press the stick somewhere, drag `px` pixels right, then read one long frame.
+ *
+ * The frame is deliberately a whole second: steering is rate-limited to at most 4.2 units
+ * per second, so a sixtieth of a second would report the slew limit rather than the
+ * request the stick actually made.
+ */
+function stickSteer(controller, px, dt = 1) {
+  const { input, stick } = controller;
+  stick.zone.emit('pointerdown', { clientX: 200, clientY: 200, target: stick.zone });
+  stick.zone.emit('pointermove', { clientX: 200 + px, clientY: 200 });
+  return input.read(dt, 0).steer;
+}
+
+test('the touch stick keeps full lock for the edge of its travel', () => {
+  /*
+   * The complaint: "if I move a bit, I get pushed onto the grass already". Full lock used
+   * to be 32% of the ring -- 42px, about a centimetre of thumb on a phone -- and the
+   * response was dead linear, so the first eighth of the travel did an eighth of the
+   * steering. Nothing in the middle of that range was usable: every thumb position that
+   * could be held was already asking for more lock than the tyres could honour.
+   *
+   * The reach is 41% now and the axis is curved, with a dead zone for a resting thumb.
+   * Both ends of the range stay where they belong: nothing until the thumb moves, and
+   * full lock at the edge of the travel rather than somewhere in the middle of it.
+   */
+  const reach = 132 * 0.41;
+
+  assert.equal(stickAxis(0, reach), 0, 'a stick left alone steers by nothing');
+  assert.equal(stickAxis(2, reach), 0, 'and a resting thumb inside the dead zone does not steer');
+  assert.ok(stickAxis(8, reach) < 0.05, `8px is a small request, got ${stickAxis(8, reach)}`);
+  assert.ok(
+    stickAxis(8, reach) < 8 / reach / 3,
+    'and it is under a third of what the same nudge asked for with a linear map'
+  );
+  assert.ok(stickAxis(reach * 0.5, reach) < 0.5, 'half travel is less than half the steering');
+  assert.ok(stickAxis(reach * 0.5, reach) > 0.2, 'but the middle of the travel still does something');
+  assert.equal(stickAxis(reach, reach), 1, 'the edge of the travel is full lock');
+  assert.equal(stickAxis(reach * 4, reach), 1, 'and past it stays there');
+  assert.equal(stickAxis(-reach * 4, reach), -1, 'which holds in both directions');
+
+  let previous = -1;
+  for (let px = 0; px <= reach; px += 1) {
+    const value = stickAxis(px, reach);
+    assert.ok(value >= previous, `the curve must not fold back: ${value} after ${previous} at ${px}px`);
+    previous = value;
+  }
+});
+
+test('a nudge of the stick at racing speed asks for less grip than the tyres have', () => {
+  /*
+   * The numbers behind the same complaint, taken from the model the car drives on.
+   *
+   * A stick request becomes a steering angle through `maxSteer`, which falls from 0.52 rad
+   * at rest to 0.09 rad at 85 m/s, and the wheelbase is the car mesh's own front-to-rear
+   * length. Steady-state cornering then asks for `v^2 * tan(steer) / L` of lateral
+   * acceleration, and the tyres can supply `TYRE.peakGrip * g` before they slide. Asking
+   * for more than that is the car leaving the road: at 200 km/h the old linear mapping
+   * turned an 8px thumb movement into several times the grip the car has, at any speed.
+   */
+  const speed = 55; // ~200 km/h
+  const maxSteer = 0.52 + (0.09 - 0.52) * Math.min(speed / 85, 1);
+  const wheelbase = 1.42 + 1.5;
+  const budget = TYRE.peakGrip * GRAVITY;
+  const demand = (request) => (speed * speed * Math.tan(request * maxSteer)) / wheelbase;
+
+  const nudge = stickAxis(8, 132 * 0.41);
+  assert.ok(
+    demand(nudge) < budget,
+    `8px at 200 km/h must stay inside the tyres: ${demand(nudge).toFixed(1)} against ${budget.toFixed(1)} m/s^2`
+  );
+
+  const before = demand(8 / (132 * 0.32));
+  assert.ok(
+    before > budget * 2,
+    `the linear mapping this replaces demanded ${before.toFixed(1)} m/s^2 against ${budget.toFixed(1)} available`
+  );
+});
+
+test('the steering setting chooses the response, and every choice still reaches full lock', () => {
+  const controller = stickController();
+  const { input } = controller;
+
+  assert.equal(input.sensitivity, DEFAULT_STEER_SENSITIVITY, 'a new player gets the tuned curve');
+
+  const at = (name, px) => {
+    input.setSensitivity(name);
+    return Math.abs(stickSteer(controller, px));
+  };
+
+  const calm = at('calm', 20);
+  const normal = at('normal', 20);
+  const sharp = at('sharp', 20);
+  assert.ok(calm < normal, `calm must be gentler than normal: ${calm} against ${normal}`);
+  assert.ok(normal < sharp, `sharp must answer sooner than normal: ${sharp} against ${normal}`);
+
+  // The endpoints survive every curve, which is what makes the setting safe to offer:
+  // a calm stick is a gentler stick, not a car that cannot be turned.
+  for (const name of Object.keys(STEER_CURVES)) {
+    assert.equal(at(name, 132 * 0.5), 1, `${name} must still be able to ask for full lock`);
+  }
+
+  assert.equal(input.setSensitivity('wild'), false, 'an unknown name is refused');
+  assert.equal(input.sensitivity, 'sharp', 'and does not disturb the choice already made');
+  assert.equal(input.curve, STEER_CURVES.sharp);
+});
+
+test('the steering setting reaches the gyroscope as well as the stick', async () => {
+  /*
+   * One setting, both analogue schemes. A player who found the stick too sharp and
+   * switched to motion expecting that to be gentler should not have to go looking for a
+   * second control, and a motion player whose setting quietly did nothing would have no
+   * way to tell that from a phone that is simply hard to hold still.
+   */
+  const motion = await startedMotion({ angle: 0 });
+  const input = new InputController(fakeWindow());
+  input.motion = motion;
+  input.controlScheme = 'motion';
+  motion.target.emit(0, 6);
+
+  const settled = () => {
+    let steer = 0;
+    for (let i = 0; i < 90; i += 1) steer = input.read(1 / 60).steer;
+    return Math.abs(steer);
+  };
+
+  const normal = settled();
+  input.setSensitivity('calm');
+  assert.equal(motion.curve, STEER_CURVES.calm, 'the tilt curve follows the same choice');
+  const calm = settled();
+  assert.ok(calm < normal, `a calm setting must steer less on tilt too: ${calm} against ${normal}`);
+
+  motion.target.emit(0, 40);
+  input.setSensitivity('normal');
+  assert.ok(settled() > 0.9, 'and a full tilt still reaches full lock');
+});
+
+test('the controls screen offers the same steering names the input layer accepts', () => {
+  /*
+   * The names are the contract between two files: `main.js` builds the chips from
+   * `STEER_CURVES`, so a new curve without copy would render a chip labelled with its own
+   * key, and a chip with no curve behind it would silently do nothing. Neither is visible
+   * from the input layer's side, which is why this reads the screen's source.
+   */
+  const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  const copy = source.match(/const STEERING_COPY = \{([\s\S]*?)\n\};/);
+  assert.ok(copy, 'the controls screen must have copy for the steering choices');
+  const named = [...copy[1].matchAll(/^ {2}([a-z]+):/gm)].map((match) => match[1]);
+  assert.deepEqual(named, Object.keys(STEER_CURVES), 'every accepted name needs a label, in order');
+
+  assert.match(source, /data-steer="\$\{choice\.id\}"/, 'the chips are built from the input layer list');
+  assert.match(source, /saveSteering\(/, 'the choice is remembered between sessions');
+  assert.match(source, /game\.input\.setSensitivity\(loadSteering\(\)\)/, 'and applied on boot');
 });
