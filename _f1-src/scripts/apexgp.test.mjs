@@ -24,6 +24,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { buildCarMesh, buildEnvironment, buildTrackMesh, syncCarMesh } from '../src/render/TrackMesh.js';
+import {
+  Effects,
+  MARK_CAPACITY,
+  MARK_LIFE,
+  SOFT_CAPACITY,
+  SPARK_CAPACITY,
+  tyreSignals
+} from '../src/render/Effects.js';
 import { buildCockpit, steerCockpit } from '../src/render/Cockpit.js';
 import { buildSurrounds } from '../src/render/Surrounds.js';
 import { disposeTree } from '../src/core/Game.js';
@@ -98,7 +106,13 @@ import { UIManager } from '../src/ui/UIManager.js';
 import { StartSequence } from '../src/race/startSequence.js';
 import { SETTING, environmentFor, isStreet } from '../src/track/environments.js';
 import { ELEVATION, PROFILE_POINTS, elevationAt } from '../src/track/elevationData.js';
-import { ACTIONS, InputController } from '../src/core/InputController.js';
+import {
+  ACTIONS,
+  DEFAULT_STEER_SENSITIVITY,
+  InputController,
+  STEER_CURVES,
+  stickAxis
+} from '../src/core/InputController.js';
 import { MotionControl } from '../src/core/MotionControl.js';
 
 import { createRandom } from '../src/util/math.js';
@@ -2423,7 +2437,11 @@ test('the on-screen controls are actually wired to the input controller', () => 
   const inputSource = readFileSync(new URL('../src/core/InputController.js', import.meta.url), 'utf8');
   assert.match(inputSource, /this\.touch\.throttle = clamp\(-dy \/ reach, 0, 1\)/, 'stick up = throttle');
   assert.match(inputSource, /this\.touch\.brake = clamp\(dy \/ reach, 0, 1\)/, 'stick down = brake');
-  assert.match(inputSource, /this\.touch\.steer = clamp\(dx \/ reach, -1, 1\)/, 'stick across = steer');
+  assert.match(
+    inputSource,
+    /this\.touch\.steer = stickAxis\(dx, reach, this\.curve\)/,
+    'stick across = steer, through the response curve'
+  );
 
   // `read()` must consider both on-screen sources, or a control wired to
   // whichever one it picked can silently go dead again.
@@ -5021,4 +5039,608 @@ test('the first lap of a race is a lap, not a deleted one', () => {
     assert.equal(car.timer.laps.length, 0, 'the crossing arms the timer rather than completing a lap');
     assert.equal(car.timer.lap, 0, 'so no lap has been completed yet');
   }
+});
+
+/* ---------------------------------------------------------------------------
+ * The touch stick: travel, response curve and the steering setting
+ * ------------------------------------------------------------------------ */
+
+/**
+ * A stand-in for the floating thumbstick.
+ *
+ * `bindStick` measures the ring it is handed and listens on the zone, so both are faked
+ * with the same listener map. Pointer capture is a silent no-op rather than absent: the
+ * binding treats it as optional, and a phone that refuses it must still steer.
+ */
+function fakeStick(width = 132) {
+  const make = () => {
+    const listeners = new Map();
+    return {
+      style: {},
+      contains: () => true,
+      classList: { add() {}, remove() {}, toggle() {} },
+      setPointerCapture() {},
+      getBoundingClientRect: () => ({ width, left: 0, top: 0 }),
+      addEventListener(type, handler) {
+        listeners.set(type, handler);
+      },
+      emit(type, fields = {}) {
+        listeners.get(type)?.({ preventDefault() {}, pointerId: 1, ...fields });
+      }
+    };
+  };
+  return { ring: make(), zone: make() };
+}
+
+/** A controller with the stand-in stick bound, the way `main.js` binds the real one. */
+function stickController(stick = fakeStick(132)) {
+  const input = new InputController(fakeWindow());
+  input.bindStick(stick.ring, null, stick.zone);
+  return { input, stick };
+}
+
+/**
+ * Press the stick somewhere, drag `px` pixels right, then read one long frame.
+ *
+ * The frame is deliberately a whole second: steering is rate-limited to at most 4.2 units
+ * per second, so a sixtieth of a second would report the slew limit rather than the
+ * request the stick actually made.
+ */
+function stickSteer(controller, px, dt = 1) {
+  const { input, stick } = controller;
+  stick.zone.emit('pointerdown', { clientX: 200, clientY: 200, target: stick.zone });
+  stick.zone.emit('pointermove', { clientX: 200 + px, clientY: 200 });
+  return input.read(dt, 0).steer;
+}
+
+test('the touch stick keeps full lock for the edge of its travel', () => {
+  /*
+   * The complaint: "if I move a bit, I get pushed onto the grass already". Full lock used
+   * to be 32% of the ring -- 42px, about a centimetre of thumb on a phone -- and the
+   * response was dead linear, so the first eighth of the travel did an eighth of the
+   * steering. Nothing in the middle of that range was usable: every thumb position that
+   * could be held was already asking for more lock than the tyres could honour.
+   *
+   * The reach is 41% now and the axis is curved, with a dead zone for a resting thumb.
+   * Both ends of the range stay where they belong: nothing until the thumb moves, and
+   * full lock at the edge of the travel rather than somewhere in the middle of it.
+   */
+  const reach = 132 * 0.41;
+
+  assert.equal(stickAxis(0, reach), 0, 'a stick left alone steers by nothing');
+  assert.equal(stickAxis(2, reach), 0, 'and a resting thumb inside the dead zone does not steer');
+  assert.ok(stickAxis(8, reach) < 0.05, `8px is a small request, got ${stickAxis(8, reach)}`);
+  assert.ok(
+    stickAxis(8, reach) < 8 / reach / 3,
+    'and it is under a third of what the same nudge asked for with a linear map'
+  );
+  assert.ok(stickAxis(reach * 0.5, reach) < 0.5, 'half travel is less than half the steering');
+  assert.ok(stickAxis(reach * 0.5, reach) > 0.2, 'but the middle of the travel still does something');
+  assert.equal(stickAxis(reach, reach), 1, 'the edge of the travel is full lock');
+  assert.equal(stickAxis(reach * 4, reach), 1, 'and past it stays there');
+  assert.equal(stickAxis(-reach * 4, reach), -1, 'which holds in both directions');
+
+  let previous = -1;
+  for (let px = 0; px <= reach; px += 1) {
+    const value = stickAxis(px, reach);
+    assert.ok(value >= previous, `the curve must not fold back: ${value} after ${previous} at ${px}px`);
+    previous = value;
+  }
+});
+
+test('a nudge of the stick at racing speed asks for less grip than the tyres have', () => {
+  /*
+   * The numbers behind the same complaint, taken from the model the car drives on.
+   *
+   * A stick request becomes a steering angle through `maxSteer`, which falls from 0.52 rad
+   * at rest to 0.09 rad at 85 m/s, and the wheelbase is the car mesh's own front-to-rear
+   * length. Steady-state cornering then asks for `v^2 * tan(steer) / L` of lateral
+   * acceleration, and the tyres can supply `TYRE.peakGrip * g` before they slide. Asking
+   * for more than that is the car leaving the road: at 200 km/h the old linear mapping
+   * turned an 8px thumb movement into several times the grip the car has, at any speed.
+   */
+  const speed = 55; // ~200 km/h
+  const maxSteer = 0.52 + (0.09 - 0.52) * Math.min(speed / 85, 1);
+  const wheelbase = 1.42 + 1.5;
+  const budget = TYRE.peakGrip * GRAVITY;
+  const demand = (request) => (speed * speed * Math.tan(request * maxSteer)) / wheelbase;
+
+  const nudge = stickAxis(8, 132 * 0.41);
+  assert.ok(
+    demand(nudge) < budget,
+    `8px at 200 km/h must stay inside the tyres: ${demand(nudge).toFixed(1)} against ${budget.toFixed(1)} m/s^2`
+  );
+
+  const before = demand(8 / (132 * 0.32));
+  assert.ok(
+    before > budget * 2,
+    `the linear mapping this replaces demanded ${before.toFixed(1)} m/s^2 against ${budget.toFixed(1)} available`
+  );
+});
+
+test('the steering setting chooses the response, and every choice still reaches full lock', () => {
+  const controller = stickController();
+  const { input } = controller;
+
+  assert.equal(input.sensitivity, DEFAULT_STEER_SENSITIVITY, 'a new player gets the tuned curve');
+
+  const at = (name, px) => {
+    input.setSensitivity(name);
+    return Math.abs(stickSteer(controller, px));
+  };
+
+  const calm = at('calm', 20);
+  const normal = at('normal', 20);
+  const sharp = at('sharp', 20);
+  assert.ok(calm < normal, `calm must be gentler than normal: ${calm} against ${normal}`);
+  assert.ok(normal < sharp, `sharp must answer sooner than normal: ${sharp} against ${normal}`);
+
+  // The endpoints survive every curve, which is what makes the setting safe to offer:
+  // a calm stick is a gentler stick, not a car that cannot be turned.
+  for (const name of Object.keys(STEER_CURVES)) {
+    assert.equal(at(name, 132 * 0.5), 1, `${name} must still be able to ask for full lock`);
+  }
+
+  assert.equal(input.setSensitivity('wild'), false, 'an unknown name is refused');
+  assert.equal(input.sensitivity, 'sharp', 'and does not disturb the choice already made');
+  assert.equal(input.curve, STEER_CURVES.sharp);
+});
+
+test('the steering setting reaches the gyroscope as well as the stick', async () => {
+  /*
+   * One setting, both analogue schemes. A player who found the stick too sharp and
+   * switched to motion expecting that to be gentler should not have to go looking for a
+   * second control, and a motion player whose setting quietly did nothing would have no
+   * way to tell that from a phone that is simply hard to hold still.
+   */
+  const motion = await startedMotion({ angle: 0 });
+  const input = new InputController(fakeWindow());
+  input.motion = motion;
+  input.controlScheme = 'motion';
+  motion.target.emit(0, 6);
+
+  const settled = () => {
+    let steer = 0;
+    for (let i = 0; i < 90; i += 1) steer = input.read(1 / 60).steer;
+    return Math.abs(steer);
+  };
+
+  const normal = settled();
+  input.setSensitivity('calm');
+  assert.equal(motion.curve, STEER_CURVES.calm, 'the tilt curve follows the same choice');
+  const calm = settled();
+  assert.ok(calm < normal, `a calm setting must steer less on tilt too: ${calm} against ${normal}`);
+
+  motion.target.emit(0, 40);
+  input.setSensitivity('normal');
+  assert.ok(settled() > 0.9, 'and a full tilt still reaches full lock');
+});
+
+test('the controls screen offers the same steering names the input layer accepts', () => {
+  /*
+   * The names are the contract between two files: `main.js` builds the chips from
+   * `STEER_CURVES`, so a new curve without copy would render a chip labelled with its own
+   * key, and a chip with no curve behind it would silently do nothing. Neither is visible
+   * from the input layer's side, which is why this reads the screen's source.
+   */
+  const source = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  const copy = source.match(/const STEERING_COPY = \{([\s\S]*?)\n\};/);
+  assert.ok(copy, 'the controls screen must have copy for the steering choices');
+  const named = [...copy[1].matchAll(/^ {2}([a-z]+):/gm)].map((match) => match[1]);
+  assert.deepEqual(named, Object.keys(STEER_CURVES), 'every accepted name needs a label, in order');
+
+  assert.match(source, /data-steer="\$\{choice\.id\}"/, 'the chips are built from the input layer list');
+  assert.match(source, /saveSteering\(/, 'the choice is remembered between sessions');
+  assert.match(source, /game\.input\.setSensitivity\(loadSteering\(\)\)/, 'and applied on boot');
+});
+
+/* ---------------------------------------------------------------------------
+ * Tyre effects: smoke, dust, sparks and the rubber on the road
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Deterministic stand-ins for `Math.random` in the effect tests.
+ *
+ * Emission is a probability per frame, so a test that wanted a particle would be flaky on
+ * `Math.random`, and a test that wanted *no* particle would pass for the wrong reason.
+ * `fires` is below every probability the module produces and `coin` sits inside the range,
+ * so each assertion is about the threshold in the code rather than about luck.
+ */
+const fires = () => 0;
+const coin = () => 0.5;
+
+const rounded = (value) => Math.round(value * 100) / 100;
+
+test('the tyre effects fire on the physics signals rather than on guesses', () => {
+  /*
+   * The whole value of a smoke effect is that it means something: that the rear tyres are
+   * past the peak of the friction curve and the car is about to be a handful. A car at the
+   * limit of grip must therefore show nothing, which is why the thresholds are read from
+   * the physics rather than chosen for how the effect looks.
+   */
+  const car = new CarPhysics();
+  car.vLong = 50; // ~180 km/h
+  car.vLat = 0;
+  const surface = { halfWidth: 7, lateral: 0 };
+
+  // Gripping: the tyres are working hard and nothing should be coming off them.
+  car.rearSlipAngle = 0.08;
+  car.wheelSlip = 0;
+  car.brakeLock = 0;
+  let signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, false, 'a car at the peak of the friction curve must not smoke');
+  assert.equal(signals.laying, false, 'and must not be leaving rubber either');
+
+  // Sliding: past the peak, which is where the smoke belongs.
+  car.rearSlipAngle = 0.2;
+  signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, true, 'a sliding tyre smokes');
+  assert.equal(signals.laying, true, 'and leaves rubber');
+
+  /*
+   * Wheelspin, which has to clear a much higher bar than the slip angle does.
+   *
+   * `wheelSlip` is non-zero whenever the engine asks for more than the rear tyres can put
+   * down, and in these cars that is most of a lap. An earlier version fired on any of it,
+   * and the first run in the browser had all twenty-two cars smoking and laying rubber
+   * through a green-flag lap -- a cue that is always on is not a cue.
+   */
+  car.rearSlipAngle = 0.02;
+  car.wheelSlip = 0.3;
+  signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, false, 'a car merely on the power out of a corner is not smoking');
+  assert.equal(signals.laying, false, 'and is not leaving rubber either');
+
+  car.wheelSlip = 0.7; // half the drive force again on top of what the tyres can take
+  signals = tyreSignals(car, surface);
+  assert.ok(signals.sliding > 0.5, 'but a wheel properly spinning up is a sliding tyre');
+  assert.equal(signals.smoky, true);
+  assert.equal(signals.laying, true);
+
+  // Locked up under braking, which the physics flags for the front axle.
+  car.wheelSlip = 0;
+  car.brakeLock = 1;
+  signals = tyreSignals(car, surface);
+  assert.equal(signals.smoky, true, 'a locked wheel smokes');
+
+  /*
+   * Where the car is on the road, which decides dust and whether there is anything to mark.
+   * The kerb is 1.4m of run-off either side, so 8m off centre on a 14m road is still kerb
+   * and 9m is not -- and off the road there is no asphalt for the rubber to be laid on.
+   */
+  car.rearSlipAngle = 0.3;
+  car.brakeLock = 0;
+  assert.equal(
+    tyreSignals(car, { halfWidth: 7, lateral: 8 }).offTrack,
+    false,
+    'the kerb is still the track: the car is on the paint, not the grass'
+  );
+  const off = tyreSignals(car, { halfWidth: 7, lateral: 9 });
+  assert.equal(off.offTrack, true, 'past the kerb the wheels are on the run-off');
+  assert.equal(off.laying, false, 'and there is nothing to lay rubber on out there');
+  assert.equal(off.smoky, true, 'though the tyres are as gone as they were on the road');
+  assert.equal(
+    tyreSignals(car).offTrack,
+    false,
+    'a car the session has not placed yet is on the road, not off it'
+  );
+});
+
+test('the effect pools are bounded, and every particle ends', () => {
+  /*
+   * The pools are the reason this is affordable on a phone at all, so the two things worth
+   * asserting are that they cannot grow and that nothing in them is immortal. An effect
+   * that leaks a particle per frame is invisible until the frame rate falls off a cliff
+   * twenty minutes into a race.
+   */
+  const effects = new Effects(new THREE.Scene(), { random: fires });
+  for (let i = 0; i < 4000; i += 1) {
+    effects.smoke(0, 0, 0, 1, 0, 0, 1 / 60);
+    effects.dust(0, 0, 0, 1, 0, 0, 1 / 60);
+    effects.sparks(0, 0, 0, 20);
+  }
+  assert.ok(effects.particleCount > 0, 'the emitters must have produced something to test');
+  assert.ok(
+    effects.particleCount <= SOFT_CAPACITY + SPARK_CAPACITY,
+    `the pools cannot grow past their capacity, got ${effects.particleCount}`
+  );
+  effects.update(1 / 60);
+  assert.equal(
+    effects.soft.geometry.drawRange.count,
+    effects.soft.live,
+    'the draw range follows the live particles, so a dead one is not still drawn'
+  );
+
+  effects.update(3);
+  assert.equal(effects.particleCount, 0, 'every particle must expire');
+  assert.equal(effects.soft.geometry.drawRange.count, 0, 'and stop being drawn');
+  assert.equal(effects.soft.live, 0, 'with nothing left in the pool');
+});
+
+test('emission is a rate per second rather than a particle per frame', () => {
+  /*
+   * The frame rate is not a game variable: a phone at 30fps and a desktop at 144 are the
+   * same race, and smoke emitted per frame would be five times as dense on the desktop. A
+   * probability scaled by `dt` is what makes them agree.
+   */
+  const effects = new Effects(new THREE.Scene(), { random: coin });
+  effects.smoke(0, 0, 0, 1, 0, 0, 1 / 30);
+  assert.equal(effects.particleCount, 1, 'a thirtieth of a second of a fully sliding tyre emits');
+
+  effects.reset();
+  effects.smoke(0, 0, 0, 1, 0, 0, 1 / 600);
+  assert.equal(effects.particleCount, 0, 'a tenth of that time emits nothing');
+
+  // A tyre that is not past the limit emits nothing whatever the frame length is.
+  effects.reset();
+  effects.smoke(0, 0, 0, 0, 0, 0, 1);
+  assert.equal(effects.particleCount, 0, 'a tyre that is not sliding must not smoke');
+});
+
+test('smoke is left behind by the car that made it', () => {
+  const effects = new Effects(new THREE.Scene(), { random: fires });
+  effects.smoke(0, 0, 0, 1, 40, 0, 1 / 60);
+  assert.equal(effects.particleCount, 1);
+
+  const vx = effects.soft.velocity[0];
+  assert.ok(vx > 0 && vx < 40, `smoke drifts along with the car, it does not travel at its speed: ${vx}`);
+  effects.update(0.05);
+  assert.ok(effects.soft.position[1] > 0, 'and rises, because it is lighter than the air it is in');
+  assert.ok(effects.soft.alpha[0] > 0, 'fading in rather than appearing at full opacity');
+  assert.ok(effects.soft.size[0] > 0.5, 'and growing as it goes');
+});
+
+test('skid marks are laid one segment at a time, and wear off', () => {
+  const effects = new Effects(new THREE.Scene(), { random: fires });
+
+  assert.equal(effects.skid('car', 0, 0, 0, 1), false, 'the first call records where the strip starts');
+  assert.equal(effects.skid('car', 1, 0, 0, 1), false, 'a metre is less than a segment');
+  assert.equal(effects.skid('car', 3, 0, 0, 1), true, 'three metres is a segment');
+  assert.equal(effects.markCount, 1, 'and leaves exactly one mark');
+
+  // Geometry: the mark runs from the last point to this one, 0.34m wide, at road height.
+  // The segment travelled was 3m along x, so the width is taken across z.
+  const xs = [];
+  const zs = [];
+  for (let corner = 0; corner < 4; corner += 1) {
+    xs.push(rounded(effects.marks.position[corner * 3]));
+    zs.push(rounded(effects.marks.position[corner * 3 + 2]));
+  }
+  assert.deepEqual(xs, [0, 0, 3, 3], 'the strip spans the segment that was travelled');
+  assert.deepEqual(zs, [0.17, -0.17, 0.17, -0.17], 'and is 0.34m wide, centred on the path');
+
+  /*
+   * A strip that ends, ends where it ended.
+   *
+   * Without that, the next time the car slides the first mark would be one quad from the
+   * last slide to this one -- a single black streak across half the circuit, drawn the first
+   * time a car spins and comes back.
+   */
+  effects.clearStrip('car');
+  assert.equal(effects.skid('car', 400, 0, 0, 1), false, 'a new strip starts where the car is now');
+  assert.equal(effects.markCount, 1, 'and does not draw anything to get there');
+
+  for (let i = 0; i < 5000; i += 1) effects.skid('ring', i * 3, 0, 0, 1);
+  assert.equal(effects.markCount, MARK_CAPACITY, 'the ring is the cap, however long the slide');
+
+  effects.update(MARK_LIFE + 1);
+  assert.equal(effects.markCount, 0, 'and the rubber wears off in the end');
+});
+
+test('a barrier strike throws a burst of sparks, sized by the hit', () => {
+  const scene = new THREE.Scene();
+  const light = new Effects(scene, { random: fires });
+  const heavy = new Effects(new THREE.Scene(), { random: fires });
+  light.sparks(0, 0, 0, 2);
+  heavy.sparks(0, 0, 0, 30);
+  assert.ok(light.particleCount >= 3, 'even a graze throws something');
+  assert.ok(
+    heavy.particleCount > light.particleCount * 2,
+    `a big hit has to read as a big hit: ${heavy.particleCount} against ${light.particleCount}`
+  );
+  assert.ok(heavy.particleCount <= SPARK_CAPACITY, 'and the burst is capped');
+
+  /*
+   * Sparks are thrown along the wall's normal rather than in a sphere: the car is scraping
+   * one side, and sparks that fly through the barrier read as confetti.
+   */
+  const effect = new Effects(scene, { random: fires });
+  effect.sparks(0, 1, 0, 20, 1, 0);
+  const along = [];
+  for (let i = 0; i < effect.glow.live; i += 1) along.push(effect.glow.velocity[i * 3]);
+  assert.ok(along.length > 0, 'the burst must have produced sparks');
+  assert.ok(along.every((vx) => vx > 0), 'and every one of them starts moving away from the wall');
+
+  // Nothing, once they have fallen out of the air.
+  effect.update(2);
+  assert.equal(effect.particleCount, 0, 'sparks are gone within a second or so');
+});
+
+/* ---------------------------------------------------------------------------
+ * Speed: the field of view, the vibration, and the sparks off a barrier
+ * ------------------------------------------------------------------------ */
+
+/** A dead straight fake circuit, which is all the camera rig's timing needs. */
+function straightTrack(count = 120, y = 0) {
+  const samples = [];
+  for (let i = 0; i < count; i += 1) {
+    samples.push({ index: i, x: i * 10, z: 0, y, width: 12, rightX: 0, rightZ: 1 });
+  }
+  return { samples, count: samples.length };
+}
+
+test('the field of view opens with speed, and closes again where it should', () => {
+  /*
+   * The cheapest speed sensation there is: at 300km/h the camera opens its lens so the world
+   * rushes past the edges of the screen, and it closes back to the broadcast framing at rest.
+   *
+   * Three details decide whether that reads as speed or as a fault. It has to be damped
+   * rather than snapped, or the view lurches every time the throttle is picked up; the
+   * projection matrix has to be told, or the field of view changes and the picture does not;
+   * and a trackside camera must not do it at all, because a fixed camera that changes lens is
+   * a bug with a speed effect's name on it.
+   */
+  const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.4, 6000);
+  const rig = new CameraRig(camera, straightTrack());
+  const car = { x: 300, y: 0, z: 0, heading: 0, speed: 0, yawRate: 0 };
+  const settle = (frames = 240) => {
+    for (let i = 0; i < frames; i += 1) rig.update(car, 1 / 60, car);
+  };
+
+  settle();
+  assert.ok(Math.abs(camera.fov - 62) < 0.05, `at rest the framing is the default, got ${camera.fov.toFixed(2)}`);
+
+  let projections = 0;
+  const rebuild = camera.updateProjectionMatrix.bind(camera);
+  camera.updateProjectionMatrix = () => {
+    projections += 1;
+    rebuild();
+  };
+
+  car.speed = 90; // flat out
+  settle();
+  assert.ok(camera.fov > 68, `at top speed the lens opens, got ${camera.fov.toFixed(2)}`);
+  assert.ok(projections > 0, 'and the projection matrix is told, or nothing changes on screen');
+
+  // Damped, not snapped: one frame at top speed must not jump the whole way.
+  rig.setMode('chase');
+  car.speed = 0;
+  settle();
+  rig.update(car, 1 / 60, car);
+  car.speed = 90;
+  rig.update(car, 1 / 60, car);
+  assert.ok(camera.fov < 64, `the lens takes time to open, got ${camera.fov.toFixed(2)} after one frame`);
+
+  settle();
+  assert.ok(camera.fov > 68, 'but it does open');
+
+  car.speed = 0;
+  settle();
+  assert.ok(Math.abs(camera.fov - 62) < 0.05, 'and it closes again at rest');
+
+  // A trackside camera is a fixed camera with a fixed lens.
+  rig.setMode('tv');
+  car.speed = 90;
+  settle(120);
+  assert.ok(Math.abs(camera.fov - 62) < 0.05, `the trackside camera keeps its lens, got ${camera.fov.toFixed(2)}`);
+});
+
+test('the camera vibrates with speed, and only with speed', () => {
+  /*
+   * A few centimetres of high frequency movement, which is what a car at 300km/h looks like
+   * from just behind it. Without it the chase camera glides like a drone, and with too much
+   * of it the car reads as broken; the test is that the camera keeps moving when nothing else
+   * does -- a settled rig at rest reproduces the same position to the last decimal, and at
+   * speed it does not.
+   */
+  const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.4, 6000);
+  const rig = new CameraRig(camera, straightTrack());
+  const car = { x: 300, y: 0, z: 0, heading: 0, speed: 0, yawRate: 0 };
+  for (let i = 0; i < 300; i += 1) rig.update(car, 1 / 60, car);
+
+  const drift = () => {
+    let worst = 0;
+    let previous = camera.position.clone();
+    for (let i = 0; i < 60; i += 1) {
+      rig.update(car, 1 / 60, car);
+      worst = Math.max(worst, camera.position.distanceTo(previous));
+      previous = camera.position.clone();
+    }
+    return worst;
+  };
+
+  assert.ok(drift() < 0.002, `a settled camera at rest must not move between frames, moved ${drift().toFixed(4)}m`);
+
+  car.speed = 90;
+  for (let i = 0; i < 120; i += 1) rig.update(car, 1 / 60, car);
+  const moving = drift();
+  assert.ok(moving > 0.01, `and at top speed it has to be alive, moved ${moving.toFixed(4)}m`);
+  // A vibration, not a wobble: a few centimetres a frame.
+  assert.ok(moving < 0.12, `but only a few centimetres, moved ${moving.toFixed(4)}m`);
+});
+
+test('a barrier strike reports where the car hit, for the sparks', () => {
+  /*
+   * The impact callback carries the speed into the wall, which is all the HUD flash needs and
+   * none of what a spark effect needs: sparks come off the barrier at the point of contact,
+   * thrown along its normal. "Somewhere on this circuit, at 40 m/s" is not a place to draw
+   * them.
+   *
+   * The car is placed beside the circuit pointing at the barrier rather than driven there:
+   * driving to a wall takes half a minute of simulation and lands wherever the AI's line
+   * happens to go, which is a test that passes for the wrong reason.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const entries = [
+    { ...DRIVERS[0], isPlayer: true, upgrades: {} },
+    { ...DRIVERS[1], isPlayer: false, upgrades: {} }
+  ];
+  const session = new RaceSession({
+    track,
+    entries,
+    type: SESSION_TYPE.race,
+    totalLaps: 3,
+    random: () => 0.5
+  });
+  const impacts = [];
+  session.onImpact = (strength, contact) => impacts.push({ strength, contact });
+
+  // Past the hold on the grid, or the cars are pinned and nothing moves.
+  const straight = { throttle: 0.8, brake: 0, steer: 0, handbrake: false };
+  for (let i = 0; i < 60 * 8; i += 1) session.update(DT, straight);
+
+  const car = session.player.physics;
+  const sample = track.samples[200];
+  const lateral = sample.width * 0.5 + 1.2; // on the kerb, inside the barrier
+  car.x = sample.x + sample.rightX * lateral;
+  car.z = sample.z + sample.rightZ * lateral;
+  car.y = sample.y ?? 0;
+  car.heading = Math.atan2(sample.rightZ, sample.rightX); // nose at the wall
+  car.vLong = 25;
+  car.vLat = 0;
+  car.yawRate = 0;
+
+  for (let i = 0; i < 30 && impacts.length === 0; i += 1) {
+    session.update(DT, { throttle: 0, brake: 0, steer: 0, handbrake: false });
+  }
+
+  assert.ok(impacts.length > 0, 'a car driven at the barrier has to register the hit');
+  const { strength, contact } = impacts[0];
+  assert.ok(strength > 0, `the strike carries the speed into the wall, got ${strength}`);
+  assert.ok(contact, 'and a place to draw sparks');
+  assert.ok(Math.hypot(contact.x - car.x, contact.z - car.z) < 5, 'the contact is at the car');
+  assert.ok(Math.abs(contact.y - car.y) < 1.5, 'at the height of the road');
+  assert.ok(Math.abs(Math.hypot(contact.nx, contact.nz) - 1) < 1e-6, 'with a unit normal');
+
+  // Pointing back into the circuit, not through the wall: sparks leave the barrier on the
+  // side the car came from.
+  const where = locateOnTrack(track, contact.x, contact.z);
+  const inward = contact.nx * where.sample.rightX + contact.nz * where.sample.rightZ;
+  assert.equal(
+    Math.sign(inward),
+    -Math.sign(where.lateral),
+    'the normal points back into the circuit, not through the barrier'
+  );
+});
+
+test('the impact feeds the sparks, and the HUD still hears about it', () => {
+  /*
+   * The wiring, which is the part a unit test cannot reach: `Game` owns both the effect and
+   * the session, so the callback is where the two meet. It used to hand `session.onImpact`
+   * straight to the HUD, which is why the HUD flash and the camera shake had to keep working
+   * when the sparks arrived -- a wrapper that swallowed the original callback would take the
+   * two most established effects in the game with it.
+   */
+  const gameSource = readFileSync(new URL('../src/core/Game.js', import.meta.url), 'utf8');
+  assert.match(
+    gameSource,
+    /this\.session\.onImpact = \(strength, contact\)/,
+    'the session reports the contact to the game'
+  );
+  assert.match(gameSource, /this\.effects\.sparks\(contact\.x/, 'which is where the sparks are thrown');
+  assert.match(gameSource, /this\.onImpact\(strength\)/, 'and the HUD flash and shake still run');
+  assert.ok(
+    gameSource.indexOf('this.session.onImpact') > gameSource.indexOf('this.effects = new Effects'),
+    'the sparks need the effect to exist first'
+  );
 });

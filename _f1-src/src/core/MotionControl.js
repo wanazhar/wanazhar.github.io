@@ -93,6 +93,15 @@ const STEER_SMOOTHING = 0.18;
 const STEER_TO_RIGHT = -1;
 
 /**
+ * Response exponent for the tilt axis: how much of the range is given to small tilts.
+ *
+ * 1.6, and `#axis` below explains why it is neither 1 nor 2. Named, because the steering
+ * sensitivity setting changes it and a literal repeated in two files cannot be kept in
+ * step with the other one.
+ */
+const MOTION_STEER_CURVE = 1.6;
+
+/**
  * How long to wait for a permission answer, milliseconds.
  *
  * A real prompt is answered by the player and can legitimately take as long as they
@@ -146,6 +155,9 @@ export class MotionControl {
 
     /** Flips both axes. See `setInverted`. */
     this.inverted = false;
+
+    /** Response exponent for the tilt axis; see `setCurve`. */
+    this.curve = MOTION_STEER_CURVE;
 
     /** Why motion is unavailable, for the UI to explain rather than just fail. */
     this.status = 'idle';
@@ -292,10 +304,16 @@ export class MotionControl {
   }
 
   /**
-   * Read the steering for this frame.
-   * @param {number} dt seconds
-   * @returns {{steer: number, active: boolean}}
+   * Set the response exponent, from the steering sensitivity setting.
+   *
+   * @param {number} exponent
    */
+  setCurve(exponent) {
+    if (!Number.isFinite(exponent) || exponent <= 0) return false;
+    this.curve = exponent;
+    return true;
+  }
+
   /**
    * Read the steering for this frame.
    *
@@ -452,7 +470,7 @@ export class MotionControl {
      * which is where a corner is actually driven.
      */
     const scaled = Math.min((magnitude - deadzone) / (range - deadzone), 1);
-    return Math.sign(offset) * scaled ** 1.6;
+    return Math.sign(offset) * scaled ** this.curve;
   }
 
 }
