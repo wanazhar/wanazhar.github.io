@@ -411,7 +411,18 @@ export class Game {
       conditions
     });
     this.#applyConditions();
-    this.session.onImpact = this.onImpact;
+    /*
+     * Sparks off the barrier, and then the flash and shake that were always there.
+     *
+     * `onImpact` is the HUD's and the rig's, so it has to keep running: the wrapper adds the
+     * effect in front of it rather than in place of it. The session passes the contact point
+     * and the barrier's inward normal along with the speed, which is everything the burst
+     * needs to come off the right wall.
+     */
+    this.session.onImpact = (strength, contact) => {
+      if (contact) this.effects.sparks(contact.x, contact.y, contact.z, strength, contact.nx, contact.nz);
+      this.onImpact(strength);
+    };
     this.session.onRetire = this.onRetire;
 
     // A new session starts with clean air and clean asphalt.

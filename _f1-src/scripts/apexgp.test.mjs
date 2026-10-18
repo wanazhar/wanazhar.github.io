@@ -5456,3 +5456,191 @@ test('a barrier strike throws a burst of sparks, sized by the hit', () => {
   assert.equal(effect.particleCount, 0, 'sparks are gone within a second or so');
 });
 
+/* ---------------------------------------------------------------------------
+ * Speed: the field of view, the vibration, and the sparks off a barrier
+ * ------------------------------------------------------------------------ */
+
+/** A dead straight fake circuit, which is all the camera rig's timing needs. */
+function straightTrack(count = 120, y = 0) {
+  const samples = [];
+  for (let i = 0; i < count; i += 1) {
+    samples.push({ index: i, x: i * 10, z: 0, y, width: 12, rightX: 0, rightZ: 1 });
+  }
+  return { samples, count: samples.length };
+}
+
+test('the field of view opens with speed, and closes again where it should', () => {
+  /*
+   * The cheapest speed sensation there is: at 300km/h the camera opens its lens so the world
+   * rushes past the edges of the screen, and it closes back to the broadcast framing at rest.
+   *
+   * Three details decide whether that reads as speed or as a fault. It has to be damped
+   * rather than snapped, or the view lurches every time the throttle is picked up; the
+   * projection matrix has to be told, or the field of view changes and the picture does not;
+   * and a trackside camera must not do it at all, because a fixed camera that changes lens is
+   * a bug with a speed effect's name on it.
+   */
+  const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.4, 6000);
+  const rig = new CameraRig(camera, straightTrack());
+  const car = { x: 300, y: 0, z: 0, heading: 0, speed: 0, yawRate: 0 };
+  const settle = (frames = 240) => {
+    for (let i = 0; i < frames; i += 1) rig.update(car, 1 / 60, car);
+  };
+
+  settle();
+  assert.ok(Math.abs(camera.fov - 62) < 0.05, `at rest the framing is the default, got ${camera.fov.toFixed(2)}`);
+
+  let projections = 0;
+  const rebuild = camera.updateProjectionMatrix.bind(camera);
+  camera.updateProjectionMatrix = () => {
+    projections += 1;
+    rebuild();
+  };
+
+  car.speed = 90; // flat out
+  settle();
+  assert.ok(camera.fov > 68, `at top speed the lens opens, got ${camera.fov.toFixed(2)}`);
+  assert.ok(projections > 0, 'and the projection matrix is told, or nothing changes on screen');
+
+  // Damped, not snapped: one frame at top speed must not jump the whole way.
+  rig.setMode('chase');
+  car.speed = 0;
+  settle();
+  rig.update(car, 1 / 60, car);
+  car.speed = 90;
+  rig.update(car, 1 / 60, car);
+  assert.ok(camera.fov < 64, `the lens takes time to open, got ${camera.fov.toFixed(2)} after one frame`);
+
+  settle();
+  assert.ok(camera.fov > 68, 'but it does open');
+
+  car.speed = 0;
+  settle();
+  assert.ok(Math.abs(camera.fov - 62) < 0.05, 'and it closes again at rest');
+
+  // A trackside camera is a fixed camera with a fixed lens.
+  rig.setMode('tv');
+  car.speed = 90;
+  settle(120);
+  assert.ok(Math.abs(camera.fov - 62) < 0.05, `the trackside camera keeps its lens, got ${camera.fov.toFixed(2)}`);
+});
+
+test('the camera vibrates with speed, and only with speed', () => {
+  /*
+   * A few centimetres of high frequency movement, which is what a car at 300km/h looks like
+   * from just behind it. Without it the chase camera glides like a drone, and with too much
+   * of it the car reads as broken; the test is that the camera keeps moving when nothing else
+   * does -- a settled rig at rest reproduces the same position to the last decimal, and at
+   * speed it does not.
+   */
+  const camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.4, 6000);
+  const rig = new CameraRig(camera, straightTrack());
+  const car = { x: 300, y: 0, z: 0, heading: 0, speed: 0, yawRate: 0 };
+  for (let i = 0; i < 300; i += 1) rig.update(car, 1 / 60, car);
+
+  const drift = () => {
+    let worst = 0;
+    let previous = camera.position.clone();
+    for (let i = 0; i < 60; i += 1) {
+      rig.update(car, 1 / 60, car);
+      worst = Math.max(worst, camera.position.distanceTo(previous));
+      previous = camera.position.clone();
+    }
+    return worst;
+  };
+
+  assert.ok(drift() < 0.002, `a settled camera at rest must not move between frames, moved ${drift().toFixed(4)}m`);
+
+  car.speed = 90;
+  for (let i = 0; i < 120; i += 1) rig.update(car, 1 / 60, car);
+  const moving = drift();
+  assert.ok(moving > 0.01, `and at top speed it has to be alive, moved ${moving.toFixed(4)}m`);
+  // A vibration, not a wobble: a few centimetres a frame.
+  assert.ok(moving < 0.12, `but only a few centimetres, moved ${moving.toFixed(4)}m`);
+});
+
+test('a barrier strike reports where the car hit, for the sparks', () => {
+  /*
+   * The impact callback carries the speed into the wall, which is all the HUD flash needs and
+   * none of what a spark effect needs: sparks come off the barrier at the point of contact,
+   * thrown along its normal. "Somewhere on this circuit, at 40 m/s" is not a place to draw
+   * them.
+   *
+   * The car is placed beside the circuit pointing at the barrier rather than driven there:
+   * driving to a wall takes half a minute of simulation and lands wherever the AI's line
+   * happens to go, which is a test that passes for the wrong reason.
+   */
+  const track = buildTrack(getCircuit('monza'));
+  const entries = [
+    { ...DRIVERS[0], isPlayer: true, upgrades: {} },
+    { ...DRIVERS[1], isPlayer: false, upgrades: {} }
+  ];
+  const session = new RaceSession({
+    track,
+    entries,
+    type: SESSION_TYPE.race,
+    totalLaps: 3,
+    random: () => 0.5
+  });
+  const impacts = [];
+  session.onImpact = (strength, contact) => impacts.push({ strength, contact });
+
+  // Past the hold on the grid, or the cars are pinned and nothing moves.
+  const straight = { throttle: 0.8, brake: 0, steer: 0, handbrake: false };
+  for (let i = 0; i < 60 * 8; i += 1) session.update(DT, straight);
+
+  const car = session.player.physics;
+  const sample = track.samples[200];
+  const lateral = sample.width * 0.5 + 1.2; // on the kerb, inside the barrier
+  car.x = sample.x + sample.rightX * lateral;
+  car.z = sample.z + sample.rightZ * lateral;
+  car.y = sample.y ?? 0;
+  car.heading = Math.atan2(sample.rightZ, sample.rightX); // nose at the wall
+  car.vLong = 25;
+  car.vLat = 0;
+  car.yawRate = 0;
+
+  for (let i = 0; i < 30 && impacts.length === 0; i += 1) {
+    session.update(DT, { throttle: 0, brake: 0, steer: 0, handbrake: false });
+  }
+
+  assert.ok(impacts.length > 0, 'a car driven at the barrier has to register the hit');
+  const { strength, contact } = impacts[0];
+  assert.ok(strength > 0, `the strike carries the speed into the wall, got ${strength}`);
+  assert.ok(contact, 'and a place to draw sparks');
+  assert.ok(Math.hypot(contact.x - car.x, contact.z - car.z) < 5, 'the contact is at the car');
+  assert.ok(Math.abs(contact.y - car.y) < 1.5, 'at the height of the road');
+  assert.ok(Math.abs(Math.hypot(contact.nx, contact.nz) - 1) < 1e-6, 'with a unit normal');
+
+  // Pointing back into the circuit, not through the wall: sparks leave the barrier on the
+  // side the car came from.
+  const where = locateOnTrack(track, contact.x, contact.z);
+  const inward = contact.nx * where.sample.rightX + contact.nz * where.sample.rightZ;
+  assert.equal(
+    Math.sign(inward),
+    -Math.sign(where.lateral),
+    'the normal points back into the circuit, not through the barrier'
+  );
+});
+
+test('the impact feeds the sparks, and the HUD still hears about it', () => {
+  /*
+   * The wiring, which is the part a unit test cannot reach: `Game` owns both the effect and
+   * the session, so the callback is where the two meet. It used to hand `session.onImpact`
+   * straight to the HUD, which is why the HUD flash and the camera shake had to keep working
+   * when the sparks arrived -- a wrapper that swallowed the original callback would take the
+   * two most established effects in the game with it.
+   */
+  const gameSource = readFileSync(new URL('../src/core/Game.js', import.meta.url), 'utf8');
+  assert.match(
+    gameSource,
+    /this\.session\.onImpact = \(strength, contact\)/,
+    'the session reports the contact to the game'
+  );
+  assert.match(gameSource, /this\.effects\.sparks\(contact\.x/, 'which is where the sparks are thrown');
+  assert.match(gameSource, /this\.onImpact\(strength\)/, 'and the HUD flash and shake still run');
+  assert.ok(
+    gameSource.indexOf('this.session.onImpact') > gameSource.indexOf('this.effects = new Effects'),
+    'the sparks need the effect to exist first'
+  );
+});

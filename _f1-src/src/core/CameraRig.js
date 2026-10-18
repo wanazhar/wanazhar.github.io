@@ -17,6 +17,25 @@ const CHASE_DISTANCE = 11.5;
 const CHASE_HEIGHT = 4.4;
 const COCKPIT_OFFSET = new THREE.Vector3(0, 1.05, 0.35);
 
+/**
+ * Speed feel, in the two places a camera can express it: a lens that opens, and a body that
+ * vibrates.
+ *
+ * The field of view gain is in degrees at top speed, with a little more when the DRS is
+ * open -- the one moment in a lap when the car genuinely is quicker than it was a second ago.
+ * It is approached by damping rather than set, so lifting off does not snap the view back,
+ * and it is applied only to the two cameras that ride with the car: a trackside camera that
+ * changed lens would be a bug wearing a speed effect's name.
+ *
+ * The vibration is in metres at top speed. A few centimetres is the difference between a car
+ * at 300km/h and a drone following one; more than that and the car reads as broken.
+ */
+const FOV_SPEED_GAIN = 9;
+const FOV_DRS_GAIN = 3;
+const FOV_RATE = 3.2;
+const VIBRATION = 0.035;
+const VIBRATION_RATE = 58;
+
 export class CameraRig {
   constructor(camera, track) {
     this.camera = camera;
@@ -31,6 +50,17 @@ export class CameraRig {
     this.smoothTarget = new THREE.Vector3();
     this.shake = 0;
     this.shakeTime = 0;
+    this.vibrationTime = 0;
+    /*
+     * The lens the game was built around, which every speed change is measured from.
+     *
+     * Remembered on the camera rather than on the rig because the rig is rebuilt for every
+     * circuit and the camera is not: read straight off the camera, a rig built while the
+     * lens was still stretched from the last session's top speed would take that as its
+     * resting framing and every session would look a little wider than the last.
+     */
+    this.baseFov = camera.userData.baseFov ?? camera.fov;
+    camera.userData.baseFov = this.baseFov;
     this.tvAnchor = null;
     this.tvTimer = 0;
     this.initialised = false;
@@ -87,6 +117,35 @@ export class CameraRig {
       this.camera.position.x += Math.sin(this.shakeTime) * magnitude;
       this.camera.position.y += Math.sin(this.shakeTime * 1.7) * magnitude;
       this.camera.position.z += Math.cos(this.shakeTime * 1.3) * magnitude;
+    }
+
+    /*
+     * The lens opens with speed, and closes again at rest.
+     *
+     * This is the oldest trick there is for making a car feel fast: at 300km/h the world
+     * rushes past the edges of the screen instead of sitting still at the same framing as it
+     * does in the pits. The guard matters as much as the damping -- a camera whose field of
+     * view changes but whose projection matrix does not is a change nothing can see.
+     */
+    const drs = this.mode === 'tv' || !car.drsOpen ? 0 : FOV_DRS_GAIN;
+    const fovTarget =
+      this.mode === 'tv' ? this.baseFov : this.baseFov + FOV_SPEED_GAIN * speedT + drs;
+    if (Math.abs(this.camera.fov - fovTarget) > 0.01) {
+      this.camera.fov = damp(this.camera.fov, fovTarget, FOV_RATE, dt);
+      this.camera.updateProjectionMatrix();
+    }
+
+    /*
+     * And the car's own vibration, which is what separates a camera on a car from a camera
+     * on a rail. It is added after the mode has placed the camera for this frame, so it can
+     * never accumulate, and it scales with the square of speed because the forces at work do.
+     */
+    const vibration = VIBRATION * speedT * speedT;
+    if (vibration > 0 && this.mode !== 'tv') {
+      this.vibrationTime += dt * VIBRATION_RATE;
+      this.camera.position.x += Math.sin(this.vibrationTime) * vibration;
+      this.camera.position.y += Math.sin(this.vibrationTime * 1.7) * vibration;
+      this.camera.position.z += Math.cos(this.vibrationTime * 1.3) * vibration;
     }
   }
 

@@ -580,7 +580,25 @@ setup.lapMetres = track.length;
         const newVz = worldVz - wallNormal.z * intoWall * 1.4;
         physics.vLong = newVx * cos + newVz * sin;
         physics.vLat = -newVx * sin + newVz * cos;
-        if (car.isPlayer) this.onImpact?.(Math.abs(intoWall));
+        /*
+         * What was hit, and where.
+         *
+         * The speed into the wall is what the HUD flash and the camera shake have always
+         * needed. The contact point and the barrier's inward normal are what a spark effect
+         * needs, and this is the only place that knows them: the normal is flipped here
+         * rather than in the effect, because this is where it is known which side of the car
+         * the barrier was on.
+         */
+        if (car.isPlayer) {
+          this.onImpact?.(Math.abs(intoWall), {
+            x: physics.x,
+            // The scrape is along the floor edge rather than the contact patch.
+            y: (physics.y ?? sample.y ?? 0) + 0.3,
+            z: physics.z,
+            nx: -wallNormal.x,
+            nz: -wallNormal.z
+          });
+        }
       }
       physics.vLong *= 0.86;
       physics.vLat *= 0.5;
